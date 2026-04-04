@@ -16,7 +16,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { DashboardSquare01Icon, Menu01Icon, ChartHistogramIcon, Folder01Icon, UserGroupIcon, Camera01Icon, File01Icon, Settings05Icon, HelpCircleIcon, SearchIcon, Database01Icon, Analytics01Icon, CommandIcon } from "@hugeicons/core-free-icons"
+import { Building04Icon, FileManagementIcon, Invoice03Icon, Wrench01Icon, AiChat01Icon, Camera01Icon, File01Icon, Settings05Icon, HelpCircleIcon, SearchIcon, Database01Icon, Analytics01Icon, CommandIcon } from "@hugeicons/core-free-icons"
 
 const data = {
   user: {
@@ -27,38 +27,28 @@ const data = {
   navMain: [
     {
       title: "Inmuebles",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />
-      ),
+      url: "/inmuebles",
+      icon: <HugeiconsIcon icon={Building04Icon} strokeWidth={2} />,
     },
     {
       title: "Contratos",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={Menu01Icon} strokeWidth={2} />
-      ),
+      url: "/contratos",
+      icon: <HugeiconsIcon icon={FileManagementIcon} strokeWidth={2} />,
     },
     {
       title: "Pagos y Mora",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={ChartHistogramIcon} strokeWidth={2} />
-      ),
+      url: "/pagos",
+      icon: <HugeiconsIcon icon={Invoice03Icon} strokeWidth={2} />,
     },
     {
       title: "Mantenimiento",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={Folder01Icon} strokeWidth={2} />
-      ),
+      url: "/mantenimiento",
+      icon: <HugeiconsIcon icon={Wrench01Icon} strokeWidth={2} />,
     },
     {
       title: "Chatbot",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
-      ),
+      url: "/chatbot",
+      icon: <HugeiconsIcon icon={AiChat01Icon} strokeWidth={2} />,
     },
   ],
   navClouds: [
