@@ -8,6 +8,9 @@
 !.yarn/releases
 !.yarn/versions
 
+#docs
+/docs/
+
 # testing
 /coverage
 
