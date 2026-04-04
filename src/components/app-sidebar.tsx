@@ -16,13 +16,13 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Building04Icon, FileManagementIcon, Invoice03Icon, Wrench01Icon, AiChat01Icon, Camera01Icon, File01Icon, Settings05Icon, HelpCircleIcon, SearchIcon, Database01Icon, Analytics01Icon, CommandIcon } from "@hugeicons/core-free-icons"
+import { Building04Icon, FileManagementIcon, Invoice03Icon, Wrench01Icon, AiChat01Icon, Settings05Icon, HelpCircleIcon, CommandIcon } from "@hugeicons/core-free-icons"
 
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "Emily Perea",
+    email: "emily@habu.com.co",
+    avatar: "",
   },
   navMain: [
     {
@@ -107,48 +107,14 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Settings",
+      title: "Configuración",
       url: "#",
-      icon: (
-        <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} />
-      ),
+      icon: <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} />,
     },
     {
-      title: "Get Help",
+      title: "Ayuda",
       url: "#",
-      icon: (
-        <HugeiconsIcon icon={HelpCircleIcon} strokeWidth={2} />
-      ),
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
-      ),
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={Database01Icon} strokeWidth={2} />
-      ),
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={Analytics01Icon} strokeWidth={2} />
-      ),
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={File01Icon} strokeWidth={2} />
-      ),
+      icon: <HugeiconsIcon icon={HelpCircleIcon} strokeWidth={2} />,
     },
   ],
 }
@@ -173,7 +139,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
+        {/* <NavDocuments items={data.documents} /> */}
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
