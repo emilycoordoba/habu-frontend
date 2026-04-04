@@ -1,7 +1,7 @@
 import { Geist, Geist_Mono, Nunito_Sans } from "next/font/google"
-
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils";
 
 const nunitoSans = Nunito_Sans({subsets:['latin'],variable:'--font-sans'})
@@ -23,7 +23,7 @@ export default function RootLayout({
       className={cn("antialiased", fontMono.variable, "font-sans", nunitoSans.variable)}
     >
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider><TooltipProvider>{children}</TooltipProvider></ThemeProvider>
       </body>
     </html>
   )
