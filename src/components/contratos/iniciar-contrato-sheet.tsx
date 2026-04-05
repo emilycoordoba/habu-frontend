@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowRight01Icon,
-  Expand01Icon,
-  Shrink01Icon,
+  ExpandIcon,
+  ArrowShrink01Icon,
   Building04Icon,
   UserIcon,
   FileManagementIcon,
+  ArrowDown01Icon,
+  Tick01Icon,
 } from "@hugeicons/core-free-icons"
 
 import {
@@ -19,17 +21,24 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 import type { TipoContrato } from "@/types/contrato.types"
 
 // --- Datos mock (se reemplazarán con la API) ---
@@ -48,12 +57,10 @@ interface IniciarContratoSheetProps {
 export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoSheetProps) {
   const router = useRouter()
   const [isFullscreen, setIsFullscreen] = React.useState(false)
+  const [comboboxOpen, setComboboxOpen] = React.useState(false)
 
-  // Paso 1: inmueble seleccionado
   const [inmuebleId, setInmuebleId] = React.useState("")
-  // Paso 2: tipo de contrato
   const [tipo, setTipo] = React.useState<TipoContrato | "">("")
-  // Paso 3: contraparte
   const [busquedaContraparte, setBusquedaContraparte] = React.useState("")
 
   const inmuebleSeleccionado = INMUEBLES_DISPONIBLES.find((i) => i.id === inmuebleId)
@@ -63,7 +70,6 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
   function handleConfirmar() {
     if (!puedeConfirmar) return
     const ruta = tipo === "arriendo" ? "/contratos/nuevo/arriendo" : "/contratos/nuevo/promesa"
-    // En el futuro pasará los IDs como searchParams
     router.push(`${ruta}?inmueble=${inmuebleId}&tipo=${tipo}`)
     onOpenChange(false)
   }
@@ -104,7 +110,7 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
             title={isFullscreen ? "Reducir" : "Expandir a pantalla completa"}
           >
             <HugeiconsIcon
-              icon={isFullscreen ? Shrink01Icon : Expand01Icon}
+              icon={isFullscreen ? ArrowShrink01Icon : ExpandIcon}
               strokeWidth={2}
               className="size-4"
             />
@@ -119,21 +125,61 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
               <div className="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</div>
               <span className="text-sm font-medium">Seleccionar inmueble</span>
             </div>
-            <Select value={inmuebleId} onValueChange={setInmuebleId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Buscar inmueble disponible..." />
-              </SelectTrigger>
-              <SelectContent>
-                {INMUEBLES_DISPONIBLES.map((i) => (
-                  <SelectItem key={i.id} value={i.id}>
-                    <div>
-                      <div className="font-medium">{i.nombre}</div>
-                      <div className="text-xs text-muted-foreground">{i.direccion}</div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+            <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={comboboxOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  {inmuebleSeleccionado ? (
+                    <span className="truncate">{inmuebleSeleccionado.nombre}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Buscar inmueble disponible...</span>
+                  )}
+                  <HugeiconsIcon icon={ArrowDown01Icon} strokeWidth={2} className="size-4 shrink-0 text-muted-foreground" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="p-0"
+                style={{ width: "var(--radix-popover-trigger-width)" }}
+              >
+                <Command>
+                  <CommandInput placeholder="Buscar por nombre o dirección..." />
+                  <CommandList>
+                    <CommandEmpty>No se encontraron inmuebles.</CommandEmpty>
+                    <CommandGroup>
+                      {INMUEBLES_DISPONIBLES.map((inmueble) => (
+                        <CommandItem
+                          key={inmueble.id}
+                          value={`${inmueble.nombre} ${inmueble.direccion}`}
+                          onSelect={() => {
+                            setInmuebleId(inmueble.id)
+                            setComboboxOpen(false)
+                          }}
+                          className="flex items-start gap-2 py-2"
+                        >
+                          <HugeiconsIcon
+                            icon={Tick01Icon}
+                            strokeWidth={2}
+                            className={cn(
+                              "size-4 mt-0.5 shrink-0",
+                              inmuebleId === inmueble.id ? "opacity-100 text-primary" : "opacity-0"
+                            )}
+                          />
+                          <div>
+                            <div className="font-medium text-sm">{inmueble.nombre}</div>
+                            <div className="text-xs text-muted-foreground">{inmueble.direccion}</div>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
 
             {/* Propietario cargado automáticamente */}
             {inmuebleSeleccionado && (
@@ -150,8 +196,13 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
           {/* Paso 2 — Tipo de contrato */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <div className={`flex size-6 items-center justify-center rounded-full text-xs font-bold ${inmuebleId ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>2</div>
-              <span className={`text-sm font-medium ${!inmuebleId ? "text-muted-foreground" : ""}`}>Tipo de contrato</span>
+              <div className={cn(
+                "flex size-6 items-center justify-center rounded-full text-xs font-bold",
+                inmuebleId ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              )}>2</div>
+              <span className={cn("text-sm font-medium", !inmuebleId && "text-muted-foreground")}>
+                Tipo de contrato
+              </span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {(["arriendo", "promesa_compraventa"] as TipoContrato[]).map((t) => (
@@ -159,11 +210,10 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
                   key={t}
                   disabled={!inmuebleId}
                   onClick={() => setTipo(t)}
-                  className={`rounded-lg border-2 p-4 text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                    tipo === t
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
+                  className={cn(
+                    "rounded-lg border-2 p-4 text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
+                    tipo === t ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                  )}
                 >
                   <div className="font-medium text-sm">
                     {t === "arriendo" ? "Arriendo" : "Promesa C/V"}
@@ -179,8 +229,11 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
           {/* Paso 3 — Contraparte */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <div className={`flex size-6 items-center justify-center rounded-full text-xs font-bold ${tipo ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>3</div>
-              <span className={`text-sm font-medium ${!tipo ? "text-muted-foreground" : ""}`}>
+              <div className={cn(
+                "flex size-6 items-center justify-center rounded-full text-xs font-bold",
+                tipo ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              )}>3</div>
+              <span className={cn("text-sm font-medium", !tipo && "text-muted-foreground")}>
                 {labelContraparte}
               </span>
               {tipo && (
@@ -220,7 +273,7 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
           </div>
         </div>
 
-        {/* Footer con acciones */}
+        {/* Footer */}
         <div className="border-t p-4 flex items-center justify-between gap-3">
           <Button variant="outline" onClick={handleClose}>
             Cancelar
