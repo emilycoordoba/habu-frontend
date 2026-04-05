@@ -1,6 +1,14 @@
 import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { PlusSignIcon, FilterIcon } from "@hugeicons/core-free-icons"
+import {
+  PlusSignIcon,
+  FilterIcon,
+  MoreHorizontalCircle01Icon,
+  EyeIcon,
+  FileEditIcon,
+  Cancel01Icon,
+  MoneyReceiveSquareIcon,
+} from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,6 +20,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Select,
   SelectContent,
@@ -98,6 +113,17 @@ const CONTRATOS_MOCK: Contrato[] = [
   },
 ]
 
+// Estados que siempre aparecen en las tarjetas de resumen (fila superior)
+const ESTADOS_PRINCIPALES: EstadoContrato[] = [
+  "activo", "en_firmas", "por_vencer", "vencido_con_saldos", "borrador",
+]
+
+// Estados secundarios (fila inferior)
+const ESTADOS_SECUNDARIOS: EstadoContrato[] = [
+  "en_escrituracion", "pendiente_registro", "terminacion_en_disputa",
+  "terminado_anticipadamente", "finalizado",
+]
+
 function formatCurrency(value: number) {
   if (value === 0) return "—"
   return new Intl.NumberFormat("es-CO", {
@@ -116,6 +142,71 @@ function formatDate(date: string) {
   })
 }
 
+function AccionesMenu({ contrato }: { contrato: Contrato }) {
+  const esActivo = contrato.estado === "activo"
+  const esPorVencer = contrato.estado === "por_vencer"
+  const tieneDeuda = contrato.estado === "vencido_con_saldos"
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="size-8">
+          <HugeiconsIcon icon={MoreHorizontalCircle01Icon} strokeWidth={2} className="size-4" />
+          <span className="sr-only">Acciones</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem asChild>
+          <Link href={`/contratos/${contrato.id}`}>
+            <HugeiconsIcon icon={EyeIcon} strokeWidth={2} className="size-4" />
+            Ver detalle
+          </Link>
+        </DropdownMenuItem>
+        {(esActivo || esPorVencer) && (
+          <DropdownMenuItem>
+            <HugeiconsIcon icon={FileEditIcon} strokeWidth={2} className="size-4" />
+            Renovar contrato
+          </DropdownMenuItem>
+        )}
+        {tieneDeuda && (
+          <DropdownMenuItem>
+            <HugeiconsIcon icon={MoneyReceiveSquareIcon} strokeWidth={2} className="size-4" />
+            Gestionar saldos
+          </DropdownMenuItem>
+        )}
+        {esActivo && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive">
+              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
+              Iniciar terminación
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function TarjetaEstado({ estado }: { estado: EstadoContrato }) {
+  const count = CONTRATOS_MOCK.filter((c) => c.estado === estado).length
+  const config = ESTADO_CONTRATO_CONFIG[estado]
+  return (
+    <div className="rounded-lg border bg-card p-3 flex flex-col gap-1.5">
+      <span className="text-xl font-bold">{count}</span>
+      <Badge variant="outline" className={config.className + " w-fit text-xs"}>
+        {config.label}
+      </Badge>
+    </div>
+  )
+}
+
+// --- Paginación (visual — sin lógica aún) ---
+const TOTAL = CONTRATOS_MOCK.length
+const POR_PAGINA = 10
+const PAGINA_ACTUAL = 1
+const TOTAL_PAGINAS = Math.ceil(TOTAL / POR_PAGINA)
+
 export default function ContratosPage() {
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
@@ -124,7 +215,7 @@ export default function ContratosPage() {
         <div>
           <h1 className="text-2xl font-semibold">Contratos</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {CONTRATOS_MOCK.length} contratos en total
+            {TOTAL} contratos en total
           </p>
         </div>
         <Button asChild>
@@ -135,22 +226,18 @@ export default function ContratosPage() {
         </Button>
       </div>
 
-      {/* Tarjetas de resumen por estado */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {(["activo", "en_firmas", "por_vencer", "vencido_con_saldos", "borrador"] as EstadoContrato[]).map(
-          (estado) => {
-            const count = CONTRATOS_MOCK.filter((c) => c.estado === estado).length
-            const config = ESTADO_CONTRATO_CONFIG[estado]
-            return (
-              <div key={estado} className="rounded-lg border bg-card p-3 flex flex-col gap-1">
-                <span className="text-2xl font-bold">{count}</span>
-                <Badge variant="outline" className={config.className + " w-fit text-xs"}>
-                  {config.label}
-                </Badge>
-              </div>
-            )
-          }
-        )}
+      {/* Tarjetas de resumen — 2 filas de 5 */}
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          {ESTADOS_PRINCIPALES.map((estado) => (
+            <TarjetaEstado key={estado} estado={estado} />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          {ESTADOS_SECUNDARIOS.map((estado) => (
+            <TarjetaEstado key={estado} estado={estado} />
+          ))}
+        </div>
       </div>
 
       {/* Filtros */}
@@ -211,13 +298,14 @@ export default function ContratosPage() {
               <TableHead className="w-40">Estado</TableHead>
               <TableHead>Vigencia</TableHead>
               <TableHead className="text-right">Canon / Precio</TableHead>
+              <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {CONTRATOS_MOCK.map((contrato) => {
               const labels = LABELS_POR_TIPO[contrato.tipo]
               return (
-                <TableRow key={contrato.id} className="hover:bg-muted/30 cursor-pointer">
+                <TableRow key={contrato.id} className="hover:bg-muted/30">
                   <TableCell>
                     <Link
                       href={`/contratos/${contrato.id}`}
@@ -250,11 +338,33 @@ export default function ContratosPage() {
                   <TableCell className="text-right text-sm font-medium">
                     {formatCurrency(contrato.valorCanon)}
                   </TableCell>
+                  <TableCell>
+                    <AccionesMenu contrato={contrato} />
+                  </TableCell>
                 </TableRow>
               )
             })}
           </TableBody>
         </Table>
+
+        {/* Paginación */}
+        <div className="flex items-center justify-between border-t px-4 py-3">
+          <p className="text-sm text-muted-foreground">
+            Mostrando <span className="font-medium">{TOTAL}</span> de{" "}
+            <span className="font-medium">{TOTAL}</span> contratos
+          </p>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled>
+              Anterior
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Página {PAGINA_ACTUAL} de {TOTAL_PAGINAS}
+            </span>
+            <Button variant="outline" size="sm" disabled={PAGINA_ACTUAL >= TOTAL_PAGINAS}>
+              Siguiente
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   )
