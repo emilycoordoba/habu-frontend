@@ -34,7 +34,6 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from "@/components/ui/command"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -325,21 +324,21 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
                           </CommandItem>
                         ))}
                       </CommandGroup>
-                      <CommandSeparator />
-                      <CommandGroup>
-                        <CommandItem
-                          onSelect={() => {
-                            setContraparteComboOpen(false)
-                            setRegistrarClienteOpen(true)
-                          }}
-                          className="flex items-center gap-2 text-primary"
-                        >
-                          <HugeiconsIcon icon={UserAdd01Icon} strokeWidth={2} className="size-4 shrink-0" />
-                          <span className="font-medium">Registrar nuevo cliente</span>
-                        </CommandItem>
-                      </CommandGroup>
                     </CommandList>
                   </Command>
+                  {/* Fuera del filtro de Command para que siempre sea visible */}
+                  <div className="border-t p-1">
+                    <button
+                      onClick={() => {
+                        setContraparteComboOpen(false)
+                        setRegistrarClienteOpen(true)
+                      }}
+                      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-primary hover:bg-accent transition-colors"
+                    >
+                      <HugeiconsIcon icon={UserAdd01Icon} strokeWidth={2} className="size-4 shrink-0" />
+                      <span className="font-medium">Registrar nuevo cliente</span>
+                    </button>
+                  </div>
                 </PopoverContent>
               </Popover>
 
