@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { UserIcon, Building07Icon } from "@hugeicons/core-free-icons"
+import { UserIcon, Building01Icon } from "@hugeicons/core-free-icons"
 
 import {
   Dialog,
@@ -113,7 +113,7 @@ export function RegistrarClienteDialog({
               >
                 <div className="flex items-center gap-2 mb-1">
                   <HugeiconsIcon
-                    icon={tipo === "natural" ? UserIcon : Building07Icon}
+                    icon={tipo === "natural" ? UserIcon : Building01Icon}
                     strokeWidth={2}
                     className="size-4 text-muted-foreground"
                   />
