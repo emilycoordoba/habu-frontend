@@ -103,7 +103,7 @@ Interactuara con módulos internos: administración, propiedades, clientes, cont
 | **RF-10** | El sistema deberá permitir al administrador gestionar plantillas de documentos, como contratos o formularios utilizados por el sistema. | Administración | **BAJA** |
 | **RF-11** | El sistema deberá permitir al administrador definir los documentos obligatorios según el tipo de contrato. | Administración | **ALTA** |
 | **RF-12** | El sistema deberá permitir al administrador configurar parámetros generales del sistema, necesarios para el correcto funcionamiento de los módulos. | Administración | **MEDIA** |
-| **RF-13** | El sistema deberá permitir registrar nuevos inmuebles con información como tipo, dirección, ubicación, área, precio y características generales. | Propiedades | **ALTA** |
+| **RF-13** | El sistema deberá permitir registrar nuevos inmuebles con información como tipo, modalidad (arriendo, venta o ambos), dirección, ubicación, área, precio y características generales. | Propiedades | **ALTA** |
 | **RF-14** | El sistema deberá permitir adjuntar fotografías a cada inmueble registrado. | Propiedades | **MEDIA** |
 | **RF-15** | El sistema deberá permitir clasificar los inmuebles según tipo (casa, apartamento, local, etc.). | Propiedades | **ALTA** |
 | **RF-16** | El sistema deberá permitir establecer el estado del inmueble (disponible, arrendado, vendido o en mantenimiento). | Propiedades | **ALTA** |
@@ -514,6 +514,7 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | :---- | :---- | :---- |
 | id | INT | Identificador único |
 | tipo | ENUM | casa / apartamento / local / otro |
+| modalidad | ENUM | arriendo / venta / ambos |
 | direccion | VARCHAR | Dirección del inmueble |
 | ubicacion | VARCHAR | Ciudad / barrio |
 | area | DECIMAL | Área en m² |

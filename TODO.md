@@ -30,3 +30,11 @@
 - [ ] Implementar `lib/hooks/use-contratos.ts` con React Query
 - [ ] Configurar `src/proxy.ts` con validación de JWT real
 - [ ] Variables de entorno (`NEXT_PUBLIC_API_URL`)
+
+
+## Documentación pendiente (Google Docs)
+- [ ] Actualizar Google Docs del proyecto con el campo `modalidad` (arriendo / venta / ambos) en la entidad `Inmueble` y en RF-13
+
+## TODO propio
+- [ ] full page sheet no funciona
+- [ ] modulo clientes?
