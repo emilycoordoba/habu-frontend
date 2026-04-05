@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  PlusSignIcon,
   FilterIcon,
   MoreHorizontalCircle01Icon,
   EyeIcon,
@@ -11,6 +10,7 @@ import {
   FileNotFoundIcon,
 } from "@hugeicons/core-free-icons"
 
+import { NuevoContratoTrigger } from "@/components/contratos/nuevo-contrato-trigger"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -246,12 +246,7 @@ export default function ContratosPage() {
           <h1 className="text-2xl font-semibold">Contratos</h1>
           <p className="text-sm text-muted-foreground mt-1">{TOTAL} contratos en total</p>
         </div>
-        <Button asChild>
-          <Link href="/contratos/nuevo">
-            <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} className="size-4" />
-            Nuevo contrato
-          </Link>
-        </Button>
+        <NuevoContratoTrigger />
       </div>
 
       {/* Tarjetas de resumen — 2 filas de 5 */}
