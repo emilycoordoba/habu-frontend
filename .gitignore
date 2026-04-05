@@ -9,7 +9,7 @@
 !.yarn/versions
 
 #docs
-/docs/
+/docs/personal/
 
 # testing
 /coverage

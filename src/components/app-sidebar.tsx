@@ -16,7 +16,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Building04Icon, FileManagementIcon, Invoice03Icon, Wrench01Icon, AiChat01Icon, Settings05Icon, HelpCircleIcon, CommandIcon } from "@hugeicons/core-free-icons"
+import { Building04Icon, FileManagementIcon, Invoice03Icon, Wrench01Icon, AiChat01Icon, Settings05Icon, HelpCircleIcon, CommandIcon, Camera01Icon, File01Icon } from "@hugeicons/core-free-icons"
 
 const data = {
   user: {
