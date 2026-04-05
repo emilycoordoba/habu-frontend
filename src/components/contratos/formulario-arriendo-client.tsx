@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowLeft01Icon,
@@ -52,6 +53,7 @@ function parseCOP(value: string): number {
 }
 
 export function FormularioArriendoClient({ inmuebleId, tipo }: FormularioArriendoClientProps) {
+  const router = useRouter()
   const inmueble = INMUEBLES_MOCK[inmuebleId]
 
   // — Sección 1: Vigencia
@@ -346,9 +348,12 @@ export function FormularioArriendoClient({ inmuebleId, tipo }: FormularioArriend
             <Link href="/contratos">
               <Button variant="outline">Cancelar</Button>
             </Link>
-            <Button disabled={!puedeGuardar}>
+            <Button
+              disabled={!puedeGuardar}
+              onClick={() => router.push("/contratos/5/documentos")}
+            >
               <HugeiconsIcon icon={FileManagementIcon} strokeWidth={2} className="size-4" />
-              Guardar borrador
+              Guardar y continuar
             </Button>
           </div>
         </div>
