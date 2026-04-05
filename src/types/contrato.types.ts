@@ -19,12 +19,19 @@ export interface Contrato {
   estado: EstadoContrato
   inmueble: string
   direccion: string
-  arrendador: string
-  arrendatario: string
+  /** Arrendador (arriendo) o Vendedor (promesa compraventa) */
+  propietario: string
+  /** Arrendatario (arriendo) o Comprador (promesa compraventa) */
+  contraparte: string
   asesor: string
   fechaInicio: string
   fechaFin: string
   valorCanon: number
+}
+
+export const LABELS_POR_TIPO: Record<TipoContrato, { propietario: string; contraparte: string; canon: string }> = {
+  arriendo:            { propietario: "Arrendador",  contraparte: "Arrendatario", canon: "Canon" },
+  promesa_compraventa: { propietario: "Vendedor",    contraparte: "Comprador",    canon: "Precio" },
 }
 
 export const ESTADO_CONTRATO_CONFIG: Record<

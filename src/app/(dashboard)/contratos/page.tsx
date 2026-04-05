@@ -22,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { EstadoBadge } from "@/components/contratos/estado-badge"
 import type { Contrato, EstadoContrato } from "@/types/contrato.types"
-import { ESTADO_CONTRATO_CONFIG } from "@/types/contrato.types"
+import { ESTADO_CONTRATO_CONFIG, LABELS_POR_TIPO } from "@/types/contrato.types"
 
 // --- Datos de ejemplo (se reemplazarán con la API) ---
 const CONTRATOS_MOCK: Contrato[] = [
@@ -33,8 +33,8 @@ const CONTRATOS_MOCK: Contrato[] = [
     estado: "activo",
     inmueble: "Apto 301 Torre A",
     direccion: "Cra 15 #80-20, Bogotá",
-    arrendador: "Carlos Méndez",
-    arrendatario: "Laura Gómez",
+    propietario: "Carlos Méndez",
+    contraparte: "Laura Gómez",
     asesor: "Ana Rodríguez",
     fechaInicio: "2025-01-01",
     fechaFin: "2026-01-01",
@@ -47,8 +47,8 @@ const CONTRATOS_MOCK: Contrato[] = [
     estado: "en_firmas",
     inmueble: "Casa 12 Urb. El Prado",
     direccion: "Cll 50 #30-10, Medellín",
-    arrendador: "Pedro Vargas",
-    arrendatario: "Sofía Torres",
+    propietario: "Pedro Vargas",
+    contraparte: "Sofía Torres",
     asesor: "Luis Martínez",
     fechaInicio: "2025-03-15",
     fechaFin: "2025-09-15",
@@ -61,8 +61,8 @@ const CONTRATOS_MOCK: Contrato[] = [
     estado: "por_vencer",
     inmueble: "Local 5 CC Bulevar",
     direccion: "Av. El Dorado #68C-61, Bogotá",
-    arrendador: "Inversiones XYZ",
-    arrendatario: "Tienda Moda Libre",
+    propietario: "Inversiones XYZ",
+    contraparte: "Tienda Moda Libre",
     asesor: "Ana Rodríguez",
     fechaInicio: "2024-06-01",
     fechaFin: "2025-06-01",
@@ -75,8 +75,8 @@ const CONTRATOS_MOCK: Contrato[] = [
     estado: "vencido_con_saldos",
     inmueble: "Oficina 208 Ed. Centenario",
     direccion: "Cra 7 #32-16, Bogotá",
-    arrendador: "María López",
-    arrendatario: "Consultora ABC",
+    propietario: "María López",
+    contraparte: "Consultora ABC",
     asesor: "Luis Martínez",
     fechaInicio: "2024-01-01",
     fechaFin: "2025-01-01",
@@ -89,8 +89,8 @@ const CONTRATOS_MOCK: Contrato[] = [
     estado: "borrador",
     inmueble: "Apto 502 Torres del Norte",
     direccion: "Cll 127 #15-40, Bogotá",
-    arrendador: "Jorge Herrera",
-    arrendatario: "—",
+    propietario: "Jorge Herrera",
+    contraparte: "—",
     asesor: "Ana Rodríguez",
     fechaInicio: "—",
     fechaFin: "—",
@@ -205,7 +205,7 @@ export default function ContratosPage() {
             <TableRow className="bg-muted/50">
               <TableHead className="w-32">Referencia</TableHead>
               <TableHead>Inmueble</TableHead>
-              <TableHead>Arrendatario</TableHead>
+              <TableHead>Partes</TableHead>
               <TableHead>Asesor</TableHead>
               <TableHead className="w-28">Tipo</TableHead>
               <TableHead className="w-40">Estado</TableHead>
@@ -214,39 +214,45 @@ export default function ContratosPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {CONTRATOS_MOCK.map((contrato) => (
-              <TableRow key={contrato.id} className="hover:bg-muted/30 cursor-pointer">
-                <TableCell>
-                  <Link
-                    href={`/contratos/${contrato.id}`}
-                    className="font-mono text-sm font-medium text-primary hover:underline"
-                  >
-                    {contrato.referencia}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <div className="font-medium text-sm">{contrato.inmueble}</div>
-                  <div className="text-xs text-muted-foreground">{contrato.direccion}</div>
-                </TableCell>
-                <TableCell className="text-sm">{contrato.arrendatario}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{contrato.asesor}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs">
-                    {contrato.tipo === "arriendo" ? "Arriendo" : "Promesa C/V"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <EstadoBadge estado={contrato.estado} />
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  <div>{formatDate(contrato.fechaInicio)}</div>
-                  <div>{formatDate(contrato.fechaFin)}</div>
-                </TableCell>
-                <TableCell className="text-right text-sm font-medium">
-                  {formatCurrency(contrato.valorCanon)}
-                </TableCell>
-              </TableRow>
-            ))}
+            {CONTRATOS_MOCK.map((contrato) => {
+              const labels = LABELS_POR_TIPO[contrato.tipo]
+              return (
+                <TableRow key={contrato.id} className="hover:bg-muted/30 cursor-pointer">
+                  <TableCell>
+                    <Link
+                      href={`/contratos/${contrato.id}`}
+                      className="font-mono text-sm font-medium text-primary hover:underline"
+                    >
+                      {contrato.referencia}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium text-sm">{contrato.inmueble}</div>
+                    <div className="text-xs text-muted-foreground">{contrato.direccion}</div>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    <div>{contrato.contraparte}</div>
+                    <div className="text-xs text-muted-foreground">{labels.contraparte}</div>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{contrato.asesor}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs">
+                      {contrato.tipo === "arriendo" ? "Arriendo" : "Promesa C/V"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <EstadoBadge estado={contrato.estado} />
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    <div>{formatDate(contrato.fechaInicio)}</div>
+                    <div>{formatDate(contrato.fechaFin)}</div>
+                  </TableCell>
+                  <TableCell className="text-right text-sm font-medium">
+                    {formatCurrency(contrato.valorCanon)}
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </div>
