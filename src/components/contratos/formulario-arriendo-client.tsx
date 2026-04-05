@@ -130,11 +130,11 @@ export function FormularioArriendoClient({ inmuebleId, tipo }: FormularioArriend
         </Badge>
       </div>
 
-      {/* Body — dos columnas */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* Body — dos columnas centradas */}
+      <div className="flex flex-1 overflow-hidden justify-center">
 
         {/* Columna izquierda — formulario */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-8 max-w-2xl">
+        <div className="w-full max-w-2xl overflow-y-auto px-6 py-6 flex flex-col gap-8">
 
           {/* Sección 1 — Vigencia */}
           <section className="flex flex-col gap-4">
