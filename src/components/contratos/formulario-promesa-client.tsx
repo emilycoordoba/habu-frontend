@@ -58,6 +58,8 @@ export function FormularioPromesaClient({ inmuebleId }: FormularioPromesaClientP
   const [formaPago, setFormaPago] = React.useState<FormaPago | "">("")
   const [contadoRaw, setContadoRaw] = React.useState("")
   const [creditoRaw, setCreditoRaw] = React.useState("")
+  const [entidadFinanciera, setEntidadFinanciera] = React.useState("")
+  const [fechaAprobacionCredito, setFechaAprobacionCredito] = React.useState("")
 
   // — Sección 3: Escrituración
   const [fechaEscrituracion, setFechaEscrituracion] = React.useState("")
@@ -81,10 +83,13 @@ export function FormularioPromesaClient({ inmuebleId }: FormularioPromesaClientP
     ? saldoMixto - precio
     : null
 
+  const tieneCredito = formaPago === "credito_hipotecario" || formaPago === "mixto"
+
   const puedeGuardar =
     precio > 0 && arras > 0 && !!fechaLimiteArras && !!formaPago &&
     !!fechaEscrituracion &&
-    (formaPago !== "mixto" || (contado > 0 && credito > 0))
+    (formaPago !== "mixto" || (contado > 0 && credito > 0)) &&
+    (!tieneCredito || !!entidadFinanciera)
 
   function handleCurrencyChange(setter: (v: string) => void) {
     return (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -245,6 +250,30 @@ export function FormularioPromesaClient({ inmuebleId }: FormularioPromesaClientP
                 )}
               </div>
             )}
+
+            {/* Campos de crédito hipotecario (crédito puro o mixto) */}
+            {tieneCredito && (
+              <div className="grid grid-cols-2 gap-4 pl-1">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="entidad-financiera">Entidad financiera <Req /></Label>
+                  <Input
+                    id="entidad-financiera"
+                    value={entidadFinanciera}
+                    onChange={(e) => setEntidadFinanciera(e.target.value)}
+                    placeholder="Bancolombia, Davivienda..."
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="fecha-aprobacion">Fecha estimada de aprobación</Label>
+                  <Input
+                    id="fecha-aprobacion"
+                    type="date"
+                    value={fechaAprobacionCredito}
+                    onChange={(e) => setFechaAprobacionCredito(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
           </section>
 
           <Separator />
@@ -349,6 +378,14 @@ export function FormularioPromesaClient({ inmuebleId }: FormularioPromesaClientP
               <>
                 <PreviewRow label="De contado" value={contado > 0 ? `$${new Intl.NumberFormat("es-CO").format(contado)}` : "—"} />
                 <PreviewRow label="Crédito" value={credito > 0 ? `$${new Intl.NumberFormat("es-CO").format(credito)}` : "—"} />
+              </>
+            )}
+            {tieneCredito && (
+              <>
+                <PreviewRow label="Entidad financiera" value={entidadFinanciera || "—"} />
+                {fechaAprobacionCredito && (
+                  <PreviewRow label="Aprobación estimada" value={new Date(fechaAprobacionCredito).toLocaleDateString("es-CO")} />
+                )}
               </>
             )}
           </div>
