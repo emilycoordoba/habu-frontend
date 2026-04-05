@@ -8,6 +8,7 @@ import {
   FileEditIcon,
   Cancel01Icon,
   MoneyReceiveSquareIcon,
+  FileNotFoundIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -51,8 +52,8 @@ const CONTRATOS_MOCK: Contrato[] = [
     propietario: "Carlos Méndez",
     contraparte: "Laura Gómez",
     asesor: "Ana Rodríguez",
-    fechaInicio: "2025-01-01",
-    fechaFin: "2026-01-01",
+    fechaInicio: "2025-04-01",
+    fechaFin: "2027-04-01",
     valorCanon: 2500000,
   },
   {
@@ -65,8 +66,8 @@ const CONTRATOS_MOCK: Contrato[] = [
     propietario: "Pedro Vargas",
     contraparte: "Sofía Torres",
     asesor: "Luis Martínez",
-    fechaInicio: "2025-03-15",
-    fechaFin: "2025-09-15",
+    fechaInicio: "2026-03-15",
+    fechaFin: "2026-09-15",
     valorCanon: 380000000,
   },
   {
@@ -79,8 +80,8 @@ const CONTRATOS_MOCK: Contrato[] = [
     propietario: "Inversiones XYZ",
     contraparte: "Tienda Moda Libre",
     asesor: "Ana Rodríguez",
-    fechaInicio: "2024-06-01",
-    fechaFin: "2025-06-01",
+    fechaInicio: "2025-05-01",
+    fechaFin: "2026-05-15",
     valorCanon: 4800000,
   },
   {
@@ -113,16 +114,18 @@ const CONTRATOS_MOCK: Contrato[] = [
   },
 ]
 
-// Estados que siempre aparecen en las tarjetas de resumen (fila superior)
 const ESTADOS_PRINCIPALES: EstadoContrato[] = [
   "activo", "en_firmas", "por_vencer", "vencido_con_saldos", "borrador",
 ]
-
-// Estados secundarios (fila inferior)
 const ESTADOS_SECUNDARIOS: EstadoContrato[] = [
   "en_escrituracion", "pendiente_registro", "terminacion_en_disputa",
   "terminado_anticipadamente", "finalizado",
 ]
+
+// Filas con estado crítico que reciben resaltado visual
+const ESTADOS_CRITICOS = new Set<EstadoContrato>(["vencido_con_saldos", "terminacion_en_disputa"])
+
+// --- Helpers de formato ---
 
 function formatCurrency(value: number) {
   if (value === 0) return "—"
@@ -133,14 +136,42 @@ function formatCurrency(value: number) {
   }).format(value)
 }
 
-function formatDate(date: string) {
-  if (date === "—") return "—"
-  return new Date(date + "T00:00:00").toLocaleDateString("es-CO", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  })
+/** Duración total entre dos fechas en texto legible: "2 años", "8 meses", "1 año 3 meses" */
+function formatDuracion(inicio: string, fin: string): string {
+  if (inicio === "—" || fin === "—") return "—"
+  const d1 = new Date(inicio + "T00:00:00")
+  const d2 = new Date(fin + "T00:00:00")
+  let años = d2.getFullYear() - d1.getFullYear()
+  let meses = d2.getMonth() - d1.getMonth()
+  if (meses < 0) { años--; meses += 12 }
+  const partes: string[] = []
+  if (años > 0) partes.push(`${años} año${años > 1 ? "s" : ""}`)
+  if (meses > 0) partes.push(`${meses} mes${meses > 1 ? "es" : ""}`)
+  return partes.length > 0 ? partes.join(" ") : "< 1 mes"
 }
+
+/** Tiempo restante desde hoy hasta fechaFin, con color semántico */
+function tiempoRestante(fin: string): { texto: string; className: string } | null {
+  if (fin === "—") return null
+  const hoy = new Date()
+  const fechaFin = new Date(fin + "T00:00:00")
+  const diffMs = fechaFin.getTime() - hoy.getTime()
+  const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+  if (diffDias < 0) return { texto: "Vencido", className: "text-red-600" }
+  if (diffDias <= 30) return { texto: `Vence en ${diffDias} día${diffDias !== 1 ? "s" : ""}`, className: "text-red-500" }
+  if (diffDias <= 90) {
+    const meses = Math.ceil(diffDias / 30)
+    return { texto: `Vence en ${meses} mes${meses > 1 ? "es" : ""}`, className: "text-yellow-600" }
+  }
+  const meses = Math.floor(diffDias / 30)
+  if (meses < 12) return { texto: `${meses} mes${meses > 1 ? "es" : ""} restantes`, className: "text-muted-foreground" }
+  const años = Math.floor(meses / 12)
+  const mesesR = meses % 12
+  const texto = mesesR > 0 ? `${años} año${años > 1 ? "s" : ""} ${mesesR} mes${mesesR > 1 ? "es" : ""} restantes` : `${años} año${años > 1 ? "s" : ""} restante${años > 1 ? "s" : ""}`
+  return { texto, className: "text-muted-foreground" }
+}
+
+// --- Subcomponentes ---
 
 function AccionesMenu({ contrato }: { contrato: Contrato }) {
   const esActivo = contrato.estado === "activo"
@@ -201,7 +232,6 @@ function TarjetaEstado({ estado }: { estado: EstadoContrato }) {
   )
 }
 
-// --- Paginación (visual — sin lógica aún) ---
 const TOTAL = CONTRATOS_MOCK.length
 const POR_PAGINA = 10
 const PAGINA_ACTUAL = 1
@@ -214,9 +244,7 @@ export default function ContratosPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Contratos</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {TOTAL} contratos en total
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">{TOTAL} contratos en total</p>
         </div>
         <Button asChild>
           <Link href="/contratos/nuevo">
@@ -246,10 +274,7 @@ export default function ContratosPage() {
           <HugeiconsIcon icon={FilterIcon} strokeWidth={2} className="size-4" />
           Filtrar por:
         </div>
-        <Input
-          placeholder="Buscar por inmueble, cliente o referencia..."
-          className="max-w-xs h-9"
-        />
+        <Input placeholder="Buscar por inmueble, cliente o referencia..." className="max-w-xs h-9" />
         <Select>
           <SelectTrigger className="w-44 h-9">
             <SelectValue placeholder="Estado" />
@@ -297,53 +322,79 @@ export default function ContratosPage() {
               <TableHead className="w-28">Tipo</TableHead>
               <TableHead className="w-40">Estado</TableHead>
               <TableHead>Vigencia</TableHead>
-              <TableHead className="text-right">Canon / Precio</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {CONTRATOS_MOCK.map((contrato) => {
-              const labels = LABELS_POR_TIPO[contrato.tipo]
-              return (
-                <TableRow key={contrato.id} className="hover:bg-muted/30">
-                  <TableCell>
-                    <Link
-                      href={`/contratos/${contrato.id}`}
-                      className="font-mono text-sm font-medium text-primary hover:underline"
-                    >
-                      {contrato.referencia}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium text-sm">{contrato.inmueble}</div>
-                    <div className="text-xs text-muted-foreground">{contrato.direccion}</div>
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    <div>{contrato.contraparte}</div>
-                    <div className="text-xs text-muted-foreground">{labels.contraparte}</div>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{contrato.asesor}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-xs">
-                      {contrato.tipo === "arriendo" ? "Arriendo" : "Promesa C/V"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <EstadoBadge estado={contrato.estado} />
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    <div>{formatDate(contrato.fechaInicio)}</div>
-                    <div>{formatDate(contrato.fechaFin)}</div>
-                  </TableCell>
-                  <TableCell className="text-right text-sm font-medium">
-                    {formatCurrency(contrato.valorCanon)}
-                  </TableCell>
-                  <TableCell>
-                    <AccionesMenu contrato={contrato} />
-                  </TableCell>
-                </TableRow>
-              )
-            })}
+            {CONTRATOS_MOCK.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="h-48 text-center">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <HugeiconsIcon icon={FileNotFoundIcon} strokeWidth={1.5} className="size-10 opacity-40" />
+                    <p className="text-sm font-medium">No se encontraron contratos</p>
+                    <p className="text-xs">Intenta ajustar los filtros o crea un nuevo contrato</p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              CONTRATOS_MOCK.map((contrato) => {
+                const labels = LABELS_POR_TIPO[contrato.tipo]
+                const restante = tiempoRestante(contrato.fechaFin)
+                const esCritico = ESTADOS_CRITICOS.has(contrato.estado)
+
+                return (
+                  <TableRow
+                    key={contrato.id}
+                    className={
+                      "hover:bg-muted/30" +
+                      (esCritico ? " border-l-2 border-l-red-400" : "")
+                    }
+                  >
+                    <TableCell>
+                      <Link
+                        href={`/contratos/${contrato.id}`}
+                        className="font-mono text-sm font-medium text-primary hover:underline"
+                      >
+                        {contrato.referencia}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-sm">{contrato.inmueble}</div>
+                      <div className="text-xs text-muted-foreground">{contrato.direccion}</div>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      <div>{contrato.contraparte}</div>
+                      <div className="text-xs text-muted-foreground">{labels.contraparte}</div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{contrato.asesor}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        {contrato.tipo === "arriendo" ? "Arriendo" : "Promesa C/V"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <EstadoBadge estado={contrato.estado} />
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <div className="font-medium text-foreground">
+                        {formatDuracion(contrato.fechaInicio, contrato.fechaFin)}
+                      </div>
+                      {restante && (
+                        <div className={restante.className}>{restante.texto}</div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right text-sm">
+                      <div className="font-medium">{formatCurrency(contrato.valorCanon)}</div>
+                      <div className="text-xs text-muted-foreground">{contrato.valorCanon > 0 ? labels.canon : ""}</div>
+                    </TableCell>
+                    <TableCell>
+                      <AccionesMenu contrato={contrato} />
+                    </TableCell>
+                  </TableRow>
+                )
+              })
+            )}
           </TableBody>
         </Table>
 
