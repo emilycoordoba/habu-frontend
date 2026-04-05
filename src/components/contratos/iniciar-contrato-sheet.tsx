@@ -1,0 +1,236 @@
+"use client"
+
+import * as React from "react"
+import { useRouter } from "next/navigation"
+import { HugeiconsIcon } from "@hugeicons/react"
+import {
+  ArrowRight01Icon,
+  Expand01Icon,
+  Shrink01Icon,
+  Building04Icon,
+  UserIcon,
+  FileManagementIcon,
+} from "@hugeicons/core-free-icons"
+
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import type { TipoContrato } from "@/types/contrato.types"
+
+// --- Datos mock (se reemplazarán con la API) ---
+const INMUEBLES_DISPONIBLES = [
+  { id: "i1", nombre: "Apto 502 Torres del Norte", direccion: "Cll 127 #15-40, Bogotá", propietario: "Jorge Herrera", propietarioId: "p1" },
+  { id: "i2", nombre: "Local 8 CC Bulevar", direccion: "Av. El Dorado #68C-61, Bogotá", propietario: "Inversiones XYZ", propietarioId: "p2" },
+  { id: "i3", nombre: "Casa 5 Urb. Los Pinos", direccion: "Cll 12 #45-30, Medellín", propietario: "María Ospina", propietarioId: "p3" },
+  { id: "i4", nombre: "Oficina 301 Ed. Empresarial", direccion: "Cra 43 #11-61, Medellín", propietario: "Rodrigo Castaño", propietarioId: "p4" },
+]
+
+interface IniciarContratoSheetProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoSheetProps) {
+  const router = useRouter()
+  const [isFullscreen, setIsFullscreen] = React.useState(false)
+
+  // Paso 1: inmueble seleccionado
+  const [inmuebleId, setInmuebleId] = React.useState("")
+  // Paso 2: tipo de contrato
+  const [tipo, setTipo] = React.useState<TipoContrato | "">("")
+  // Paso 3: contraparte
+  const [busquedaContraparte, setBusquedaContraparte] = React.useState("")
+
+  const inmuebleSeleccionado = INMUEBLES_DISPONIBLES.find((i) => i.id === inmuebleId)
+  const labelContraparte = tipo === "arriendo" ? "Arrendatario" : tipo === "promesa_compraventa" ? "Comprador" : "Contraparte"
+  const puedeConfirmar = !!inmuebleId && !!tipo && busquedaContraparte.trim().length > 0
+
+  function handleConfirmar() {
+    if (!puedeConfirmar) return
+    const ruta = tipo === "arriendo" ? "/contratos/nuevo/arriendo" : "/contratos/nuevo/promesa"
+    // En el futuro pasará los IDs como searchParams
+    router.push(`${ruta}?inmueble=${inmuebleId}&tipo=${tipo}`)
+    onOpenChange(false)
+  }
+
+  function handleClose() {
+    setInmuebleId("")
+    setTipo("")
+    setBusquedaContraparte("")
+    setIsFullscreen(false)
+    onOpenChange(false)
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={handleClose}>
+      <SheetContent
+        side="right"
+        className={
+          isFullscreen
+            ? "w-screen max-w-none h-screen sm:max-w-none rounded-none transition-all duration-300"
+            : "w-full sm:max-w-lg transition-all duration-300"
+        }
+      >
+        <SheetHeader className="flex flex-row items-start justify-between pr-8">
+          <div>
+            <SheetTitle className="flex items-center gap-2">
+              <HugeiconsIcon icon={FileManagementIcon} strokeWidth={2} className="size-5 text-primary" />
+              Iniciar contrato
+            </SheetTitle>
+            <SheetDescription>
+              Selecciona el inmueble, el tipo y las partes del contrato.
+            </SheetDescription>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 shrink-0"
+            onClick={() => setIsFullscreen((v) => !v)}
+            title={isFullscreen ? "Reducir" : "Expandir a pantalla completa"}
+          >
+            <HugeiconsIcon
+              icon={isFullscreen ? Shrink01Icon : Expand01Icon}
+              strokeWidth={2}
+              className="size-4"
+            />
+          </Button>
+        </SheetHeader>
+
+        <div className="flex flex-col gap-6 p-6 overflow-y-auto flex-1">
+
+          {/* Paso 1 — Inmueble */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</div>
+              <span className="text-sm font-medium">Seleccionar inmueble</span>
+            </div>
+            <Select value={inmuebleId} onValueChange={setInmuebleId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Buscar inmueble disponible..." />
+              </SelectTrigger>
+              <SelectContent>
+                {INMUEBLES_DISPONIBLES.map((i) => (
+                  <SelectItem key={i.id} value={i.id}>
+                    <div>
+                      <div className="font-medium">{i.nombre}</div>
+                      <div className="text-xs text-muted-foreground">{i.direccion}</div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Propietario cargado automáticamente */}
+            {inmuebleSeleccionado && (
+              <div className="rounded-lg border bg-muted/40 p-3 flex items-center gap-3">
+                <HugeiconsIcon icon={Building04Icon} strokeWidth={2} className="size-4 text-muted-foreground shrink-0" />
+                <div className="text-sm">
+                  <div className="text-muted-foreground text-xs">Propietario (cargado automáticamente)</div>
+                  <div className="font-medium">{inmuebleSeleccionado.propietario}</div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Paso 2 — Tipo de contrato */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div className={`flex size-6 items-center justify-center rounded-full text-xs font-bold ${inmuebleId ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>2</div>
+              <span className={`text-sm font-medium ${!inmuebleId ? "text-muted-foreground" : ""}`}>Tipo de contrato</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {(["arriendo", "promesa_compraventa"] as TipoContrato[]).map((t) => (
+                <button
+                  key={t}
+                  disabled={!inmuebleId}
+                  onClick={() => setTipo(t)}
+                  className={`rounded-lg border-2 p-4 text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                    tipo === t
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <div className="font-medium text-sm">
+                    {t === "arriendo" ? "Arriendo" : "Promesa C/V"}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {t === "arriendo" ? "Canon mensual, depósito, administración" : "Precio, arras, escrituración"}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Paso 3 — Contraparte */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div className={`flex size-6 items-center justify-center rounded-full text-xs font-bold ${tipo ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>3</div>
+              <span className={`text-sm font-medium ${!tipo ? "text-muted-foreground" : ""}`}>
+                {labelContraparte}
+              </span>
+              {tipo && (
+                <Badge variant="outline" className="text-xs ml-auto">
+                  {tipo === "arriendo" ? "Arrendatario" : "Comprador"}
+                </Badge>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="busqueda-contraparte" className="text-xs text-muted-foreground">
+                Busca por nombre o documento
+              </Label>
+              <div className="relative">
+                <HugeiconsIcon
+                  icon={UserIcon}
+                  strokeWidth={2}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+                />
+                <Input
+                  id="busqueda-contraparte"
+                  placeholder={`Buscar ${labelContraparte.toLowerCase()}...`}
+                  className="pl-9"
+                  value={busquedaContraparte}
+                  onChange={(e) => setBusquedaContraparte(e.target.value)}
+                  disabled={!tipo}
+                />
+              </div>
+              {tipo && (
+                <p className="text-xs text-muted-foreground">
+                  ¿No está registrado?{" "}
+                  <button className="text-primary underline underline-offset-2">
+                    Registrar nuevo cliente
+                  </button>
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer con acciones */}
+        <div className="border-t p-4 flex items-center justify-between gap-3">
+          <Button variant="outline" onClick={handleClose}>
+            Cancelar
+          </Button>
+          <Button onClick={handleConfirmar} disabled={!puedeConfirmar}>
+            Continuar
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
