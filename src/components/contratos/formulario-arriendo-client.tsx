@@ -61,7 +61,6 @@ export function FormularioArriendoClient({ inmuebleId, tipo }: FormularioArriend
   // — Sección 2: Canon y pagos
   const [canonRaw, setCanonRaw] = React.useState("")
   const [diaCorte, setDiaCorte] = React.useState("1")
-  const [formaPago, setFormaPago] = React.useState("")
   const [incluyeAdmin, setIncluyeAdmin] = React.useState(false)
   const [adminRaw, setAdminRaw] = React.useState("")
 
@@ -91,7 +90,7 @@ export function FormularioArriendoClient({ inmuebleId, tipo }: FormularioArriend
   }, [fechaInicio, duracionMeses])
 
   const puedeGuardar =
-    !!fechaInicio && !!duracionMeses && canon > 0 && !!formaPago &&
+    !!fechaInicio && !!duracionMeses && canon > 0 &&
     (!incluyeAdmin || adminValor > 0) &&
     (!tieneDeposito || (tipoDeposito === "meses" ? parseInt(mesesDeposito) > 0 : depositoValor > 0)) &&
     (!tieneCodudor || (!!codeudorNombre && !!codeudorDoc))
@@ -205,21 +204,6 @@ export function FormularioArriendoClient({ inmuebleId, tipo }: FormularioArriend
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="forma-pago">Forma de pago <Req /></Label>
-              <Select value={formaPago} onValueChange={setFormaPago}>
-                <SelectTrigger id="forma-pago">
-                  <SelectValue placeholder="Seleccionar..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="transferencia">Transferencia bancaria</SelectItem>
-                  <SelectItem value="efectivo">Efectivo</SelectItem>
-                  <SelectItem value="cheque">Cheque</SelectItem>
-                  <SelectItem value="pse">PSE</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             {/* Toggle administración */}
