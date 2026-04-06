@@ -12,6 +12,15 @@ export type EstadoContrato =
 
 export type TipoContrato = "arriendo" | "promesa_compraventa"
 
+export type TipoCobro =
+  | "canon"
+  | "comision_administracion"
+  | "comision_colocacion"
+  | "arras"
+  | "deposito"
+  | "penalizacion"
+  | "precio_venta"
+
 export interface Contrato {
   id: string
   referencia: string

@@ -98,7 +98,7 @@ Interactuara con módulos internos: administración, propiedades, clientes, cont
 | **RF-05** | El sistema deberá permitir al administrador consultar la lista de usuarios registrados, mostrando toda la información relacionada. | Administración | **ALTA** |
 | **RF-06** | El sistema deberá permitir al administrador configurar los tipos de contrato disponibles en el sistema. | Administración | **ALTA** |
 | **RF-07** | El sistema deberá permitir al administrador definir y modificar los estados de los inmuebles. | Administración | **MEDIA** |
-| **RF-08** | El sistema deberá permitir al administrador configurar los porcentajes de comisión aplicables a los asesores o a la inmobiliaria. | Administración | **ALTA** |
+| **RF-08** | El sistema deberá permitir al administrador configurar los porcentajes de comisión aplicables a los asesores o a la inmobiliaria, incluyendo la comisión de colocación (arriendo sin administración) y la comisión de administración mensual. | Administración | **ALTA** |
 | **RF-09** | El sistema deberá permitir al administrador asignar un esquema de comisión a uno o varios asesores del sistema.  | Administración | **MEDIA** |
 | **RF-10** | El sistema deberá permitir al administrador gestionar plantillas de documentos, como contratos o formularios utilizados por el sistema. | Administración | **BAJA** |
 | **RF-11** | El sistema deberá permitir al administrador definir los documentos obligatorios según el tipo de contrato. | Administración | **ALTA** |
@@ -310,6 +310,8 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | fecha\_fin | DATE | Fecha de vencimiento del contrato |
 | arrendatario\_id | INT (FK) | Referencia al cliente arrendatario |
 | propietario\_id | INT (FK) | Referencia al cliente propietario |
+| incluye\_administracion | BOOLEAN | Indica si el contrato incluye servicio de administración mensual |
+| comision\_colocacion | DECIMAL | Valor cobrado por gestionar el arriendo (pago único al activar el contrato) |
 
 **Contrato de Administración**
 
@@ -408,7 +410,7 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | :---- | :---- | :---- |
 | id | INT | Identificador único del cobro |
 | contrato\_id | INT (FK) | Referencia al contrato asociado |
-| tipo | ENUM | canon / comisión / arras / depósito / penalización / precio\_venta |
+| tipo | ENUM | canon / comision\_administracion / comision\_colocacion / arras / depósito / penalización / precio\_venta |
 | valor | DECIMAL | Valor total del cobro |
 | fecha\_limite | DATE | Fecha máxima de pago |
 | estado | ENUM | pendiente / pagado / en\_mora |

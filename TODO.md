@@ -38,6 +38,9 @@
 ## Documentación pendiente (Google Docs)
 - [ ] Actualizar Google Docs del proyecto con el campo `modalidad` (arriendo / venta / ambos) en la entidad `Inmueble` y en RF-13
 - [ ] Agregar `precio_venta` al ENUM `Cobro.tipo` — el pago del precio total al vendedor no estaba contemplado en el modelo original
+- [ ] Agregar `comision_colocacion` y `comision_administracion` al ENUM `Cobro.tipo` (reemplaza el genérico `comisión`)
+- [ ] Agregar campos `incluye_administracion` (BOOLEAN) y `comision_colocacion` (DECIMAL) a la entidad `ContratoArriendo`
+- [ ] Actualizar RF-08 para incluir configuración de comisión de colocación además de comisión de administración
 
 ## TODO propio
 - [ ] full page sheet no funciona
