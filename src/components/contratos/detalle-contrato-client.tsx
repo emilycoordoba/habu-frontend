@@ -14,6 +14,7 @@ import {
   FileManagementIcon,
   PencilEdit01Icon,
   CheckmarkCircle02Icon,
+  EyeIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -83,6 +84,7 @@ interface Documento {
   nombre: string
   estado: "pendiente" | "recibido" | "rechazado"
   fechaCarga?: string
+  archivoUrl?: string // URL real vendrá de la API
 }
 
 interface Firma {
@@ -102,11 +104,11 @@ interface EventoHistorial {
 function getMockDocs(estado: EstadoContrato, tipo: TipoContrato): Documento[] {
   const labels = LABELS_POR_TIPO[tipo]
   const base: Documento[] = [
-    { nombre: `Cédula de ciudadanía (${labels.contraparte})`, estado: "recibido", fechaCarga: "2025-04-01" },
-    { nombre: `Certificado laboral (${labels.contraparte})`, estado: "recibido", fechaCarga: "2025-04-01" },
-    { nombre: `Extractos bancarios (${labels.contraparte})`, estado: estado === "borrador" ? "pendiente" : "recibido", fechaCarga: estado !== "borrador" ? "2025-04-02" : undefined },
-    { nombre: `Cédula de ciudadanía (${labels.propietario})`, estado: "recibido", fechaCarga: "2025-04-01" },
-    { nombre: "Certificado de tradición y libertad", estado: estado === "borrador" ? "pendiente" : "recibido", fechaCarga: estado !== "borrador" ? "2025-04-02" : undefined },
+    { nombre: `Cédula de ciudadanía (${labels.contraparte})`, estado: "recibido", fechaCarga: "2025-04-01", archivoUrl: "#" },
+    { nombre: `Certificado laboral (${labels.contraparte})`, estado: "recibido", fechaCarga: "2025-04-01", archivoUrl: "#" },
+    { nombre: `Extractos bancarios (${labels.contraparte})`, estado: estado === "borrador" ? "pendiente" : "recibido", fechaCarga: estado !== "borrador" ? "2025-04-02" : undefined, archivoUrl: estado !== "borrador" ? "#" : undefined },
+    { nombre: `Cédula de ciudadanía (${labels.propietario})`, estado: "recibido", fechaCarga: "2025-04-01", archivoUrl: "#" },
+    { nombre: "Certificado de tradición y libertad", estado: estado === "borrador" ? "pendiente" : "recibido", fechaCarga: estado !== "borrador" ? "2025-04-02" : undefined, archivoUrl: estado !== "borrador" ? "#" : undefined },
   ]
   return base
 }
@@ -232,6 +234,7 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
 
       {/* Tabs */}
       <div className="flex-1 px-6 py-4">
+        <div className="max-w-2xl mx-auto">
         <Tabs defaultValue="condiciones">
           <TabsList className="mb-4">
             <TabsTrigger value="condiciones">Condiciones</TabsTrigger>
@@ -255,7 +258,7 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
           </TabsList>
 
           {/* Tab — Condiciones */}
-          <TabsContent value="condiciones" className="max-w-xl flex flex-col gap-6">
+          <TabsContent value="condiciones" className="flex flex-col gap-6">
             {contrato.tipo === "arriendo" ? (
               <>
                 <Section title="Vigencia">
@@ -305,7 +308,7 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
           </TabsContent>
 
           {/* Tab — Documentos */}
-          <TabsContent value="documentos" className="max-w-xl flex flex-col gap-3">
+          <TabsContent value="documentos" className="flex flex-col gap-3">
             {documentos.map((doc, i) => (
               <div key={i} className={cn(
                 "flex items-center gap-3 rounded-lg border p-3",
@@ -333,13 +336,26 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
                     <p className="text-xs text-muted-foreground">Cargado el {doc.fechaCarga}</p>
                   )}
                 </div>
-                <Badge variant="outline" className={cn(
-                  "text-xs shrink-0",
-                  doc.estado === "recibido" ? "border-green-200 text-green-700" :
-                  doc.estado === "rechazado" ? "border-destructive/30 text-destructive" : ""
-                )}>
-                  {doc.estado === "recibido" ? "Recibido" : doc.estado === "rechazado" ? "Rechazado" : "Pendiente"}
-                </Badge>
+                <div className="flex items-center gap-2 shrink-0">
+                  {doc.archivoUrl && (
+                    <a
+                      href={doc.archivoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted transition-colors"
+                    >
+                      <HugeiconsIcon icon={EyeIcon} strokeWidth={2} className="size-3" />
+                      Ver
+                    </a>
+                  )}
+                  <Badge variant="outline" className={cn(
+                    "text-xs",
+                    doc.estado === "recibido" ? "border-green-200 text-green-700" :
+                    doc.estado === "rechazado" ? "border-destructive/30 text-destructive" : ""
+                  )}>
+                    {doc.estado === "recibido" ? "Recibido" : doc.estado === "rechazado" ? "Rechazado" : "Pendiente"}
+                  </Badge>
+                </div>
               </div>
             ))}
             {contrato.estado === "borrador" && (
@@ -353,7 +369,7 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
           </TabsContent>
 
           {/* Tab — Firmas */}
-          <TabsContent value="firmas" className="max-w-xl flex flex-col gap-3">
+          <TabsContent value="firmas" className="flex flex-col gap-3">
             {firmas.map((firma, i) => (
               <div key={i} className={cn(
                 "flex items-center gap-3 rounded-lg border p-4",
@@ -383,7 +399,7 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
           </TabsContent>
 
           {/* Tab — Historial */}
-          <TabsContent value="historial" className="max-w-xl">
+          <TabsContent value="historial">
             <div className="flex flex-col gap-0">
               {historial.map((evento, i) => {
                 const config = ESTADO_CONTRATO_CONFIG[evento.estado]
@@ -418,6 +434,7 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
             </div>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </div>
   )
