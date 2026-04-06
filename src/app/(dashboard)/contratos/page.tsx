@@ -8,6 +8,7 @@ import {
   Cancel01Icon,
   MoneyReceiveSquareIcon,
   FileNotFoundIcon,
+  FileAttachmentIcon,
 } from "@hugeicons/core-free-icons"
 
 import { NuevoContratoTrigger } from "@/components/contratos/nuevo-contrato-trigger"
@@ -177,6 +178,7 @@ function AccionesMenu({ contrato }: { contrato: Contrato }) {
   const esActivo = contrato.estado === "activo"
   const esPorVencer = contrato.estado === "por_vencer"
   const tieneDeuda = contrato.estado === "vencido_con_saldos"
+  const esBorrador = contrato.estado === "borrador"
 
   return (
     <DropdownMenu>
@@ -193,6 +195,14 @@ function AccionesMenu({ contrato }: { contrato: Contrato }) {
             Ver detalle
           </Link>
         </DropdownMenuItem>
+        {esBorrador && (
+          <DropdownMenuItem asChild>
+            <Link href={`/contratos/${contrato.id}/documentos`}>
+              <HugeiconsIcon icon={FileAttachmentIcon} strokeWidth={2} className="size-4" />
+              Gestionar documentos
+            </Link>
+          </DropdownMenuItem>
+        )}
         {(esActivo || esPorVencer) && (
           <DropdownMenuItem>
             <HugeiconsIcon icon={FileEditIcon} strokeWidth={2} className="size-4" />

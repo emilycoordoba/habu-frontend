@@ -16,7 +16,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Building04Icon, FileManagementIcon, Invoice03Icon, Wrench01Icon, AiChat01Icon, Settings05Icon, HelpCircleIcon, CommandIcon, Camera01Icon, File01Icon } from "@hugeicons/core-free-icons"
+import { Building04Icon, FileManagementIcon, Invoice03Icon, Wrench01Icon, AiChat01Icon, Settings05Icon, HelpCircleIcon, Camera01Icon, File01Icon } from "@hugeicons/core-free-icons"
+import { HabuLogoHouse, HabuLogoMonogram } from "@/components/habu-logo"
 
 const data = {
   user: {
@@ -130,7 +131,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
               <a href="#">
-                <HugeiconsIcon icon={CommandIcon} strokeWidth={2} className="size-5!" />
+                <HabuLogoMonogram className="size-5! text-sidebar-primary" />
                 <span className="text-base font-semibold">Habu</span>
               </a>
             </SidebarMenuButton>
