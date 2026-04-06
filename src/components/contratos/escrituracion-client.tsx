@@ -60,6 +60,9 @@ export function EscrituracionClient({ contratoId }: EscrituracionClientProps) {
   // — Sección 2: Pagos
   const [arrasConfirmado, setArrasConfirmado] = React.useState(false)
   const [precioConfirmado, setPrecioConfirmado] = React.useState(false)
+  const [comisionConfirmada, setComisionConfirmada] = React.useState(false)
+
+  const comision = Math.round(contrato.precio * 0.03)
 
   // — Sección 3: Certificado de tradición
   const [certificado, setCertificado] = React.useState<ArchivoSubido | null>(null)
@@ -88,7 +91,7 @@ export function EscrituracionClient({ contratoId }: EscrituracionClientProps) {
   }
 
   const seccion1Completa = !!fechaEscritura && !!notaria && !!escritura
-  const seccion2Completa = arrasConfirmado && precioConfirmado
+  const seccion2Completa = arrasConfirmado && precioConfirmado && comisionConfirmada
   const seccion3Completa = !!certificado
   const puedeFinalizarVenta = seccion1Completa && seccion2Completa && seccion3Completa
 
@@ -169,15 +172,25 @@ export function EscrituracionClient({ contratoId }: EscrituracionClientProps) {
 
             <ConfirmPagoRow
               label="Arras"
+              descripcion="Pago del comprador al vendedor"
               monto={contrato.arras}
               confirmado={arrasConfirmado}
               onChange={setArrasConfirmado}
             />
             <ConfirmPagoRow
               label="Precio total del inmueble"
+              descripcion="Pago del comprador al vendedor"
               monto={contrato.precio}
               confirmado={precioConfirmado}
               onChange={setPrecioConfirmado}
+            />
+            <ConfirmPagoRow
+              label="Comisión inmobiliaria (3%)"
+              descripcion="Pago del vendedor a la inmobiliaria"
+              monto={comision}
+              confirmado={comisionConfirmada}
+              onChange={setComisionConfirmada}
+              destacado
             />
           </section>
 
@@ -228,6 +241,7 @@ export function EscrituracionClient({ contratoId }: EscrituracionClientProps) {
             <p className="text-xs font-medium text-muted-foreground">Valores pactados</p>
             <PreviewRow label="Precio total" value={formatCOP(contrato.precio)} highlight />
             <PreviewRow label="Arras" value={formatCOP(contrato.arras)} />
+            <PreviewRow label="Comisión (3%)" value={formatCOP(Math.round(contrato.precio * 0.03))} />
           </div>
 
           <Separator />
@@ -359,19 +373,22 @@ function FileUploadRow({
 }
 
 function ConfirmPagoRow({
-  label, monto, confirmado, onChange,
+  label, descripcion, monto, confirmado, onChange, destacado,
 }: {
   label: string
+  descripcion?: string
   monto: number
   confirmado: boolean
   onChange: (v: boolean) => void
+  destacado?: boolean
 }) {
   return (
     <button
       onClick={() => onChange(!confirmado)}
       className={cn(
         "flex items-center gap-3 rounded-lg border-2 p-3 w-full text-left transition-colors",
-        confirmado ? "border-green-400 bg-green-50/60" : "border-border hover:border-primary/40"
+        confirmado ? "border-green-400 bg-green-50/60" : "border-border hover:border-primary/40",
+        destacado && !confirmado && "border-dashed"
       )}
     >
       <div className={cn(
@@ -384,7 +401,10 @@ function ConfirmPagoRow({
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">{label}</p>
-        <p className={cn("text-sm tabular-nums", confirmado ? "text-green-700" : "text-muted-foreground")}>
+        {descripcion && (
+          <p className="text-xs text-muted-foreground">{descripcion}</p>
+        )}
+        <p className={cn("text-sm tabular-nums mt-0.5", confirmado ? "text-green-700" : "text-muted-foreground")}>
           {formatCOP(monto)}
         </p>
       </div>
