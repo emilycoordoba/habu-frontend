@@ -13,6 +13,7 @@ import {
   ArrowRight01Icon,
   PdfIcon,
   ImageIcon,
+  EyeIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -38,9 +39,12 @@ interface DocCargado {
   nombreArchivo: string
   fechaCarga: string
   estado: EstadoDoc
+  objectUrl: string
 }
 
-// --- Mock: en producción vendría de la API según tipo de contrato ---
+// --- Mock: en producción esta lista vendría del endpoint configurado en el
+// módulo de Administración (CU-10 "Configurar documentos requeridos").
+// Se filtra por tipo de contrato, tipo de persona e indicador de codeudor. ---
 function getDocumentosPorTipo(tipo: TipoContrato, tieneCodudor: boolean): TipoDocMock[] {
   const labels = LABELS_POR_TIPO[tipo]
 
@@ -104,12 +108,16 @@ export function GestionDocumentosClient({ contratoId }: GestionDocumentosClientP
     ? Math.round((recibidos.filter((r) => obligatorios.some((o) => o.id === r.tipoDocId)).length / obligatorios.length) * 100)
     : 0
 
-  function getEstadoDoc(tipoDocId: string): EstadoDoc | null {
-    return docsCargados.find((d) => d.tipoDocId === tipoDocId)?.estado ?? null
-  }
+  // Libera todas las object URLs al desmontar el componente
+  React.useEffect(() => {
+    return () => {
+      docsCargados.forEach((d) => URL.revokeObjectURL(d.objectUrl))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  function getNombreArchivo(tipoDocId: string): string | null {
-    return docsCargados.find((d) => d.tipoDocId === tipoDocId)?.nombreArchivo ?? null
+  function getDoc(tipoDocId: string): DocCargado | undefined {
+    return docsCargados.find((d) => d.tipoDocId === tipoDocId)
   }
 
   function handleCargar(tipoDocId: string, archivo: File) {
@@ -122,12 +130,17 @@ export function GestionDocumentosClient({ contratoId }: GestionDocumentosClientP
     // Simula carga con 800ms de delay
     setTimeout(() => {
       setDocsCargados((prev) => {
+        // Revoca la URL anterior si existía
+        const anterior = prev.find((d) => d.tipoDocId === tipoDocId)
+        if (anterior) URL.revokeObjectURL(anterior.objectUrl)
+
         const sinEste = prev.filter((d) => d.tipoDocId !== tipoDocId)
         return [...sinEste, {
           tipoDocId,
           nombreArchivo: archivo.name,
           fechaCarga: new Date().toLocaleDateString("es-CO"),
           estado: "recibido",
+          objectUrl: URL.createObjectURL(archivo),
         }]
       })
       setCargando(null)
@@ -172,8 +185,9 @@ export function GestionDocumentosClient({ contratoId }: GestionDocumentosClientP
                 </h3>
                 <div className="flex flex-col gap-2">
                   {docsCategoria.map((doc) => {
-                    const estado = getEstadoDoc(doc.id)
-                    const nombreArchivo = getNombreArchivo(doc.id)
+                    const docCargado = getDoc(doc.id)
+                    const estado = docCargado?.estado ?? null
+                    const nombreArchivo = docCargado?.nombreArchivo ?? null
                     const esCargando = cargando === doc.id
 
                     return (
@@ -260,6 +274,19 @@ export function GestionDocumentosClient({ contratoId }: GestionDocumentosClientP
                             )}
                           </span>
                         </label>
+
+                        {/* Botón ver — solo cuando hay archivo cargado */}
+                        {docCargado && (
+                          <a
+                            href={docCargado.objectUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0 inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
+                          >
+                            <HugeiconsIcon icon={EyeIcon} strokeWidth={2} className="size-3" />
+                            Ver
+                          </a>
+                        )}
                       </div>
                     )
                   })}
@@ -324,10 +351,18 @@ export function GestionDocumentosClient({ contratoId }: GestionDocumentosClientP
                   return (
                     <div key={doc.tipoDocId} className="flex items-start gap-2">
                       <HugeiconsIcon icon={FileAttachmentIcon} strokeWidth={2} className="size-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium truncate">{tipo?.nombre}</p>
                         <p className="text-xs text-muted-foreground">{doc.fechaCarga}</p>
                       </div>
+                      <a
+                        href={doc.objectUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 text-xs text-primary hover:underline"
+                      >
+                        Ver
+                      </a>
                     </div>
                   )
                 })}
