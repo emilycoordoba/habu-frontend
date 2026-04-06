@@ -408,7 +408,7 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | :---- | :---- | :---- |
 | id | INT | Identificador único del cobro |
 | contrato\_id | INT (FK) | Referencia al contrato asociado |
-| tipo | ENUM | canon / comisión / arras / depósito / penalización |
+| tipo | ENUM | canon / comisión / arras / depósito / penalización / precio\_venta |
 | valor | DECIMAL | Valor total del cobro |
 | fecha\_limite | DATE | Fecha máxima de pago |
 | estado | ENUM | pendiente / pagado / en\_mora |

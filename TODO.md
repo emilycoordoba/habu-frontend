@@ -37,6 +37,7 @@
 
 ## Documentación pendiente (Google Docs)
 - [ ] Actualizar Google Docs del proyecto con el campo `modalidad` (arriendo / venta / ambos) en la entidad `Inmueble` y en RF-13
+- [ ] Agregar `precio_venta` al ENUM `Cobro.tipo` — el pago del precio total al vendedor no estaba contemplado en el modelo original
 
 ## TODO propio
 - [ ] full page sheet no funciona
