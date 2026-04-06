@@ -32,6 +32,9 @@
 - [ ] Variables de entorno (`NEXT_PUBLIC_API_URL`)
 
 
+## Decisiones de diseño pendientes
+- [ ] **Contratos firmados manualmente**: definir si el sistema debe soportar cargar un PDF de contrato firmado fuera de DocuSign (no está contemplado en la documentación actual). Implica cambios en el modelo y en UI-C05.
+
 ## Documentación pendiente (Google Docs)
 - [ ] Actualizar Google Docs del proyecto con el campo `modalidad` (arriendo / venta / ambos) en la entidad `Inmueble` y en RF-13
 
