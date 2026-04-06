@@ -5,7 +5,7 @@
 - [x] UI-C02 — Iniciar contrato (selección de inmueble, tipo y partes involucradas)
 - [x] UI-C03 — Formulario contrato de arriendo (canon, fechas, depósito, administración)
 - [x] UI-C04 — Formulario promesa de compraventa (precio, arras, forma de pago, fecha escrituración)
-- [ ] UI-C05 — Gestión de documentos (lista de chequeo y carga de archivos)
+- [x] UI-C05 — Gestión de documentos (lista de chequeo y carga de archivos)
 - [ ] UI-C06 — Detalle de contrato (estado actual, partes, documentos y firmas)
 - [ ] UI-C07 — Registrar escrituración (fecha, notaría, pagos pendientes, certificado de tradición)
 - [ ] UI-C08 — Registrar terminación anticipada (causa, penalizaciones, fecha de entrega)
