@@ -65,12 +65,12 @@ function getDocumentosPorTipo(tipo: TipoContrato, tieneCodudor: boolean): TipoDo
     { id: "d8", nombre: `Certificado de tradición y libertad`, obligatorio: true, categoria: labels.propietario },
   ]
 
-  const docsContrato: TipoDocMock[] = tipo === "arriendo"
-    ? [{ id: "d9", nombre: "Contrato de arriendo firmado (PDF)", obligatorio: true, categoria: "Contrato" }]
-    : [
-        { id: "d9", nombre: "Promesa de compraventa firmada (PDF)", obligatorio: true, categoria: "Contrato" },
-        { id: "d10", nombre: "Comprobante de pago de arras", obligatorio: true, categoria: "Contrato" },
-      ]
+  // El PDF del contrato firmado lo genera DocuSign después de "Enviar a firmas"
+  // y no es un documento que el asesor suba en este paso.
+  // Aquí solo van los documentos de soporte previos a la firma.
+  const docsContrato: TipoDocMock[] = tipo === "promesa_compraventa"
+    ? [{ id: "d9", nombre: "Comprobante de pago de arras", obligatorio: true, categoria: "Contrato" }]
+    : []
 
   return [...docsContraparte, ...docsCodudor, ...docsPropietario, ...docsContrato]
 }
