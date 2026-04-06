@@ -40,4 +40,4 @@
 
 ## TODO propio
 - [ ] full page sheet no funciona
-- [ ] modulo clientes?
+- [ ] lista de tabs centrada tambien en detalles de contrato
