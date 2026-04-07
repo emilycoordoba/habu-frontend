@@ -195,21 +195,31 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
             {contrato.inmueble} · {contrato.direccion}
           </p>
         </div>
-        {accion && (
-          accion.href ? (
-            <Link href={accion.href}>
+        <div className="flex items-center gap-2">
+          {["activo", "por_vencer"].includes(contrato.estado) && (
+            <Link href={`/contratos/${contrato.id}/terminacion`}>
+              <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
+                Terminación anticipada
+              </Button>
+            </Link>
+          )}
+          {accion && (
+            accion.href ? (
+              <Link href={accion.href}>
+                <Button size="sm">
+                  <HugeiconsIcon icon={accion.icon} strokeWidth={2} className="size-4" />
+                  {accion.label}
+                </Button>
+              </Link>
+            ) : (
               <Button size="sm">
                 <HugeiconsIcon icon={accion.icon} strokeWidth={2} className="size-4" />
                 {accion.label}
               </Button>
-            </Link>
-          ) : (
-            <Button size="sm">
-              <HugeiconsIcon icon={accion.icon} strokeWidth={2} className="size-4" />
-              {accion.label}
-            </Button>
-          )
-        )}
+            )
+          )}
+        </div>
       </div>
 
       {/* Partes — siempre visibles */}
