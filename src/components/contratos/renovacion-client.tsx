@@ -61,6 +61,16 @@ function formatCOP(value: number) {
   return `$${new Intl.NumberFormat("es-CO").format(value)}`
 }
 
+function formatInput(raw: string): string {
+  const num = parseInt(raw.replace(/\D/g, ""), 10)
+  if (isNaN(num)) return ""
+  return new Intl.NumberFormat("es-CO").format(num)
+}
+
+function parseInput(formatted: string): number {
+  return parseInt(formatted.replace(/\D/g, ""), 10) || 0
+}
+
 // Suma N meses a una fecha ISO (YYYY-MM-DD)
 function sumarMeses(fecha: string, meses: number): string {
   const d = new Date(fecha)
@@ -155,10 +165,10 @@ export function RenovacionClient({ contratoId }: RenovacionClientProps) {
 
   // Sección 2: nuevas condiciones (solo si renueva)
   const nuevaFechaInicio = diaSiguiente(contrato.fechaFin)
-  const [nuevoCanon, setNuevoCanon] = React.useState(String(contrato.canon))
+  const [nuevoCanon, setNuevoCanon] = React.useState(formatInput(String(contrato.canon)))
   const [nuevaFechaFin, setNuevaFechaFin] = React.useState(sumarMeses(nuevaFechaInicio, 12))
   const [mismoDeposito, setMismoDeposito] = React.useState(true)
-  const [nuevoDeposito, setNuevoDeposito] = React.useState(String(contrato.deposito))
+  const [nuevoDeposito, setNuevoDeposito] = React.useState(formatInput(String(contrato.deposito)))
   const [fechaEntrega, setFechaEntrega] = React.useState("")
 
   // Validaciones
@@ -168,8 +178,8 @@ export function RenovacionClient({ contratoId }: RenovacionClientProps) {
     : !!nuevoCanon && !!nuevaFechaFin
   const todoCorrecto = s1Completa && s2Completa
 
-  const canonNum = parseFloat(nuevoCanon.replace(/\./g, "")) || 0
-  const depositoFinal = mismoDeposito ? contrato.deposito : (parseFloat(nuevoDeposito.replace(/\./g, "")) || 0)
+  const canonNum = parseInput(nuevoCanon)
+  const depositoFinal = mismoDeposito ? contrato.deposito : parseInput(nuevoDeposito)
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -269,7 +279,7 @@ export function RenovacionClient({ contratoId }: RenovacionClientProps) {
                           <Input
                             className="pl-6"
                             value={nuevoCanon}
-                            onChange={(e) => setNuevoCanon(e.target.value.replace(/[^0-9]/g, ""))}
+                            onChange={(e) => setNuevoCanon(formatInput(e.target.value))}
                           />
                         </div>
                         {canonNum !== contrato.canon && (
@@ -327,7 +337,7 @@ export function RenovacionClient({ contratoId }: RenovacionClientProps) {
                             <Input
                               className="pl-6"
                               value={nuevoDeposito}
-                              onChange={(e) => setNuevoDeposito(e.target.value.replace(/[^0-9]/g, ""))}
+                              onChange={(e) => setNuevoDeposito(formatInput(e.target.value))}
                             />
                           </div>
                         </div>
