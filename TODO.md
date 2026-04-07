@@ -36,6 +36,7 @@
 - [ ] **Contratos firmados manualmente**: definir si el sistema debe soportar cargar un PDF de contrato firmado fuera de DocuSign (no está contemplado en la documentación actual). Implica cambios en el modelo y en UI-C05.
 
 ## Documentación pendiente (Google Docs)
+- [ ] Agregar entidad `TerminacionAnticipada` al modelo de datos (ver `docs/Documento_Proyecto.md` para los campos completos)
 - [ ] Actualizar Google Docs del proyecto con el campo `modalidad` (arriendo / venta / ambos) en la entidad `Inmueble` y en RF-13
 - [ ] Agregar `precio_venta` al ENUM `Cobro.tipo` — el pago del precio total al vendedor no estaba contemplado en el modelo original
 - [ ] Agregar `comision_colocacion` y `comision_administracion` al ENUM `Cobro.tipo` (reemplaza el genérico `comisión`)
