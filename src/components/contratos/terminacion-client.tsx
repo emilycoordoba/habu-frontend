@@ -86,6 +86,16 @@ function formatCOP(value: number) {
   return `$${new Intl.NumberFormat("es-CO").format(value)}`
 }
 
+function formatInput(raw: string): string {
+  const num = parseInt(raw.replace(/\D/g, ""), 10)
+  if (isNaN(num)) return ""
+  return new Intl.NumberFormat("es-CO").format(num)
+}
+
+function parseInput(formatted: string): number {
+  return parseInt(formatted.replace(/\D/g, ""), 10) || 0
+}
+
 // ---------------------------------------------------------------------------
 // Sub-componentes
 // ---------------------------------------------------------------------------
@@ -155,12 +165,12 @@ function FlujoArriendo({ contrato }: { contrato: ContratoMock }) {
 
   // Sección 3
   const [aplicaPenalizacion, setAplicaPenalizacion] = React.useState(false)
-  const [penalizacionValor, setPenalizacionValor] = React.useState("")
+  const [penalizacionValor, setPenalizacionValor] = React.useState<string>("")
   const [penalizacionACargo, setPenalizacionACargo] = React.useState("")
   const [retenerDeposito, setRetenerDeposito] = React.useState(false)
 
   // Cálculos
-  const penVal = parseFloat(penalizacionValor.replace(/\./g, "")) || 0
+  const penVal = parseInput(penalizacionValor)
   const depositoOriginal = contrato.deposito ?? 0
   const retencion = aplicaPenalizacion && retenerDeposito ? Math.min(penVal, depositoOriginal) : 0
   const depositoADevolver = Math.max(0, depositoOriginal - retencion - totalPendiente)
@@ -332,7 +342,7 @@ function FlujoArriendo({ contrato }: { contrato: ContratoMock }) {
                             className="pl-6"
                             placeholder="0"
                             value={penalizacionValor}
-                            onChange={(e) => setPenalizacionValor(e.target.value.replace(/[^0-9.]/g, ""))}
+                            onChange={(e) => setPenalizacionValor(formatInput(e.target.value))}
                           />
                         </div>
                       </div>

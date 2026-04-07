@@ -9,7 +9,7 @@
 - [x] UI-C06 — Detalle de contrato (estado actual, partes, documentos y firmas)
 - [x] UI-C07 — Registrar escrituración (fecha, notaría, pagos pendientes, certificado de tradición)
 - [x] UI-C08 — Registrar terminación anticipada (causa, penalizaciones, fecha de entrega)
-- [ ] UI-C09 — Gestionar vencimiento y renovación (alerta, decisión de renovar o finalizar)
+- [x] UI-C09 — Gestionar vencimiento y renovación (alerta, decisión de renovar o finalizar)
 
 ### Pendientes de UI-C01 al conectar la API
 - [ ] Conectar filtros a `searchParams` de Next.js para que sean persistentes en URL

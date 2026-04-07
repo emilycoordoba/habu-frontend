@@ -204,9 +204,11 @@ function AccionesMenu({ contrato }: { contrato: Contrato }) {
           </DropdownMenuItem>
         )}
         {(esActivo || esPorVencer) && (
-          <DropdownMenuItem>
-            <HugeiconsIcon icon={FileEditIcon} strokeWidth={2} className="size-4" />
-            Renovar contrato
+          <DropdownMenuItem asChild>
+            <Link href={`/contratos/${contrato.id}/renovacion`}>
+              <HugeiconsIcon icon={FileEditIcon} strokeWidth={2} className="size-4" />
+              Renovar contrato
+            </Link>
           </DropdownMenuItem>
         )}
         {tieneDeuda && (
@@ -215,12 +217,14 @@ function AccionesMenu({ contrato }: { contrato: Contrato }) {
             Gestionar saldos
           </DropdownMenuItem>
         )}
-        {esActivo && (
+        {(esActivo || esPorVencer) && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">
-              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
-              Iniciar terminación
+            <DropdownMenuItem variant="destructive" asChild>
+              <Link href={`/contratos/${contrato.id}/terminacion`}>
+                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
+                Iniciar terminación
+              </Link>
             </DropdownMenuItem>
           </>
         )}

@@ -5,6 +5,7 @@ import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowLeft01Icon,
+  ArrowRight01Icon,
   UserIcon,
   Building04Icon,
   FileAttachmentIcon,
@@ -77,6 +78,22 @@ const CONTRATOS_MOCK: Record<string, ContratoDetalle> = {
     asesor: "Emily Perea", tieneCodudor: false,
     canon: 1950000, fechaInicio: "2025-05-01", fechaFin: "2026-05-01",
     diaCorte: 1, deposito: 1950000,
+  },
+  "3": {
+    id: "3", referencia: "CTR-2025-003", tipo: "arriendo", estado: "por_vencer",
+    inmueble: "Local 5 CC Bulevar", direccion: "Av. El Dorado #68C-61, Bogotá",
+    propietario: "Inversiones XYZ", contraparte: "Tienda Moda Libre",
+    asesor: "Ana Rodríguez", tieneCodudor: false,
+    canon: 4800000, fechaInicio: "2024-05-15", fechaFin: "2025-05-15",
+    diaCorte: 15, deposito: 9600000, incluyeAdmin: false,
+  },
+  "por-vencer": {
+    id: "por-vencer", referencia: "CTR-2024-018", tipo: "arriendo", estado: "por_vencer",
+    inmueble: "Casa 5 Urb. Los Cedros", direccion: "Cll 80 #52-30, Medellín",
+    propietario: "Carlos Ramírez", contraparte: "Laura Gómez",
+    asesor: "Emily Perea", tieneCodudor: false,
+    canon: 2200000, fechaInicio: "2024-04-15", fechaFin: "2025-04-15",
+    diaCorte: 15, deposito: 4400000, incluyeAdmin: false,
   },
 }
 
@@ -152,8 +169,9 @@ function getAccionPrincipal(estado: EstadoContrato, id: string) {
     case "en_firmas":
       return { label: "Ver estado de firmas", href: null, icon: PencilEdit01Icon }
     case "activo":
-    case "por_vencer":
       return { label: "Registrar pago", href: null, icon: CheckmarkCircle02Icon }
+    case "por_vencer":
+      return { label: "Gestionar renovación", href: `/contratos/${id}/renovacion`, icon: ArrowRight01Icon }
     case "en_escrituracion":
       return { label: "Registrar escrituración", href: `/contratos/${id}/escrituracion`, icon: FileManagementIcon }
     default:
