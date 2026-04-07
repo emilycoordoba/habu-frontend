@@ -204,9 +204,11 @@ function AccionesMenu({ contrato }: { contrato: Contrato }) {
           </DropdownMenuItem>
         )}
         {(esActivo || esPorVencer) && (
-          <DropdownMenuItem>
-            <HugeiconsIcon icon={FileEditIcon} strokeWidth={2} className="size-4" />
-            Renovar contrato
+          <DropdownMenuItem asChild>
+            <Link href={`/contratos/${contrato.id}/renovacion`}>
+              <HugeiconsIcon icon={FileEditIcon} strokeWidth={2} className="size-4" />
+              Renovar contrato
+            </Link>
           </DropdownMenuItem>
         )}
         {tieneDeuda && (
