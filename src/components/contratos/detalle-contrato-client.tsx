@@ -5,6 +5,7 @@ import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowLeft01Icon,
+  ArrowRight01Icon,
   UserIcon,
   Building04Icon,
   FileAttachmentIcon,
@@ -152,8 +153,9 @@ function getAccionPrincipal(estado: EstadoContrato, id: string) {
     case "en_firmas":
       return { label: "Ver estado de firmas", href: null, icon: PencilEdit01Icon }
     case "activo":
-    case "por_vencer":
       return { label: "Registrar pago", href: null, icon: CheckmarkCircle02Icon }
+    case "por_vencer":
+      return { label: "Gestionar renovación", href: `/contratos/${id}/renovacion`, icon: ArrowRight01Icon }
     case "en_escrituracion":
       return { label: "Registrar escrituración", href: `/contratos/${id}/escrituracion`, icon: FileManagementIcon }
     default:
