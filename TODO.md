@@ -6,9 +6,9 @@
 - [x] UI-C03 — Formulario contrato de arriendo (canon, fechas, depósito, administración)
 - [x] UI-C04 — Formulario promesa de compraventa (precio, arras, forma de pago, fecha escrituración)
 - [x] UI-C05 — Gestión de documentos (lista de chequeo y carga de archivos)
-- [ ] UI-C06 — Detalle de contrato (estado actual, partes, documentos y firmas)
-- [ ] UI-C07 — Registrar escrituración (fecha, notaría, pagos pendientes, certificado de tradición)
-- [ ] UI-C08 — Registrar terminación anticipada (causa, penalizaciones, fecha de entrega)
+- [x] UI-C06 — Detalle de contrato (estado actual, partes, documentos y firmas)
+- [x] UI-C07 — Registrar escrituración (fecha, notaría, pagos pendientes, certificado de tradición)
+- [x] UI-C08 — Registrar terminación anticipada (causa, penalizaciones, fecha de entrega)
 - [ ] UI-C09 — Gestionar vencimiento y renovación (alerta, decisión de renovar o finalizar)
 
 ### Pendientes de UI-C01 al conectar la API

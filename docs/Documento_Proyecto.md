@@ -402,6 +402,26 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | fecha\_hora | DATETIME | Fecha y hora en que se realizó la firma |
 | referencia\_docusign | VARCHAR | Identificador en DocuSign (pendiente definir) |
 
+**TerminacionAnticipada**
+
+| Atributo | Tipo | Descripción |
+| :---- | :---- | :---- |
+| id | INT | Identificador único |
+| contrato\_id | INT (FK) | Referencia al contrato base |
+| tipo\_contrato | ENUM | arriendo / promesa\_compraventa |
+| iniciador | ENUM | propietario\_vendedor / arrendatario\_comprador / mutuo\_acuerdo |
+| causa | ENUM | mutuo\_acuerdo / incumplimiento\_arrendatario / incumplimiento\_arrendador / incumplimiento\_comprador / incumplimiento\_vendedor / caso\_fortuito / otro |
+| causa\_detalle | TEXT | Descripción adicional de la causa (opcional) |
+| fecha\_efectiva | DATE | Fecha acordada de entrega del inmueble |
+| penalizacion\_valor | DECIMAL | Valor de la penalización (si aplica) — en arriendo es configurable; en promesa se deriva de las arras |
+| penalizacion\_a\_cargo | ENUM | arrendatario / arrendador / comprador / vendedor / ninguno |
+| retener\_deposito | BOOLEAN | Solo para arriendo — indica si se retiene el depósito como pago de penalización |
+| deposito\_devolver | DECIMAL | Valor neto del depósito a devolver al arrendatario tras retenciones |
+| arras\_devolver | DECIMAL | Solo para promesa — valor de arras a devolver (0, valor original o doble) |
+| notas | TEXT | Observaciones adicionales del asesor |
+| registrado\_por\_id | INT (FK) | Referencia al asesor que registró la terminación |
+| fecha\_registro | DATETIME | Fecha y hora del registro |
+
 **Modulo Pagos y Mora**
 
 **Cobro**
