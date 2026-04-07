@@ -215,12 +215,14 @@ function AccionesMenu({ contrato }: { contrato: Contrato }) {
             Gestionar saldos
           </DropdownMenuItem>
         )}
-        {esActivo && (
+        {(esActivo || esPorVencer) && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">
-              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
-              Iniciar terminación
+            <DropdownMenuItem variant="destructive" asChild>
+              <Link href={`/contratos/${contrato.id}/terminacion`}>
+                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
+                Iniciar terminación
+              </Link>
             </DropdownMenuItem>
           </>
         )}
