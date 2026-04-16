@@ -43,12 +43,18 @@
 - [ ] **Contratos firmados manualmente**: definir si el sistema debe soportar cargar un PDF de contrato firmado fuera de DocuSign (no está contemplado en la documentación actual). Implica cambios en el modelo y en UI-C05.
 
 ## Documentación pendiente (Google Docs)
-- [ ] Agregar entidad `TerminacionAnticipada` al modelo de datos (ver `docs/Documento_Proyecto.md` para los campos completos)
-- [ ] Actualizar Google Docs del proyecto con el campo `modalidad` (arriendo / venta / ambos) en la entidad `Inmueble` y en RF-13
-- [ ] Agregar `precio_venta` al ENUM `Cobro.tipo` — el pago del precio total al vendedor no estaba contemplado en el modelo original
-- [ ] Agregar `comision_colocacion` y `comision_administracion` al ENUM `Cobro.tipo` (reemplaza el genérico `comisión`)
-- [ ] Agregar campos `incluye_administracion` (BOOLEAN) y `comision_colocacion` (DECIMAL) a la entidad `ContratoArriendo`
-- [ ] Actualizar RF-08 para incluir configuración de comisión de colocación además de comisión de administración
+
+### Modelo de datos
+- [ ] Agregar entidad `TerminacionAnticipada` (ver `docs/Documento_Proyecto.md` para los campos completos)
+- [ ] Agregar campo `modalidad` (arriendo / venta / ambos) a la entidad `Inmueble`
+- [ ] Agregar campos `incluye_administracion` (BOOLEAN) y `comision_colocacion` (DECIMAL) a `ContratoArriendo`
+- [ ] Actualizar ENUM `Cobro.tipo`: reemplazar `comisión` por `comision_administracion` y `comision_colocacion`, agregar `precio_venta`
+- [ ] Agregar campo `pagado_con_mora` (INT, días) a la entidad `Cobro` — permite auditar comportamiento de pago sin cruzar fechas
+
+### Requisitos funcionales
+- [ ] Actualizar RF-13 para incluir `modalidad` en el registro de inmuebles
+- [ ] Actualizar RF-08 para contemplar comisión de colocación además de comisión de administración
+- [ ] Agregar RF nuevo: "El sistema debe registrar el cobro de comisión de colocación al activar un contrato de arriendo sin administración"
 
 ## TODO propio
 - [ ] full page sheet no funciona
