@@ -19,7 +19,7 @@
 
 ## Módulo Pagos y Mora — UI
 - [x] UI-P01 — Lista de cobros de un contrato (estado, fecha límite, valor)
-- [ ] UI-P02 — Registrar pago (selección de cobro, valor, fecha y comprobante)
+- [x] UI-P02 — Registrar pago (selección de cobro, valor, fecha y comprobante)
 - [ ] UI-P03 — Estado de cuenta (historial cronológico de pagos, mora e intereses)
 - [ ] UI-P04 — Generar reporte de ingresos (filtros por periodo, cliente o inmueble)
 - [ ] UI-P05 — Vista de cobros en mora (listado con intereses acumulados)
@@ -41,11 +41,13 @@
 
 ## Decisiones de diseño pendientes
 - [ ] **Contratos firmados manualmente**: definir si el sistema debe soportar cargar un PDF de contrato firmado fuera de DocuSign (no está contemplado en la documentación actual). Implica cambios en el modelo y en UI-C05.
+- [x] **Pagos parciales**: no se soportan en esta versión. El cobro permanece en mora hasta recibir el monto completo. El asesor registra el pago solo cuando tiene el valor total.
 
 ## Documentación pendiente (Google Docs)
 
 ### Modelo de datos
 - [ ] Agregar entidad `TerminacionAnticipada` (ver `docs/Documento_Proyecto.md` para los campos completos)
+- [ ] Agregar campo `notas` (TEXT, opcional) a la entidad `Pago`
 - [ ] Agregar campo `modalidad` (arriendo / venta / ambos) a la entidad `Inmueble`
 - [ ] Agregar campos `incluye_administracion` (BOOLEAN) y `comision_colocacion` (DECIMAL) a `ContratoArriendo`
 - [ ] Actualizar ENUM `Cobro.tipo`: reemplazar `comisión` por `comision_administracion` y `comision_colocacion`, agregar `precio_venta`

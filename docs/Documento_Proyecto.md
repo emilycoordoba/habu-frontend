@@ -444,6 +444,7 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | valor | DECIMAL | Valor efectivamente pagado |
 | fecha | DATE | Fecha en que se registró el pago |
 | comprobante | VARCHAR | Archivo del comprobante de pago |
+| notas | TEXT | Observaciones del asesor sobre el pago (opcional) |
 | registrado\_por\_id | INT (FK) | Referencia al asesor que registró el pago |
 
 **InteresMora**
