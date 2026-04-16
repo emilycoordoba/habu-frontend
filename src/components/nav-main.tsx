@@ -1,46 +1,108 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons"
 import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 
-export function NavMain({
-  items,
-}: {
-  items: {
-    title: string
-    url: string
-    icon?: React.ReactNode
-  }[]
-}) {
+interface NavItem {
+  title: string
+  url: string
+  icon?: React.ReactNode
+  items?: { title: string; url: string }[]
+}
+
+export function NavMain({ items }: { items: NavItem[] }) {
   const pathname = usePathname()
 
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                asChild
-                tooltip={item.title}
-                isActive={pathname.startsWith(item.url)}
-              >
-                <Link href={item.url}>
-                  {item.icon}
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) => {
+            const isActive = pathname.startsWith(item.url)
+
+            if (item.items && item.items.length > 0) {
+              return (
+                <NavItemCollapsible
+                  key={item.title}
+                  item={item}
+                  isActive={isActive}
+                  pathname={pathname}
+                />
+              )
+            }
+
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
+                  <Link href={item.url}>
+                    {item.icon}
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
+  )
+}
+
+function NavItemCollapsible({
+  item,
+  isActive,
+  pathname,
+}: {
+  item: NavItem
+  isActive: boolean
+  pathname: string
+}) {
+  const [open, setOpen] = React.useState(isActive)
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        tooltip={item.title}
+        isActive={isActive}
+        onClick={() => setOpen(!open)}
+      >
+        {item.icon}
+        <span>{item.title}</span>
+        <HugeiconsIcon
+          icon={ArrowDown01Icon}
+          strokeWidth={2}
+          className={cn(
+            "ml-auto size-4 transition-transform duration-200",
+            open && "rotate-180"
+          )}
+        />
+      </SidebarMenuButton>
+
+      {open && (
+        <SidebarMenuSub>
+          {item.items!.map((sub) => (
+            <SidebarMenuSubItem key={sub.title}>
+              <SidebarMenuSubButton asChild isActive={pathname === sub.url}>
+                <Link href={sub.url}>{sub.title}</Link>
+              </SidebarMenuSubButton>
+            </SidebarMenuSubItem>
+          ))}
+        </SidebarMenuSub>
+      )}
+    </SidebarMenuItem>
   )
 }
