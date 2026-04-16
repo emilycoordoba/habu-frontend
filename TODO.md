@@ -61,3 +61,5 @@
 ## TODO propio
 - [ ] full page sheet no funciona
 - [ ] lista de tabs centrada tambien en detalles de contrato
+- animaciones, transiciones
+- mejorar pdf reportes de ingresos
