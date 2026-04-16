@@ -40,6 +40,10 @@ const data = {
       title: "Pagos y Mora",
       url: "/pagos",
       icon: <HugeiconsIcon icon={Invoice03Icon} strokeWidth={2} />,
+      items: [
+        { title: "Reporte de ingresos", url: "/pagos/reportes" },
+        { title: "Cobros en mora",      url: "/pagos/mora" },
+      ],
     },
     {
       title: "Mantenimiento",

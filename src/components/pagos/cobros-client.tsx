@@ -137,6 +137,9 @@ export function CobrosClient({ contratoId }: CobrosClientProps) {
           <h1 className="text-lg font-semibold">Cobros del contrato</h1>
           <p className="text-sm text-muted-foreground truncate">{contrato.referencia} · {contrato.inmueble}</p>
         </div>
+        <Link href={`/contratos/${contrato.id}/estado-cuenta`}>
+          <Button variant="outline" size="sm">Estado de cuenta</Button>
+        </Link>
       </div>
 
       <div className="px-6 py-6 space-y-6 max-w-5xl mx-auto w-full">
