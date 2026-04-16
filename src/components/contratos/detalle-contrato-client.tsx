@@ -283,6 +283,11 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
               )}
             </TabsTrigger>
             <TabsTrigger value="historial">Historial</TabsTrigger>
+            {["activo", "por_vencer", "vencido_con_saldos"].includes(contrato.estado) && (
+              <TabsTrigger value="pagos" asChild>
+                <Link href={`/contratos/${contrato.id}/cobros`}>Pagos</Link>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Tab — Condiciones */}
