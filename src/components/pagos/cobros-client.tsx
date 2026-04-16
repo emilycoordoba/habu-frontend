@@ -34,6 +34,7 @@ interface Cobro {
   estado: EstadoCobro
   diasMora?: number       // solo si en_mora
   tieneComprobante?: boolean
+  pagadoConMora?: number  // días de mora al momento del pago — solo si estado === "pagado"
 }
 
 interface ContratoResumen {
@@ -57,8 +58,8 @@ const COBROS_MOCK: Cobro[] = [
   { id: "c-02", tipo: "comision_colocacion",  fechaLimite: "2025-02-01", valor: 2800000,  estado: "pagado",    tieneComprobante: true },
   { id: "c-03", tipo: "canon",  periodo: "Febrero 2025",  fechaLimite: "2025-02-05", valor: 2800000,  estado: "pagado",    tieneComprobante: true },
   { id: "c-04", tipo: "comision_administracion", periodo: "Febrero 2025", fechaLimite: "2025-02-05", valor: 320000, estado: "pagado", tieneComprobante: true },
-  { id: "c-05", tipo: "canon",  periodo: "Marzo 2025",    fechaLimite: "2025-03-05", valor: 2800000,  estado: "pagado",    tieneComprobante: true },
-  { id: "c-06", tipo: "comision_administracion", periodo: "Marzo 2025",  fechaLimite: "2025-03-05", valor: 320000, estado: "pagado", tieneComprobante: true },
+  { id: "c-05", tipo: "canon",  periodo: "Marzo 2025",    fechaLimite: "2025-03-05", valor: 2800000,  estado: "pagado",    tieneComprobante: true, pagadoConMora: 12 },
+  { id: "c-06", tipo: "comision_administracion", periodo: "Marzo 2025",  fechaLimite: "2025-03-05", valor: 320000, estado: "pagado", tieneComprobante: true, pagadoConMora: 12 },
   { id: "c-07", tipo: "canon",  periodo: "Abril 2025",    fechaLimite: "2025-04-05", valor: 2800000,  estado: "en_mora",   diasMora: 10 },
   { id: "c-08", tipo: "comision_administracion", periodo: "Abril 2025",  fechaLimite: "2025-04-05", valor: 320000, estado: "en_mora", diasMora: 10 },
   { id: "c-09", tipo: "canon",  periodo: "Mayo 2025",     fechaLimite: "2025-05-05", valor: 2800000,  estado: "pendiente" },
@@ -235,6 +236,7 @@ export function CobrosClient({ contratoId }: CobrosClientProps) {
                         {formatCOP(cobro.valor)}
                       </td>
                       <td className="px-4 py-3 text-center">
+                        <div className="flex flex-col items-center gap-1">
                         <Badge
                           variant="outline"
                           className={cn("gap-1 text-xs", estadoCfg.className)}
@@ -242,6 +244,13 @@ export function CobrosClient({ contratoId }: CobrosClientProps) {
                           <HugeiconsIcon icon={estadoCfg.icon} strokeWidth={2} className="size-3" />
                           {estadoCfg.label}
                         </Badge>
+                        {cobro.pagadoConMora != null && cobro.pagadoConMora > 0 && (
+                          <span className="text-xs text-amber-600 flex items-center gap-1">
+                            <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-3" />
+                            {cobro.pagadoConMora} días de mora
+                          </span>
+                        )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-right">
                         {cobro.estado === "pagado" ? (
