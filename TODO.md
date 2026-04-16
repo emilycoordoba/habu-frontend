@@ -20,7 +20,7 @@
 ## Módulo Pagos y Mora — UI
 - [x] UI-P01 — Lista de cobros de un contrato (estado, fecha límite, valor)
 - [x] UI-P02 — Registrar pago (selección de cobro, valor, fecha y comprobante)
-- [ ] UI-P03 — Estado de cuenta (historial cronológico de pagos, mora e intereses)
+- [x] UI-P03 — Estado de cuenta (historial cronológico de pagos, mora e intereses)
 - [ ] UI-P04 — Generar reporte de ingresos (filtros por periodo, cliente o inmueble)
 - [ ] UI-P05 — Vista de cobros en mora (listado con intereses acumulados)
 
