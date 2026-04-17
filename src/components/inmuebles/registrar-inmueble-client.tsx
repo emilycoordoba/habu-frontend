@@ -17,6 +17,7 @@ import {
   Money01Icon,
   ArrowDown01Icon,
   CheckmarkCircle02Icon,
+  UserAdd01Icon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -397,17 +398,17 @@ export function RegistrarInmuebleClient() {
                         </CommandGroup>
                       </CommandList>
                     </Command>
+                    <div className="border-t p-1">
+                      <button
+                        onClick={() => { setPropietarioOpen(false); setRegistrarOpen(true) }}
+                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-primary hover:bg-accent transition-colors"
+                      >
+                        <HugeiconsIcon icon={UserAdd01Icon} strokeWidth={2} className="size-4 shrink-0" />
+                        <span className="font-medium">Registrar nuevo propietario</span>
+                      </button>
+                    </div>
                   </PopoverContent>
                 </Popover>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-muted-foreground"
-                  onClick={() => setRegistrarOpen(true)}
-                >
-                  + Registrar nuevo propietario
-                </Button>
               </div>
             </section>
 
