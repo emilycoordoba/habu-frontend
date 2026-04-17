@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import type { TipoInmueble, ModalidadInmueble, EstadoInmueble } from "@/types/inmueble.types"
+import { RegistrarClienteDialog } from "@/components/contratos/registrar-cliente-dialog"
 
 // Carga el mapa solo en el cliente (Leaflet no funciona con SSR)
 const MapaInmueble = dynamic(
@@ -63,7 +64,7 @@ const MapaInmueble = dynamic(
 // Mock propietarios
 // ---------------------------------------------------------------------------
 
-const PROPIETARIOS_MOCK = [
+const PROPIETARIOS_INICIALES = [
   { id: "p-1", nombre: "Ana Martínez" },
   { id: "p-2", nombre: "Inversiones Pedraza S.A.S." },
   { id: "p-3", nombre: "Luis Gómez" },
@@ -111,8 +112,10 @@ export function RegistrarInmuebleClient() {
     propietarioId: "",
   })
 
+  const [propietarios, setPropietarios]         = React.useState(PROPIETARIOS_INICIALES)
   const [fotos, setFotos]                       = React.useState<FotoPreview[]>([])
   const [propietarioOpen, setPropietarioOpen]   = React.useState(false)
+  const [registrarOpen, setRegistrarOpen]       = React.useState(false)
   const [fotoAmpliada, setFotoAmpliada]         = React.useState<string | null>(null)
   const [coordenadas, setCoordenadas]           = React.useState<[number, number] | null>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
@@ -158,13 +161,19 @@ export function RegistrarInmuebleClient() {
     setFotos(prev => prev.filter(f => f.url !== url))
   }
 
+  function handlePropietarioRegistrado({ nombre }: { nombre: string; identificacion: string }) {
+    const nuevoId = `p-nuevo-${Date.now()}`
+    setPropietarios(prev => [...prev, { id: nuevoId, nombre }])
+    setField("propietarioId", nuevoId)
+  }
+
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault()
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"))
     setFotos(prev => [...prev, ...files.map(file => ({ file, url: URL.createObjectURL(file) }))])
   }
 
-  const propietarioNombre = PROPIETARIOS_MOCK.find(p => p.id === form.propietarioId)?.nombre
+  const propietarioNombre = propietarios.find(p => p.id === form.propietarioId)?.nombre
 
   const precioLabel = form.modalidad === "venta"   ? "Precio de venta"
                     : form.modalidad === "arriendo" ? "Canon mensual"
@@ -371,7 +380,7 @@ export function RegistrarInmuebleClient() {
                       <CommandList>
                         <CommandEmpty>No se encontró ningún propietario.</CommandEmpty>
                         <CommandGroup>
-                          {PROPIETARIOS_MOCK.map(p => (
+                          {propietarios.map(p => (
                             <CommandItem
                               key={p.id}
                               value={p.nombre}
@@ -390,10 +399,15 @@ export function RegistrarInmuebleClient() {
                     </Command>
                   </PopoverContent>
                 </Popover>
-                <p className="text-xs text-muted-foreground">
-                  Si el propietario no está registrado, puedes{" "}
-                  <Link href="/clientes/nuevo" className="underline underline-offset-2">registrarlo aquí</Link>.
-                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-muted-foreground"
+                  onClick={() => setRegistrarOpen(true)}
+                >
+                  + Registrar nuevo propietario
+                </Button>
               </div>
             </section>
 
@@ -461,6 +475,14 @@ export function RegistrarInmuebleClient() {
 
         </div>
       </div>
+
+      {/* Modal registrar propietario */}
+      <RegistrarClienteDialog
+        open={registrarOpen}
+        onOpenChange={setRegistrarOpen}
+        labelRol="Propietario"
+        onClienteRegistrado={handlePropietarioRegistrado}
+      />
 
       {/* Lightbox */}
       <Dialog open={fotoAmpliada !== null} onOpenChange={() => setFotoAmpliada(null)}>
