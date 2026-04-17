@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { IconSvgElement } from "@hugeicons/react"
@@ -42,8 +43,21 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import type { TipoInmueble, ModalidadInmueble, EstadoInmueble } from "@/types/inmueble.types"
+
+// Carga el mapa solo en el cliente (Leaflet no funciona con SSR)
+const MapaInmueble = dynamic(
+  () => import("./mapa-inmueble").then(m => m.MapaInmueble),
+  {
+    ssr: false,
+    loading: () => <div className="w-full h-48 rounded-lg bg-muted animate-pulse" />,
+  }
+)
 
 // ---------------------------------------------------------------------------
 // Mock propietarios
@@ -60,7 +74,7 @@ const PROPIETARIOS_MOCK = [
 ]
 
 // ---------------------------------------------------------------------------
-// Tipos internos
+// Tipos
 // ---------------------------------------------------------------------------
 
 interface FotoPreview {
@@ -97,13 +111,37 @@ export function RegistrarInmuebleClient() {
     propietarioId: "",
   })
 
-  const [fotos, setFotos]               = React.useState<FotoPreview[]>([])
-  const [propietarioOpen, setPropietarioOpen] = React.useState(false)
+  const [fotos, setFotos]                       = React.useState<FotoPreview[]>([])
+  const [propietarioOpen, setPropietarioOpen]   = React.useState(false)
+  const [fotoAmpliada, setFotoAmpliada]         = React.useState<string | null>(null)
+  const [coordenadas, setCoordenadas]           = React.useState<[number, number] | null>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
 
+  // Limpia URLs de objeto al desmontar
   React.useEffect(() => {
     return () => fotos.forEach(f => URL.revokeObjectURL(f.url))
   }, [fotos])
+
+  // Geocodifica la dirección con Nominatim cuando cambian dirección o ciudad (debounced 800ms)
+  React.useEffect(() => {
+    const query = [form.direccion, form.ubicacion].filter(Boolean).join(", ")
+    if (!query) return
+
+    const timeout = setTimeout(async () => {
+      try {
+        const res  = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ", Colombia")}&format=json&limit=1`,
+          { headers: { "Accept-Language": "es" } }
+        )
+        const data = await res.json() as { lat: string; lon: string }[]
+        if (data[0]) setCoordenadas([parseFloat(data[0].lat), parseFloat(data[0].lon)])
+      } catch {
+        // Falla silenciosamente — el mapa simplemente no mueve el pin
+      }
+    }, 800)
+
+    return () => clearTimeout(timeout)
+  }, [form.direccion, form.ubicacion])
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm(prev => ({ ...prev, [key]: value }))
@@ -111,8 +149,7 @@ export function RegistrarInmuebleClient() {
 
   function handleFotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
-    const nuevas = files.map(file => ({ file, url: URL.createObjectURL(file) }))
-    setFotos(prev => [...prev, ...nuevas])
+    setFotos(prev => [...prev, ...files.map(file => ({ file, url: URL.createObjectURL(file) }))])
     e.target.value = ""
   }
 
@@ -124,33 +161,29 @@ export function RegistrarInmuebleClient() {
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault()
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"))
-    const nuevas = files.map(file => ({ file, url: URL.createObjectURL(file) }))
-    setFotos(prev => [...prev, ...nuevas])
+    setFotos(prev => [...prev, ...files.map(file => ({ file, url: URL.createObjectURL(file) }))])
   }
 
   const propietarioNombre = PROPIETARIOS_MOCK.find(p => p.id === form.propietarioId)?.nombre
 
-  const precioLabel = form.modalidad === "venta"    ? "Precio de venta"
-                    : form.modalidad === "arriendo"  ? "Canon mensual"
+  const precioLabel = form.modalidad === "venta"   ? "Precio de venta"
+                    : form.modalidad === "arriendo" ? "Canon mensual"
                     : "Precio"
-  const precioHint  = form.modalidad === "venta"    ? "Precio total pactado"
-                    : form.modalidad === "arriendo"  ? "Valor mensual del arriendo"
+  const precioHint  = form.modalidad === "venta"   ? "Precio total pactado"
+                    : form.modalidad === "arriendo" ? "Valor mensual del arriendo"
                     : "Ingresa la modalidad para saber el tipo de precio"
 
   const puedeGuardar =
-    form.tipo !== "" &&
-    form.modalidad !== "" &&
-    form.direccion.trim() !== "" &&
-    form.ubicacion.trim() !== "" &&
-    form.area.trim() !== "" &&
-    form.precio.trim() !== "" &&
+    form.tipo !== "" && form.modalidad !== "" &&
+    form.direccion.trim() !== "" && form.ubicacion.trim() !== "" &&
+    form.area.trim() !== "" && form.precio.trim() !== "" &&
     form.propietarioId !== ""
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
 
       {/* Header */}
-      <div className="border-b px-6 py-4 flex items-center gap-4">
+      <div className="border-b px-6 py-4 flex items-center gap-4 shrink-0">
         <Link href="/inmuebles">
           <Button variant="ghost" size="icon" className="size-8">
             <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
@@ -170,12 +203,12 @@ export function RegistrarInmuebleClient() {
 
       {/* Cuerpo — dos columnas centradas */}
       <div className="flex-1 overflow-y-auto">
-        <div className="flex max-w-[960px] mx-auto w-full min-h-full">
+        <div className="flex max-w-[960px] mx-auto w-full">
 
           {/* Columna izquierda — formulario */}
-          <div className="flex-1 px-6 py-6 space-y-8 min-w-0">
+          <div className="flex-1 px-6 py-6 pb-12 space-y-8 min-w-0">
 
-            {/* Sección: Información básica */}
+            {/* Información básica */}
             <section className="space-y-4">
               <SectionHeader icon={Building04Icon} title="Información básica" />
 
@@ -237,10 +270,7 @@ export function RegistrarInmuebleClient() {
                         : "border-gray-200 bg-muted/30 text-muted-foreground"
                     )}
                   >
-                    <span className={cn(
-                      "size-2 rounded-full shrink-0",
-                      form.publicado ? "bg-green-500" : "bg-gray-300"
-                    )} />
+                    <span className={cn("size-2 rounded-full shrink-0", form.publicado ? "bg-green-500" : "bg-gray-300")} />
                     {form.publicado ? "Publicado en el portal" : "No publicado"}
                   </button>
                 </div>
@@ -249,7 +279,7 @@ export function RegistrarInmuebleClient() {
 
             <Separator />
 
-            {/* Sección: Ubicación */}
+            {/* Ubicación */}
             <section className="space-y-4">
               <SectionHeader icon={Location01Icon} title="Ubicación" />
 
@@ -270,11 +300,21 @@ export function RegistrarInmuebleClient() {
                   onChange={e => setField("ubicacion", e.target.value)}
                 />
               </div>
+
+              {/* Mapa */}
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground">
+                  {coordenadas
+                    ? "Ubicación encontrada. Puedes verificar el pin en el mapa."
+                    : "El pin aparecerá automáticamente al ingresar la dirección y ciudad."}
+                </p>
+                <MapaInmueble coordenadas={coordenadas} />
+              </div>
             </section>
 
             <Separator />
 
-            {/* Sección: Detalles */}
+            {/* Detalles */}
             <section className="space-y-4">
               <SectionHeader icon={SquareIcon} title="Detalles del inmueble" />
 
@@ -310,7 +350,7 @@ export function RegistrarInmuebleClient() {
 
             <Separator />
 
-            {/* Sección: Propietario */}
+            {/* Propietario */}
             <section className="space-y-4">
               <SectionHeader icon={UserIcon} title="Propietario" />
 
@@ -318,11 +358,7 @@ export function RegistrarInmuebleClient() {
                 <Label>Propietario <Required /></Label>
                 <Popover open={propietarioOpen} onOpenChange={setPropietarioOpen}>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className="w-full justify-between font-normal text-left"
-                    >
+                    <Button variant="outline" role="combobox" className="w-full justify-between font-normal text-left">
                       <span className={cn("truncate", !propietarioNombre && "text-muted-foreground")}>
                         {propietarioNombre ?? "Buscar propietario…"}
                       </span>
@@ -339,18 +375,12 @@ export function RegistrarInmuebleClient() {
                             <CommandItem
                               key={p.id}
                               value={p.nombre}
-                              onSelect={() => {
-                                setField("propietarioId", p.id)
-                                setPropietarioOpen(false)
-                              }}
+                              onSelect={() => { setField("propietarioId", p.id); setPropietarioOpen(false) }}
                             >
                               <HugeiconsIcon
                                 icon={CheckmarkCircle02Icon}
                                 strokeWidth={2}
-                                className={cn(
-                                  "size-4 mr-2",
-                                  form.propietarioId === p.id ? "opacity-100" : "opacity-0"
-                                )}
+                                className={cn("size-4 mr-2", form.propietarioId === p.id ? "opacity-100" : "opacity-0")}
                               />
                               {p.nombre}
                             </CommandItem>
@@ -373,7 +403,7 @@ export function RegistrarInmuebleClient() {
           <div className="w-px bg-border shrink-0" />
 
           {/* Columna derecha — fotos */}
-          <div className="w-80 shrink-0 px-5 py-6 space-y-4">
+          <div className="w-80 shrink-0 px-5 py-6 pb-12 space-y-4">
             <div className="flex items-center gap-2">
               <HugeiconsIcon icon={Image01Icon} strokeWidth={2} className="size-4 text-muted-foreground" />
               <p className="text-sm font-semibold">Fotografías</p>
@@ -395,25 +425,18 @@ export function RegistrarInmuebleClient() {
               <p className="text-xs text-muted-foreground">JPG, PNG · máx. 10 MB por archivo</p>
             </div>
 
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/jpeg,image/png"
-              multiple
-              className="hidden"
-              onChange={handleFotos}
-            />
+            <input ref={inputRef} type="file" accept="image/jpeg,image/png" multiple className="hidden" onChange={handleFotos} />
 
             {fotos.length > 0 ? (
               <div className="grid grid-cols-2 gap-2">
                 {fotos.map((foto, idx) => (
-                  <div key={foto.url} className="relative group rounded-md overflow-hidden aspect-square bg-muted">
+                  <div
+                    key={foto.url}
+                    className="relative group rounded-md overflow-hidden aspect-square bg-muted cursor-zoom-in"
+                    onClick={() => setFotoAmpliada(foto.url)}
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={foto.url}
-                      alt={`Foto ${idx + 1}`}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={foto.url} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
                     {idx === 0 && (
                       <span className="absolute top-1 left-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded font-medium">
                         Principal
@@ -421,7 +444,7 @@ export function RegistrarInmuebleClient() {
                     )}
                     <button
                       type="button"
-                      onClick={() => eliminarFoto(foto.url)}
+                      onClick={e => { e.stopPropagation(); eliminarFoto(foto.url) }}
                       className="absolute top-1 right-1 size-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="size-3" />
@@ -438,6 +461,21 @@ export function RegistrarInmuebleClient() {
 
         </div>
       </div>
+
+      {/* Lightbox */}
+      <Dialog open={fotoAmpliada !== null} onOpenChange={() => setFotoAmpliada(null)}>
+        <DialogContent className="max-w-3xl p-2 bg-black/90 border-0">
+          {fotoAmpliada && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={fotoAmpliada}
+              alt="Vista ampliada"
+              className="w-full rounded-md object-contain max-h-[85vh]"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
     </div>
   )
 }
