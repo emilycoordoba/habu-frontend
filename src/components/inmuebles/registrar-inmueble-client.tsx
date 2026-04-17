@@ -256,7 +256,14 @@ export function RegistrarInmuebleClient() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5 w-full">
                   <Label>Estado inicial</Label>
-                  <Select value={form.estado} onValueChange={v => setField("estado", v as EstadoInmueble)}>
+                  <Select value={form.estado} onValueChange={v => {
+                    const nuevoEstado = v as EstadoInmueble
+                    setForm(prev => ({
+                      ...prev,
+                      estado: nuevoEstado,
+                      publicado: nuevoEstado === "disponible" ? prev.publicado : false,
+                    }))
+                  }}>
                     <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
@@ -272,16 +279,24 @@ export function RegistrarInmuebleClient() {
                   <Label>Publicación en portal</Label>
                   <button
                     type="button"
+                    disabled={form.estado !== "disponible"}
                     onClick={() => setField("publicado", !form.publicado)}
                     className={cn(
                       "w-full h-9 rounded-md border px-3 text-sm text-left flex items-center gap-2 transition-colors",
-                      form.publicado
+                      form.estado !== "disponible"
+                        ? "border-gray-200 bg-muted/50 text-muted-foreground opacity-50 cursor-not-allowed"
+                        : form.publicado
                         ? "border-green-200 bg-green-50 text-green-700"
                         : "border-gray-200 bg-muted/30 text-muted-foreground"
                     )}
                   >
-                    <span className={cn("size-2 rounded-full shrink-0", form.publicado ? "bg-green-500" : "bg-gray-300")} />
-                    {form.publicado ? "Publicado en el portal" : "No publicado"}
+                    <span className={cn(
+                      "size-2 rounded-full shrink-0",
+                      form.estado !== "disponible" ? "bg-gray-300" : form.publicado ? "bg-green-500" : "bg-gray-300"
+                    )} />
+                    {form.estado !== "disponible"
+                      ? "Solo disponible si el estado es Disponible"
+                      : form.publicado ? "Publicado en el portal" : "No publicado"}
                   </button>
                 </div>
               </div>
