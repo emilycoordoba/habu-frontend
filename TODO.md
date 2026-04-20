@@ -22,10 +22,16 @@
 - [x] UI-P02 — Registrar pago (selección de cobro, valor, fecha y comprobante)
 - [x] UI-P03 — Estado de cuenta (historial cronológico de pagos, mora e intereses)
 - [x] UI-P04 — Generar reporte de ingresos (filtros por periodo, cliente o inmueble)
-- [ ] UI-P05 — Vista de cobros en mora (listado con intereses acumulados)
+- [x] UI-P05 — Vista de cobros en mora (listado con intereses acumulados)
+
+## Módulo Inmuebles — UI
+- [x] UI-I01 — Lista de inmuebles (filtros por tipo, estado, modalidad; cards de resumen)
+- [x] UI-I02 — Registrar inmueble (página completa: datos + galería de fotos)
+- [ ] UI-I03 — Detalle del inmueble (tabs: Info / Fotos / Historial de cambios)
+- [ ] UI-I04 — Editar inmueble (misma página que UI-I02, modo edición)
 
 ## Módulos pendientes (UI)
-- [ ] Pagos y Mora
+- [x] Pagos y Mora
 - [ ] Inmuebles
 - [ ] Mantenimiento
 - [ ] Clientes
