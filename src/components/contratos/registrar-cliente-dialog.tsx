@@ -145,7 +145,7 @@ export function RegistrarClienteDialog({
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="tipo-id">Tipo de documento <span className="text-destructive">*</span></Label>
                   <Select value={tipoId} onValueChange={setTipoId}>
-                    <SelectTrigger id="tipo-id">
+                    <SelectTrigger id="tipo-id" className="w-full">
                       <SelectValue placeholder="Seleccionar..." />
                     </SelectTrigger>
                     <SelectContent>
