@@ -25,8 +25,8 @@
 - [x] UI-P05 — Vista de cobros en mora (listado con intereses acumulados)
 
 ## Módulo Inmuebles — UI
-- [ ] UI-I01 — Lista de inmuebles (filtros por tipo, estado, modalidad; cards de resumen)
-- [ ] UI-I02 — Registrar inmueble (página completa: datos + galería de fotos)
+- [x] UI-I01 — Lista de inmuebles (filtros por tipo, estado, modalidad; cards de resumen)
+- [x] UI-I02 — Registrar inmueble (página completa: datos + galería de fotos)
 - [ ] UI-I03 — Detalle del inmueble (tabs: Info / Fotos / Historial de cambios)
 - [ ] UI-I04 — Editar inmueble (misma página que UI-I02, modo edición)
 
