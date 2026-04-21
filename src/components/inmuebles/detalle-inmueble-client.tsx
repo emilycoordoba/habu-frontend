@@ -63,7 +63,7 @@ interface CambioHistorial {
   usuario: string
 }
 
-interface InmuebleDetalle {
+export interface InmuebleDetalle {
   id: string
   tipo: TipoInmueble
   modalidad: ModalidadInmueble
@@ -81,7 +81,7 @@ interface InmuebleDetalle {
   historial: CambioHistorial[]
 }
 
-const INMUEBLES_MOCK: Record<string, InmuebleDetalle> = {
+export const INMUEBLES_MOCK: Record<string, InmuebleDetalle> = {
   "1": {
     id: "1", tipo: "apartamento", modalidad: "arriendo", estado: "arrendado",
     publicado: true, direccion: "Cra 15 #93-47, Apto 301 Torre A",

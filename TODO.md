@@ -28,11 +28,11 @@
 - [x] UI-I01 — Lista de inmuebles (filtros por tipo, estado, modalidad; cards de resumen)
 - [x] UI-I02 — Registrar inmueble (página completa: datos + galería de fotos)
 - [x] UI-I03 — Detalle del inmueble (tabs: Info / Fotos / Historial de cambios)
-- [ ] UI-I04 — Editar inmueble (misma página que UI-I02, modo edición)
+- [x] UI-I04 — Editar inmueble (misma página que UI-I02, modo edición)
 
 ## Módulos pendientes (UI)
 - [x] Pagos y Mora
-- [ ] Inmuebles
+- [x] Inmuebles
 - [ ] Mantenimiento
 - [ ] Clientes
 - [ ] Administración

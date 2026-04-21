@@ -79,10 +79,11 @@ const PROPIETARIOS_INICIALES = [
 // Tipos
 // ---------------------------------------------------------------------------
 
-interface FotoPreview {
-  file: File
-  url: string
-}
+// Una foto puede ser existente (cargada del backend, tiene id) o nueva (File local).
+// Ambas comparten `url` — la existente apunta al recurso remoto, la nueva es un ObjectURL.
+type FotoPreview =
+  | { kind: "existente"; id: string; url: string; descripcion?: string }
+  | { kind: "nueva"; file: File; url: string }
 
 interface FormState {
   tipo: TipoInmueble | ""
@@ -96,34 +97,89 @@ interface FormState {
   propietarioId: string
 }
 
+export interface RegistrarInmuebleInitialData {
+  tipo: TipoInmueble
+  modalidad: ModalidadInmueble
+  estado: EstadoInmueble
+  publicado: boolean
+  direccion: string
+  ubicacion: string
+  area: number
+  precio: number
+  propietarioId: string
+  propietarioNombre: string
+  coordenadas?: [number, number]
+  fotos: Array<{ id: string; url: string; descripcion?: string }>
+}
+
+interface RegistrarInmuebleClientProps {
+  mode?: "crear" | "editar"
+  inmuebleId?: string
+  initialData?: RegistrarInmuebleInitialData
+}
+
 // ---------------------------------------------------------------------------
 // Componente
 // ---------------------------------------------------------------------------
 
-export function RegistrarInmuebleClient() {
-  const [form, setForm] = React.useState<FormState>({
-    tipo:          "",
-    modalidad:     "",
-    estado:        "disponible",
-    publicado:     true,
-    direccion:     "",
-    ubicacion:     "",
-    area:          "",
-    precio:        "",
-    propietarioId: "",
-  })
+export function RegistrarInmuebleClient({
+  mode = "crear",
+  inmuebleId,
+  initialData,
+}: RegistrarInmuebleClientProps = {}) {
+  const esEdicion = mode === "editar"
 
-  const [propietarios, setPropietarios]         = React.useState(PROPIETARIOS_INICIALES)
-  const [fotos, setFotos]                       = React.useState<FotoPreview[]>([])
+  const [form, setForm] = React.useState<FormState>(() =>
+    initialData
+      ? {
+          tipo:          initialData.tipo,
+          modalidad:     initialData.modalidad,
+          estado:        initialData.estado,
+          publicado:     initialData.publicado,
+          direccion:     initialData.direccion,
+          ubicacion:     initialData.ubicacion,
+          area:          String(initialData.area),
+          precio:        String(initialData.precio),
+          propietarioId: initialData.propietarioId,
+        }
+      : {
+          tipo:          "",
+          modalidad:     "",
+          estado:        "disponible",
+          publicado:     true,
+          direccion:     "",
+          ubicacion:     "",
+          area:          "",
+          precio:        "",
+          propietarioId: "",
+        }
+  )
+
+  // Si estamos editando, inyectamos el propietario actual por si no está en la lista cargada
+  const propietariosIniciales = React.useMemo(() => {
+    if (!initialData) return PROPIETARIOS_INICIALES
+    const yaEsta = PROPIETARIOS_INICIALES.some(p => p.id === initialData.propietarioId)
+    return yaEsta
+      ? PROPIETARIOS_INICIALES
+      : [...PROPIETARIOS_INICIALES, { id: initialData.propietarioId, nombre: initialData.propietarioNombre }]
+  }, [initialData])
+
+  const [propietarios, setPropietarios]         = React.useState(propietariosIniciales)
+  const [fotos, setFotos] = React.useState<FotoPreview[]>(() =>
+    initialData?.fotos.map(f => ({ kind: "existente" as const, id: f.id, url: f.url, descripcion: f.descripcion })) ?? []
+  )
+  const [fotosEliminadas, setFotosEliminadas]   = React.useState<string[]>([])
   const [propietarioOpen, setPropietarioOpen]   = React.useState(false)
   const [registrarOpen, setRegistrarOpen]       = React.useState(false)
   const [fotoAmpliada, setFotoAmpliada]         = React.useState<string | null>(null)
-  const [coordenadas, setCoordenadas]           = React.useState<[number, number] | null>(null)
+  const [coordenadas, setCoordenadas]           = React.useState<[number, number] | null>(
+    initialData?.coordenadas ?? null
+  )
   const inputRef = React.useRef<HTMLInputElement>(null)
 
-  // Limpia URLs de objeto al desmontar
+  // Limpia ObjectURLs solo de fotos NUEVAS al desmontar; las existentes son URLs remotas
   React.useEffect(() => {
-    return () => fotos.forEach(f => URL.revokeObjectURL(f.url))
+    return () => fotos.forEach(f => { if (f.kind === "nueva") URL.revokeObjectURL(f.url) })
   }, [fotos])
 
   // Geocodifica la dirección con Nominatim cuando cambian dirección o ciudad (debounced 800ms)
@@ -153,13 +209,24 @@ export function RegistrarInmuebleClient() {
 
   function handleFotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
-    setFotos(prev => [...prev, ...files.map(file => ({ file, url: URL.createObjectURL(file) }))])
+    setFotos(prev => [
+      ...prev,
+      ...files.map(file => ({ kind: "nueva" as const, file, url: URL.createObjectURL(file) })),
+    ])
     e.target.value = ""
   }
 
   function eliminarFoto(url: string) {
-    URL.revokeObjectURL(url)
-    setFotos(prev => prev.filter(f => f.url !== url))
+    setFotos(prev => {
+      const foto = prev.find(f => f.url === url)
+      if (foto?.kind === "nueva") {
+        URL.revokeObjectURL(foto.url)
+      } else if (foto?.kind === "existente") {
+        // Marca la foto para borrar en backend al guardar
+        setFotosEliminadas(prevIds => [...prevIds, foto.id])
+      }
+      return prev.filter(f => f.url !== url)
+    })
   }
 
   function handlePropietarioRegistrado({ nombre }: { nombre: string; identificacion: string }) {
@@ -171,7 +238,10 @@ export function RegistrarInmuebleClient() {
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault()
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"))
-    setFotos(prev => [...prev, ...files.map(file => ({ file, url: URL.createObjectURL(file) }))])
+    setFotos(prev => [
+      ...prev,
+      ...files.map(file => ({ kind: "nueva" as const, file, url: URL.createObjectURL(file) })),
+    ])
   }
 
   const propietarioNombre = propietarios.find(p => p.id === form.propietarioId)?.nombre
@@ -194,20 +264,26 @@ export function RegistrarInmuebleClient() {
 
       {/* Header */}
       <div className="border-b px-6 py-4 flex items-center gap-4 shrink-0">
-        <Link href="/inmuebles">
+        <Link href={esEdicion && inmuebleId ? `/inmuebles/${inmuebleId}` : "/inmuebles"}>
           <Button variant="ghost" size="icon" className="size-8">
             <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
           </Button>
         </Link>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-semibold">Registrar inmueble</h1>
-          <p className="text-sm text-muted-foreground">Completa la información del inmueble</p>
+          <h1 className="text-lg font-semibold">
+            {esEdicion ? "Editar inmueble" : "Registrar inmueble"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {esEdicion ? "Actualiza la información del inmueble" : "Completa la información del inmueble"}
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/inmuebles">
+          <Link href={esEdicion && inmuebleId ? `/inmuebles/${inmuebleId}` : "/inmuebles"}>
             <Button variant="outline" size="sm">Cancelar</Button>
           </Link>
-          <Button size="sm" disabled={!puedeGuardar}>Guardar inmueble</Button>
+          <Button size="sm" disabled={!puedeGuardar}>
+            {esEdicion ? "Guardar cambios" : "Guardar inmueble"}
+          </Button>
         </div>
       </div>
 
