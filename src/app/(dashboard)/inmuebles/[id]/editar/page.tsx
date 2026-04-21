@@ -3,7 +3,7 @@ import {
   RegistrarInmuebleClient,
   type RegistrarInmuebleInitialData,
 } from "@/components/inmuebles/registrar-inmueble-client"
-import { INMUEBLES_MOCK } from "@/components/inmuebles/detalle-inmueble-client"
+import { INMUEBLES_MOCK } from "@/lib/mock/inmuebles"
 
 interface Props {
   params: Promise<{ id: string }>
