@@ -1,3 +1,5 @@
+import { ParametrosClient } from "@/components/administracion/parametros-client"
+
 export default function ParametrosPage() {
-  return <div className="p-6 text-muted-foreground text-sm">Próximamente — UI-A06</div>
+  return <ParametrosClient />
 }
