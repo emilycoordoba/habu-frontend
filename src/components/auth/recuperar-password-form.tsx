@@ -24,7 +24,7 @@ export function RecuperarPasswordForm() {
   }
 
   return (
-    <div className="w-full max-w-sm">
+    <div className="w-full">
       {/* Logo */}
       <div className="flex flex-col items-center gap-2 mb-8">
         <div className="flex items-center justify-center size-12 rounded-xl bg-primary/10">
