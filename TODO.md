@@ -30,12 +30,21 @@
 - [x] UI-I03 — Detalle del inmueble (tabs: Info / Fotos / Historial de cambios)
 - [x] UI-I04 — Editar inmueble (misma página que UI-I02, modo edición)
 
+## Módulo Administración — UI
+- [x] UI-A01 — Lista de usuarios (tabla con filtros, activar/desactivar, crear/editar via dialog)
+- [ ] UI-A02 — incluido en UI-A01 (dialog crear/editar usuario)
+- [ ] UI-A03 — Roles y permisos (lista de roles con checklist de permisos asociados)
+- [ ] UI-A04 — Esquemas de comisión (CRUD + asignación a asesores)
+- [ ] UI-A05 — Documentos requeridos (configuración por tipo de contrato)
+- [ ] UI-A06 — Parámetros del sistema (mora, tasas, tipos de contrato)
+- [ ] UI-A07 — Plantillas de documentos (prioridad baja)
+
 ## Módulos pendientes (UI)
 - [x] Pagos y Mora
 - [x] Inmuebles
 - [ ] Mantenimiento
 - [ ] Clientes
-- [ ] Administración
+- [ ] Administración (en progreso)
 - [ ] Login / Autenticación
 
 ## Infraestructura pendiente

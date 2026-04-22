@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation"
+
 export default function AdministracionPage() {
-  return <div>Administracion</div>
+  redirect("/administracion/usuarios")
 }
