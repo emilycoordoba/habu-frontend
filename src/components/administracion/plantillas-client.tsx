@@ -503,11 +503,14 @@ export function PlantillasClient() {
             const isSelected = seleccionada?.id === p.id
 
             return (
-              <button
+              <div
                 key={p.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => { setSeleccionada(p); setEditando(false) }}
+                onKeyDown={e => e.key === "Enter" && (setSeleccionada(p), setEditando(false))}
                 className={cn(
-                  "w-full text-left px-4 py-3 flex flex-col gap-1 hover:bg-muted/40 transition-colors",
+                  "w-full text-left px-4 py-3 flex flex-col gap-1 hover:bg-muted/40 transition-colors cursor-pointer",
                   isSelected && "bg-muted/60 border-l-2 border-primary"
                 )}
               >
@@ -537,7 +540,7 @@ export function PlantillasClient() {
                 <p className="text-[10px] text-muted-foreground/60">
                   Editado {formatFecha(p.ultimaEdicion)}
                 </p>
-              </button>
+              </div>
             )
           })}
         </div>
