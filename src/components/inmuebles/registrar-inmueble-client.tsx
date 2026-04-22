@@ -358,7 +358,7 @@ export function RegistrarInmuebleClient({
                     disabled={form.estado !== "disponible"}
                     onClick={() => setField("publicado", !form.publicado)}
                     className={cn(
-                      "w-full h-9 rounded-md border px-3 text-sm text-left flex items-center gap-2 transition-colors",
+                      "w-full min-h-9 rounded-md border px-3 py-2 text-sm text-left flex items-center gap-2 transition-colors",
                       form.estado !== "disponible"
                         ? "border-gray-200 bg-muted/50 text-muted-foreground opacity-50 cursor-not-allowed"
                         : form.publicado
@@ -371,7 +371,7 @@ export function RegistrarInmuebleClient({
                       form.estado !== "disponible" ? "bg-gray-300" : form.publicado ? "bg-green-500" : "bg-gray-300"
                     )} />
                     {form.estado !== "disponible"
-                      ? "Solo disponible si el estado es Disponible"
+                      ? "No disponible en este estado"
                       : form.publicado ? "Publicado en el portal" : "No publicado"}
                   </button>
                 </div>
