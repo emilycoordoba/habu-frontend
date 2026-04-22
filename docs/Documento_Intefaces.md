@@ -257,3 +257,33 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 *(Inserta aquí la captura de pantalla de la interfaz)*
+
+## Módulo de Login / Autenticación
+
+| Interfaz: UI-L01 | Realizado por: Emily Perea Córdoba |
+| :---- | :---- |
+| Descripción: Login. Formulario de inicio de sesión con correo y contraseña. Incluye toggle de visibilidad de contraseña, enlace a recuperación y manejo de estados de error (credenciales incorrectas, cuenta inactiva). No hay registro propio — los usuarios son creados por el administrador desde UI-A01. | |
+| RF: RF-01, RF-05 | |
+
+**Mockup:**
+*(Inserta aquí la captura de pantalla de la interfaz)*
+
+---
+
+| Interfaz: UI-L02 | Realizado por: Emily Perea Córdoba |
+| :---- | :---- |
+| Descripción: Recuperar contraseña. Formulario para ingresar el correo al que se enviará el enlace de restablecimiento. Muestra un estado de confirmación genérico (no revela si el correo existe) con instrucciones para revisar la bandeja de entrada. | |
+| RF: RF-01 | |
+
+**Mockup:**
+*(Inserta aquí la captura de pantalla de la interfaz)*
+
+---
+
+| Interfaz: UI-L03 | Realizado por: Emily Perea Córdoba |
+| :---- | :---- |
+| Descripción: Restablecer contraseña. Formulario accesible desde el enlace del correo para definir una nueva contraseña. Incluye indicadores visuales de fortaleza (longitud mínima, mayúscula, número) y validación de coincidencia entre los dos campos. | |
+| RF: RF-01 | |
+
+**Mockup:**
+*(Inserta aquí la captura de pantalla de la interfaz)*
