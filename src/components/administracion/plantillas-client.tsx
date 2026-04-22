@@ -275,6 +275,7 @@ function PanelEditor({ plantilla, onGuardar, onCancelar }: PanelEditorProps) {
   const [modo, setModo] = React.useState<"editar" | "preview">("editar")
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Placeholder.configure({ placeholder: "Escribe el contenido de la plantilla…" }),
