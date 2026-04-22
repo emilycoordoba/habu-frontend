@@ -19,6 +19,7 @@ import {
   ListViewIcon,
   TextAlignLeftIcon,
   InformationCircleIcon,
+  PrinterIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -229,6 +230,32 @@ function sanitizeEditorHtml(html: string): string {
   })
 }
 
+function imprimirPlantilla(nombre: string, contenidoHtml: string) {
+  const previewHtml = buildPreviewHtml(contenidoHtml)
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${nombre}</title><style>
+    body { font-family: Georgia, serif; font-size: 13pt; line-height: 1.8; margin: 2.5cm 3cm; color: #111; }
+    p { margin: 0 0 0.8em; }
+    strong { font-weight: 700; }
+    em { font-style: italic; }
+    ul, ol { margin: 0 0 0.8em 1.5em; }
+    mark { background: none !important; color: inherit !important; }
+    @media print { body { margin: 2cm 2.5cm; } }
+  </style></head><body>${previewHtml}</body></html>`
+
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" })
+  const url = URL.createObjectURL(blob)
+  const ventana = window.open(url, "_blank")
+  if (ventana) {
+    ventana.addEventListener("load", () => {
+      ventana.focus()
+      ventana.print()
+      URL.revokeObjectURL(url)
+    })
+  } else {
+    URL.revokeObjectURL(url)
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Barra de herramientas
 // ---------------------------------------------------------------------------
@@ -418,10 +445,21 @@ function PanelPreview({ plantilla, onEditar }: { plantilla: Plantilla; onEditar:
             {cfg.label}
           </Badge>
         </div>
-        <Button size="sm" variant="outline" onClick={onEditar} className="gap-1.5">
-          <HugeiconsIcon icon={PencilEdit01Icon} strokeWidth={2} className="size-3.5" />
-          Editar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm" variant="ghost"
+            onClick={() => imprimirPlantilla(plantilla.nombre, plantilla.contenido)}
+            className="gap-1.5 text-muted-foreground hover:text-foreground"
+            title="Ver en PDF / Imprimir"
+          >
+            <HugeiconsIcon icon={PrinterIcon} strokeWidth={2} className="size-3.5" />
+            Imprimir
+          </Button>
+          <Button size="sm" variant="outline" onClick={onEditar} className="gap-1.5">
+            <HugeiconsIcon icon={PencilEdit01Icon} strokeWidth={2} className="size-3.5" />
+            Editar
+          </Button>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto px-5 py-4">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4 bg-muted/30 rounded px-3 py-2">
