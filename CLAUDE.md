@@ -44,7 +44,7 @@ Cada módulo tiene su propio layout si necesita tabs o contexto. Las subrutas di
 
 - Crear rama por feature/UI antes de empezar (`git checkout -b feat/ui-cl01`).
 - Hacer commit después de cada fix o pantalla completada — no acumular cambios.
-- Rama principal para PRs: `ui-contratos`.
+- Rama principal para PRs: `ui-[modulo]`.
 - Formato de commits: `feat(ui-xxx): descripción` / `fix(ui-xxx): descripción`.
 
 ## Decisiones de diseño establecidas
@@ -59,3 +59,4 @@ Cada módulo tiene su propio layout si necesita tabs o contexto. Las subrutas di
 - `src/lib/api/` — clientes HTTP, aún no conectados a backend.
 - Módulo Clientes (UI-CL01 a UI-CL04) — pendiente de construir.
 - Módulo Mantenimiento — pendiente.
+- Módulo Chatbot — pendiente.

@@ -52,6 +52,7 @@
 - [ ] Clientes
 - [x] Administración (UI-A01 a UI-A06 completos; UI-A07 prioridad baja)
 - [x] Login / Autenticación
+- [ ] Chatbot
 
 ## Infraestructura pendiente
 - [ ] Configurar `lib/api/axios.ts` con interceptores de JWT

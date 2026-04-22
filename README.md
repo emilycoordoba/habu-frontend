@@ -59,6 +59,8 @@ src/
 | Administración | UI-A01 a UI-A07 | Completo |
 | Clientes | UI-CL01 a UI-CL04 | Pendiente |
 | Mantenimiento | — | Pendiente |
+| Chatbot | — | Pendiente |
+
 
 ## Comandos
 
