@@ -98,7 +98,7 @@ Interactuara con módulos internos: administración, propiedades, clientes, cont
 | **RF-05** | El sistema deberá permitir al administrador consultar la lista de usuarios registrados, mostrando toda la información relacionada. | Administración | **ALTA** |
 | **RF-06** | El sistema deberá permitir al administrador configurar los tipos de contrato disponibles en el sistema. | Administración | **ALTA** |
 | **RF-07** | El sistema deberá permitir al administrador definir y modificar los estados de los inmuebles. | Administración | **MEDIA** |
-| **RF-08** | El sistema deberá permitir al administrador configurar los porcentajes de comisión aplicables a los asesores o a la inmobiliaria, incluyendo la comisión de colocación (arriendo sin administración) y la comisión de administración mensual. | Administración | **ALTA** |
+| **RF-08** | El sistema deberá permitir al administrador crear esquemas de comisión con dos tasas diferenciadas: el porcentaje que la inmobiliaria cobra al cliente (`porcentaje_inmobiliaria`) y el porcentaje de ese cobro que recibe el asesor (`porcentaje_asesor`). Cada esquema aplica a un tipo de comisión: administración mensual, colocación (pago único al activar arriendo) o venta. Distintos asesores pueden tener esquemas distintos del mismo tipo para reflejar diferencias por antigüedad o desempeño. | Administración | **ALTA** |
 | **RF-09** | El sistema deberá permitir al administrador asignar un esquema de comisión a uno o varios asesores del sistema.  | Administración | **MEDIA** |
 | **RF-10** | El sistema deberá permitir al administrador gestionar plantillas de documentos, como contratos o formularios utilizados por el sistema. | Administración | **BAJA** |
 | **RF-11** | El sistema deberá permitir al administrador definir los documentos obligatorios según el tipo de contrato. | Administración | **ALTA** |
@@ -517,9 +517,13 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | :---- | :---- | :---- |
 | id | INT | Identificador único |
 | nombre | VARCHAR | Nombre del esquema |
-| porcentaje | DECIMAL | Porcentaje de comisión |
-| condiciones | VARCHAR | Condiciones aplicables |
+| tipo | ENUM | administracion / colocacion / venta — a qué cobro aplica el esquema |
+| porcentaje\_inmobiliaria | DECIMAL | Porcentaje que la inmobiliaria cobra al cliente (propietario) |
+| porcentaje\_asesor | DECIMAL | Porcentaje del cobro al cliente que recibe el asesor |
+| condiciones | VARCHAR | Condiciones o reglas de aplicación |
 | estado | ENUM | activo / inactivo |
+
+> **Nota de diseño:** `porcentaje_inmobiliaria` es lo que la inmobiliaria le cobra al propietario (ej. 8% del canon mensual). `porcentaje_asesor` es la participación del asesor *sobre ese cobro* (ej. 40% del 8% = 3.2% del canon). Distintos asesores pueden tener distintos esquemas del mismo tipo, permitiendo escalar comisiones por antigüedad o desempeño.
 
 **AsesorComision**
 
