@@ -37,7 +37,7 @@
 - [x] UI-A04 — Esquemas de comisión (CRUD + panel de asignación a asesores)
 - [x] UI-A05 — Documentos requeridos (tabla CRUD con toggle de obligatorio)
 - [x] UI-A06 — Parámetros del sistema (mora, alertas, comisiones por defecto)
-- [ ] UI-A07 — Plantillas de documentos (prioridad baja)
+- [x] UI-A07 — Plantillas de documentos (editor TipTap + paleta de variables + preview)
 
 ## Módulos pendientes (UI)
 - [x] Pagos y Mora

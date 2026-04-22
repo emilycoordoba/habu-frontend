@@ -10,6 +10,7 @@ const TABS = [
   { label: "Comisiones",    href: "/administracion/comisiones" },
   { label: "Documentos",    href: "/administracion/documentos" },
   { label: "Parámetros",    href: "/administracion/parametros" },
+  { label: "Plantillas",    href: "/administracion/plantillas" },
 ]
 
 export function AdminNav() {
