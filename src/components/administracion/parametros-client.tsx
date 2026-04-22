@@ -28,10 +28,6 @@ interface Parametros {
   alertaVencimientoDias: number
   alertaRenovacionDias: number
 
-  // Comisiones por defecto
-  comisionAdminPct: number
-  comisionColocacionCanonesN: number // N primeros cánones (ej. 0.5 = 50 %)
-  comisionVentaPct: number
 }
 
 const DEFAULTS: Parametros = {
@@ -43,9 +39,6 @@ const DEFAULTS: Parametros = {
   alertaVencimientoDias: 30,
   alertaRenovacionDias: 60,
 
-  comisionAdminPct: 8,
-  comisionColocacionCanonesN: 50,
-  comisionVentaPct: 3,
 }
 
 // ---------------------------------------------------------------------------
@@ -243,54 +236,6 @@ export function ParametrosClient() {
               min={1}
               max={180}
               suffix="días"
-            />
-          </Campo>
-        </Seccion>
-
-        {/* Comisiones por defecto */}
-        <Seccion
-          titulo="Comisiones por defecto"
-          descripcion="Valores sugeridos al crear un nuevo esquema de comisión. No afecta esquemas ya creados."
-        >
-          <Campo
-            label="Comisión de administración"
-            descripcion="Porcentaje mensual sobre el canon de arriendo."
-          >
-            <NumericInput
-              value={params.comisionAdminPct}
-              onChange={v => set("comisionAdminPct", v)}
-              min={0}
-              max={100}
-              step={0.5}
-              suffix="%"
-            />
-          </Campo>
-
-          <Campo
-            label="Comisión de colocación"
-            descripcion="Porcentaje del primer canon cobrado al activar un contrato sin administración."
-          >
-            <NumericInput
-              value={params.comisionColocacionCanonesN}
-              onChange={v => set("comisionColocacionCanonesN", v)}
-              min={0}
-              max={100}
-              step={5}
-              suffix="%"
-            />
-          </Campo>
-
-          <Campo
-            label="Comisión de venta"
-            descripcion="Porcentaje sobre el precio total de venta al escriturar."
-          >
-            <NumericInput
-              value={params.comisionVentaPct}
-              onChange={v => set("comisionVentaPct", v)}
-              min={0}
-              max={20}
-              step={0.5}
-              suffix="%"
             />
           </Campo>
         </Seccion>
