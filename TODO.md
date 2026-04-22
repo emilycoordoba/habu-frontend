@@ -57,6 +57,7 @@
 ## Decisiones de diseño pendientes
 - [ ] **Contratos firmados manualmente**: definir si el sistema debe soportar cargar un PDF de contrato firmado fuera de DocuSign (no está contemplado en la documentación actual). Implica cambios en el modelo y en UI-C05.
 - [x] **Pagos parciales**: no se soportan en esta versión. El cobro permanece en mora hasta recibir el monto completo. El asesor registra el pago solo cuando tiene el valor total.
+- [ ] **Usuario con roles Administrador + Asesor simultáneos**: el modelo lo permite (UsuarioRol es muchos-a-muchos). Definir si un administrador con rol asesor activo recibe comisiones por contratos gestionados (`AsesorComision`). Considerar si Administrador debe ser superconjunto explícito de Asesor o si la combinación debe restringirse.
 
 ## Documentación pendiente (Google Docs)
 
@@ -78,3 +79,4 @@
 - [ ] lista de tabs centrada tambien en detalles de contrato
 - animaciones, transiciones
 - mejorar pdf reportes de ingresos
+- 
