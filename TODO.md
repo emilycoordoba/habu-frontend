@@ -32,11 +32,11 @@
 
 ## Módulo Administración — UI
 - [x] UI-A01 — Lista de usuarios (tabla con filtros, activar/desactivar, crear/editar via dialog)
-- [ ] UI-A02 — incluido en UI-A01 (dialog crear/editar usuario)
-- [ ] UI-A03 — Roles y permisos (lista de roles con checklist de permisos asociados)
-- [ ] UI-A04 — Esquemas de comisión (CRUD + asignación a asesores)
-- [ ] UI-A05 — Documentos requeridos (configuración por tipo de contrato)
-- [ ] UI-A06 — Parámetros del sistema (mora, tasas, tipos de contrato)
+- [x] UI-A02 — incluido en UI-A01 (dialog crear/editar usuario)
+- [x] UI-A03 — Roles y permisos (matriz de permisos por módulo, solo lectura)
+- [x] UI-A04 — Esquemas de comisión (CRUD + panel de asignación a asesores)
+- [x] UI-A05 — Documentos requeridos (tabla CRUD con toggle de obligatorio)
+- [x] UI-A06 — Parámetros del sistema (mora, alertas, comisiones por defecto)
 - [ ] UI-A07 — Plantillas de documentos (prioridad baja)
 
 ## Módulos pendientes (UI)
@@ -44,7 +44,7 @@
 - [x] Inmuebles
 - [ ] Mantenimiento
 - [ ] Clientes
-- [ ] Administración (en progreso)
+- [x] Administración (UI-A01 a UI-A06 completos; UI-A07 prioridad baja)
 - [ ] Login / Autenticación
 
 ## Infraestructura pendiente
