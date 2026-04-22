@@ -1,3 +1,5 @@
-export default function ReportesPagosPage() {
-  return <div>Reportes</div>
+import { ReportesClient } from "@/components/pagos/reportes-client"
+
+export default function ReportesPage() {
+  return <ReportesClient />
 }

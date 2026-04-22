@@ -16,7 +16,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Building04Icon, FileManagementIcon, Invoice03Icon, Wrench01Icon, AiChat01Icon, Settings05Icon, HelpCircleIcon, Camera01Icon, File01Icon } from "@hugeicons/core-free-icons"
+import { Building04Icon, FileManagementIcon, Invoice03Icon, Wrench01Icon, AiChat01Icon, Settings05Icon, HelpCircleIcon, Camera01Icon, File01Icon, UserSettings01Icon } from "@hugeicons/core-free-icons"
 import { HabuLogoHouse, HabuLogoMonogram } from "@/components/habu-logo"
 
 const data = {
@@ -40,6 +40,10 @@ const data = {
       title: "Pagos y Mora",
       url: "/pagos",
       icon: <HugeiconsIcon icon={Invoice03Icon} strokeWidth={2} />,
+      items: [
+        { title: "Reporte de ingresos", url: "/pagos/reportes" },
+        { title: "Cobros en mora",      url: "/pagos/mora" },
+      ],
     },
     {
       title: "Mantenimiento",
@@ -50,6 +54,11 @@ const data = {
       title: "Chatbot",
       url: "/chatbot",
       icon: <HugeiconsIcon icon={AiChat01Icon} strokeWidth={2} />,
+    },
+    {
+      title: "Administración",
+      url: "/administracion",
+      icon: <HugeiconsIcon icon={UserSettings01Icon} strokeWidth={2} />,
     },
   ],
   navClouds: [

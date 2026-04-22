@@ -16,6 +16,7 @@ import {
   PencilEdit01Icon,
   CheckmarkCircle02Icon,
   EyeIcon,
+  MoneyReceive02Icon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -169,7 +170,7 @@ function getAccionPrincipal(estado: EstadoContrato, id: string) {
     case "en_firmas":
       return { label: "Ver estado de firmas", href: null, icon: PencilEdit01Icon }
     case "activo":
-      return { label: "Registrar pago", href: null, icon: CheckmarkCircle02Icon }
+      return { label: "Registrar pago", href: `/contratos/${id}/cobros`, icon: CheckmarkCircle02Icon }
     case "por_vencer":
       return { label: "Gestionar renovación", href: `/contratos/${id}/renovacion`, icon: ArrowRight01Icon }
     case "en_escrituracion":
@@ -214,6 +215,14 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {["activo", "por_vencer", "vencido_con_saldos"].includes(contrato.estado) && (
+            <Link href={`/contratos/${contrato.id}/cobros`}>
+              <Button size="sm" variant="outline">
+                <HugeiconsIcon icon={MoneyReceive02Icon} strokeWidth={2} className="size-4" />
+                Ver cobros
+              </Button>
+            </Link>
+          )}
           {["activo", "por_vencer"].includes(contrato.estado) && (
             <Link href={`/contratos/${contrato.id}/terminacion`}>
               <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
