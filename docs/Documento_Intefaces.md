@@ -196,8 +196,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-01, RF-02, RF-05 | |
 
 **Mockup:**
-*(Inserta aquí la captura de pantalla de la interfaz)*
-
+![alt text](screenshots/ui-a01-lista-usuarios.png)
 ---
 
 | Interfaz: UI-A02 | Realizado por: Emily Perea Córdoba |
@@ -206,8 +205,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-01, RF-02, RF-04 | |
 
 **Mockup:**
-*(Inserta aquí la captura de pantalla de la interfaz)*
-
+![alt text](screenshots/ui-a02-crear-editar-usuario.png)
 ---
 
 | Interfaz: UI-A03 | Realizado por: Emily Perea Córdoba |
@@ -216,7 +214,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-03, RF-04 | |
 
 **Mockup:**
-*(Inserta aquí la captura de pantalla de la interfaz)*
+![alt text](screenshots/ui-a03-roles-permisos.png)
 
 ---
 
@@ -226,7 +224,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-08, RF-09 | |
 
 **Mockup:**
-*(Inserta aquí la captura de pantalla de la interfaz)*
+![alt text](screenshots/ui-a04-esquemas-comision.png)
 
 ---
 
@@ -236,8 +234,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-11 | |
 
 **Mockup:**
-*(Inserta aquí la captura de pantalla de la interfaz)*
-
+![alt text](screenshots/ui-a05-documentos-requeridos.png)
 ---
 
 | Interfaz: UI-A06 | Realizado por: Emily Perea Córdoba |
@@ -246,7 +243,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-12 | |
 
 **Mockup:**
-*(Inserta aquí la captura de pantalla de la interfaz)*
+![alt text](screenshots/ui-a06-parametros-sistema.png)
 
 ---
 
@@ -256,8 +253,8 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-10 | |
 
 **Mockup:**
-*(Inserta aquí la captura de pantalla de la interfaz)*
-
+![alt text](screenshots/ui-a07-plantillas-documentos-01.png)
+![alt text](screenshots/ui-a07-plantillas-documentos-02.png)
 ## Módulo de Login / Autenticación
 
 | Interfaz: UI-L01 | Realizado por: Emily Perea Córdoba |
@@ -266,7 +263,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-01, RF-05 | |
 
 **Mockup:**
-*(Inserta aquí la captura de pantalla de la interfaz)*
+![alt text](screenshots/ui-l01-login.png)
 
 ---
 
@@ -276,8 +273,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-01 | |
 
 **Mockup:**
-*(Inserta aquí la captura de pantalla de la interfaz)*
-
+![alt text](screenshots/ui-l02-recuperar-contrasena.png)
 ---
 
 | Interfaz: UI-L03 | Realizado por: Emily Perea Córdoba |
@@ -286,4 +282,4 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-01 | |
 
 **Mockup:**
-*(Inserta aquí la captura de pantalla de la interfaz)*
+![alt text](screenshots/ui-l03-restablecer-contrasena.png)
