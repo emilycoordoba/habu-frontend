@@ -102,7 +102,7 @@ Interactuara con módulos internos: administración, propiedades, clientes, cont
 | **RF-09** | El sistema deberá permitir al administrador asignar un esquema de comisión a uno o varios asesores del sistema.  | Administración | **MEDIA** |
 | **RF-10** | El sistema deberá permitir al administrador gestionar plantillas de documentos, como contratos o formularios utilizados por el sistema. | Administración | **BAJA** |
 | **RF-11** | El sistema deberá permitir al administrador definir los documentos obligatorios según el tipo de contrato. | Administración | **ALTA** |
-| **RF-12** | El sistema deberá permitir al administrador configurar parámetros generales del sistema, necesarios para el correcto funcionamiento de los módulos. | Administración | **MEDIA** |
+| **RF-12** | El sistema deberá permitir al administrador configurar los parámetros operativos del sistema: periodo de gracia de mora (días hábiles), tasas de interés de mora por tipo de contrato (residencial / comercial), y días de anticipación para alertas de vencimiento y renovación de contratos. Estos valores se almacenan en la entidad `ParametroSistema` y aplican globalmente. | Administración | **MEDIA** |
 | **RF-13** | El sistema deberá permitir registrar nuevos inmuebles con información como tipo, modalidad (arriendo, venta o ambos), dirección, ubicación, área, precio y características generales. | Propiedades | **ALTA** |
 | **RF-14** | El sistema deberá permitir adjuntar fotografías a cada inmueble registrado. | Propiedades | **MEDIA** |
 | **RF-15** | El sistema deberá permitir clasificar los inmuebles según tipo (casa, apartamento, local, etc.). | Propiedades | **ALTA** |
@@ -312,6 +312,7 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | propietario\_id | INT (FK) | Referencia al cliente propietario |
 | incluye\_administracion | BOOLEAN | Indica si el contrato incluye servicio de administración mensual |
 | comision\_colocacion | DECIMAL | Valor cobrado por gestionar el arriendo (pago único al activar el contrato) |
+| codeudor\_id | INT (FK, nullable) | Referencia al cliente registrado como codeudor. El cliente debe tener tipo = codeudor. Nullable cuando no aplica. |
 
 **Contrato de Administración**
 
@@ -341,6 +342,7 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | Atributo | Tipo | Descripción |
 | :---- | :---- | :---- |
 | id | INT | Identificador único del cliente |
+| tipo | ENUM | propietario / arrendatario / prospecto / codeudor |
 | telefono | VARCHAR | Número de contacto (también usado para WhatsApp) |
 | correo | VARCHAR | Correo electrónico para notificaciones |
 | direccion | VARCHAR | Dirección de residencia o domicilio |
@@ -434,6 +436,7 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | valor | DECIMAL | Valor total del cobro |
 | fecha\_limite | DATE | Fecha máxima de pago |
 | estado | ENUM | pendiente / pagado / en\_mora |
+| pagado\_con\_mora | INT (nullable) | Días de mora que tenía el cobro al momento de registrar el pago. Permite auditar comportamiento de pago sin recalcular fechas. |
 
 **Pago**
 
@@ -533,6 +536,18 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | esquema\_id | INT (FK) | Referencia al esquema |
 | fecha\_asignacion | DATE | Fecha de asignación |
 
+**ParametroSistema**
+
+| Atributo | Tipo | Descripción |
+| :---- | :---- | :---- |
+| id | INT | Identificador único (registro único — tabla de configuración global) |
+| mora\_gracia\_dias\_habiles | INT | Días hábiles de gracia antes de marcar un cobro en mora. Por defecto 5 según Ley 820/2003. |
+| mora\_aplica\_residencial | BOOLEAN | Si los intereses de mora aplican a contratos residenciales. Por defecto false. |
+| mora\_tasa\_residencial | DECIMAL | Porcentaje mensual de interés de mora para arriendo residencial. Solo aplica si mora\_aplica\_residencial = true. |
+| mora\_tasa\_comercial | DECIMAL | Porcentaje mensual de interés de mora para arriendo comercial. No puede superar el límite del Banco de la República. |
+| alerta\_vencimiento\_dias | INT | Días de anticipación para notificar vencimiento de un contrato. Por defecto 30. |
+| alerta\_renovacion\_dias | INT | Días antes del vencimiento para iniciar el proceso de renovación o finalización. Por defecto 60. |
+
 **Modulo Propiedades**
 
 **Inmueble**
@@ -558,6 +573,7 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | id | INT | Identificador único |
 | inmueble\_id | INT (FK) | Referencia al inmueble |
 | archivo | VARCHAR | Ruta del archivo |
+| descripcion | VARCHAR (nullable) | Texto descriptivo de la foto (ej. "Sala principal") |
 | fecha\_carga | DATE | Fecha de carga |
 
 **HistorialInmueble**

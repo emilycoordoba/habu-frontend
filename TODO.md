@@ -61,18 +61,30 @@
 
 ## Documentación pendiente (Google Docs)
 
+> El archivo `docs/Documento_Proyecto.md` local ya está actualizado. Estos cambios aún deben reflejarse en Google Docs.
+
 ### Modelo de datos
-- [ ] Agregar entidad `TerminacionAnticipada` (ver `docs/Documento_Proyecto.md` para los campos completos)
-- [ ] Agregar campo `notas` (TEXT, opcional) a la entidad `Pago`
-- [ ] Agregar campo `modalidad` (arriendo / venta / ambos) a la entidad `Inmueble`
-- [ ] Agregar campos `incluye_administracion` (BOOLEAN) y `comision_colocacion` (DECIMAL) a `ContratoArriendo`
-- [ ] Actualizar ENUM `Cobro.tipo`: reemplazar `comisión` por `comision_administracion` y `comision_colocacion`, agregar `precio_venta`
-- [ ] Agregar campo `pagado_con_mora` (INT, días) a la entidad `Cobro` — permite auditar comportamiento de pago sin cruzar fechas
+- [ ] Agregar campo `tipo` (propietario / arrendatario / prospecto / **codeudor**) a `Cliente`
+- [ ] Agregar campo `codeudor_id` (FK → Cliente, nullable) a `ContratoArriendo`
+- [ ] Agregar entidad `TerminacionAnticipada`
+- [ ] Agregar campo `notas` (TEXT, opcional) a `Pago`
+- [ ] Agregar campo `modalidad` (arriendo / venta / ambos) a `Inmueble`
+- [ ] Agregar campos `incluye_administracion` y `comision_colocacion` a `ContratoArriendo`
+- [ ] Actualizar ENUM `Cobro.tipo` (comision_administracion, comision_colocacion, precio_venta)
+- [ ] Agregar campo `pagado_con_mora` (INT, nullable) a `Cobro`
+- [ ] Agregar campo `descripcion` (VARCHAR, nullable) a `FotografiaInmueble`
+- [ ] Agregar entidad `ParametroSistema` (mora, alertas)
+- [ ] Actualizar `EsquemaComision`: añadir `tipo`, `porcentaje_inmobiliaria`, `porcentaje_asesor`; eliminar `porcentaje`
 
 ### Requisitos funcionales
+- [ ] Actualizar RF-08 (modelo de dos tasas en EsquemaComision)
+- [ ] Actualizar RF-12 (especificar parámetros concretos de ParametroSistema)
 - [ ] Actualizar RF-13 para incluir `modalidad` en el registro de inmuebles
-- [ ] Actualizar RF-08 para contemplar comisión de colocación además de comisión de administración
-- [ ] Agregar RF nuevo: "El sistema debe registrar el cobro de comisión de colocación al activar un contrato de arriendo sin administración"
+- [ ] Agregar RF nuevo: cobro de comisión de colocación al activar arriendo sin administración
+
+### Casos de uso
+- [ ] Actualizar CU_05: flujo con tipo + dos porcentajes + simulador
+- [ ] Actualizar CU_06: flujo correcto (seleccionar esquema primero, luego asignar asesores)
 
 ## TODO propio
 - [ ] full page sheet no funciona
