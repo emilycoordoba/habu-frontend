@@ -38,7 +38,7 @@ export const INMUEBLES_MOCK: Record<string, InmuebleDetalle> = {
     id: "1", tipo: "apartamento", modalidad: "arriendo", estado: "arrendado",
     publicado: true, direccion: "Cra 15 #93-47, Apto 301 Torre A",
     ubicacion: "Bogotá — Chapinero", area: 68, precio: 2800000,
-    propietario: "Ana Martínez", propietarioId: "p-1",
+    propietario: "Ana Lucía Martínez Ruiz", propietarioId: "1",
     fechaRegistro: "2025-01-15", coordenadas: [4.6451, -74.0631],
     fotos: [
       { id: "f1", url: "https://placehold.co/800x600/e2e8f0/94a3b8?text=Sala", descripcion: "Sala principal" },
@@ -58,7 +58,7 @@ export const INMUEBLES_MOCK: Record<string, InmuebleDetalle> = {
     id: "2", tipo: "local", modalidad: "arriendo", estado: "arrendado",
     publicado: true, direccion: "CC Plaza, Local 3",
     ubicacion: "Medellín — El Poblado", area: 120, precio: 4800000,
-    propietario: "Inversiones Pedraza S.A.S.", propietarioId: "p-2",
+    propietario: "Inversiones Pedraza S.A.S.", propietarioId: "2",
     fechaRegistro: "2025-01-20", coordenadas: [6.2087, -75.5636],
     fotos: [
       { id: "f1", url: "https://placehold.co/800x600/e2e8f0/94a3b8?text=Fachada", descripcion: "Fachada" },
@@ -75,7 +75,7 @@ export const INMUEBLES_MOCK: Record<string, InmuebleDetalle> = {
     id: "3", tipo: "apartamento", modalidad: "venta", estado: "en_proceso_venta",
     publicado: true, direccion: "Cll 80 #45-12, Apto 502",
     ubicacion: "Bogotá — Barrios Unidos", area: 54, precio: 320000000,
-    propietario: "Luis Gómez", propietarioId: "p-3",
+    propietario: "Luis Hernando Gómez Vargas", propietarioId: "5",
     fechaRegistro: "2025-02-03", coordenadas: [4.6648, -74.0837],
     fotos: [
       { id: "f1", url: "https://placehold.co/800x600/e2e8f0/94a3b8?text=Sala+comedor", descripcion: "Sala comedor" },
@@ -97,7 +97,7 @@ export const INMUEBLES_MOCK: Record<string, InmuebleDetalle> = {
     id: "4", tipo: "casa", modalidad: "ambos", estado: "disponible",
     publicado: true, direccion: "Cra 7 #120-30",
     ubicacion: "Bogotá — Usaquén", area: 180, precio: 5200000,
-    propietario: "María Ospina", propietarioId: "p-4",
+    propietario: "María Fernanda Ospina Castro", propietarioId: "4",
     fechaRegistro: "2025-03-10", coordenadas: [4.7095, -74.0419],
     fotos: [
       { id: "f1", url: "https://placehold.co/800x600/e2e8f0/94a3b8?text=Fachada", descripcion: "Fachada" },
@@ -130,7 +130,7 @@ export const INMUEBLES_MOCK: Record<string, InmuebleDetalle> = {
     id: "6", tipo: "local", modalidad: "arriendo", estado: "en_mantenimiento",
     publicado: false, direccion: "Cll 50 #10-15, Local 2",
     ubicacion: "Cali — Granada", area: 90, precio: 3200000,
-    propietario: "Fondos Cali S.A.", propietarioId: "p-6",
+    propietario: "Fondos Inmobiliarios Cali S.A.", propietarioId: "9",
     fechaRegistro: "2025-04-01", coordenadas: [3.4516, -76.5319],
     fotos: [
       { id: "f1", url: "https://placehold.co/800x600/e2e8f0/94a3b8?text=Interior", descripcion: "Interior" },

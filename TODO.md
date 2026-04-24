@@ -42,7 +42,7 @@
 ## Módulo Clientes — UI
 - [x] UI-CL01 — Lista de clientes (tabla con filtros por tipo y búsqueda por nombre/documento)
 - [x] UI-CL02 — Registrar / Editar cliente (datos personales, tipo, persona natural o jurídica)
-- [ ] UI-CL03 — Detalle del cliente (tabs: datos, inmuebles asociados, contratos, historial de interacciones)
+- [x] UI-CL03 — Detalle del cliente (tabs: datos, inmuebles asociados, contratos, historial de interacciones)
 - [ ] UI-CL04 — Registrar visita (cliente, inmueble, fecha/hora, notas)
 
 ## Módulos pendientes (UI)

@@ -1,4 +1,82 @@
-import type { Cliente } from "@/types/cliente.types"
+import type { Cliente, TipoCliente } from "@/types/cliente.types"
+import type { TipoContrato, EstadoContrato } from "@/types/contrato.types"
+
+// ---------------------------------------------------------------------------
+// Interacciones (historial)
+// ---------------------------------------------------------------------------
+
+export type TipoInteraccion = "visita" | "nota"
+
+export interface Interaccion {
+  id: string
+  tipo: TipoInteraccion
+  fecha: string
+  descripcion: string
+  asesor: string
+  inmueble?: string
+}
+
+export const INTERACCIONES_MOCK: Record<string, Interaccion[]> = {
+  "1": [
+    { id: "i1", tipo: "nota", fecha: "2025-02-10", descripcion: "Propietaria solicitó revisar cláusula de renovación antes del vencimiento. Prefiere renovar a largo plazo.", asesor: "Emily Perea" },
+    { id: "i2", tipo: "visita", fecha: "2024-09-05", descripcion: "Visita al inmueble Cra 15 #93-47 para revisión previa a la firma del contrato.", asesor: "Emily Perea", inmueble: "Cra 15 #93-47, Apto 301 Torre A" },
+  ],
+  "2": [
+    { id: "i1", tipo: "nota", fecha: "2025-01-15", descripcion: "Empresa solicita facturación mensual antes del día 5. Contacto de pagos: contabilidad@pedrazasas.com.", asesor: "Emily Perea" },
+  ],
+  "3": [
+    { id: "i1", tipo: "nota", fecha: "2024-11-02", descripcion: "Llamó para confirmar disponibilidad del apto en Chapinero. Interesado en contrato desde noviembre.", asesor: "Emily Perea" },
+    { id: "i2", tipo: "visita", fecha: "2024-10-18", descripcion: "Primera visita al apartamento Cra 15 #93-47. Cliente conforme con el espacio y la ubicación.", asesor: "Emily Perea", inmueble: "Cra 15 #93-47, Apto 301 Torre A" },
+  ],
+  "4": [
+    { id: "i1", tipo: "nota", fecha: "2025-03-20", descripcion: "Propietaria también interesada en arrendar su casa en Usaquén. Solicita avalúo comercial.", asesor: "Emily Perea" },
+  ],
+  "6": [
+    { id: "i1", tipo: "visita", fecha: "2025-02-20", descripcion: "Visita a la casa Cra 7 #120-30. Interesada en arrendar. Lleva pareja para segunda visita.", asesor: "Emily Perea", inmueble: "Cra 7 #120-30, Usaquén" },
+    { id: "i2", tipo: "visita", fecha: "2025-03-05", descripcion: "Segunda visita con pareja. Solicitan tiempo para decidir.", asesor: "Emily Perea", inmueble: "Cra 7 #120-30, Usaquén" },
+    { id: "i3", tipo: "nota", fecha: "2025-03-10", descripcion: "Decidieron no avanzar por ahora. Posible interés en 2-3 meses. Anotar para seguimiento.", asesor: "Emily Perea" },
+  ],
+  "10": [
+    { id: "i1", tipo: "visita", fecha: "2025-04-05", descripcion: "Visita al apartamento Av. Suba #91-20. Cliente llega puntual, hace preguntas sobre parqueadero.", asesor: "Emily Perea", inmueble: "Av. Suba #91-20, Apto 204" },
+  ],
+}
+
+// ---------------------------------------------------------------------------
+// Contratos por cliente
+// ---------------------------------------------------------------------------
+
+export interface ContratoResumen {
+  id: string
+  referencia: string
+  tipo: TipoContrato
+  estado: EstadoContrato
+  inmueble: string
+  direccion: string
+  rol: TipoCliente
+}
+
+export const CONTRATOS_POR_CLIENTE: Record<string, ContratoResumen[]> = {
+  "1": [
+    { id: "1", referencia: "CTR-2025-001", tipo: "arriendo", estado: "activo", inmueble: "Apto 301 Torre A", direccion: "Cra 15 #93-47, Bogotá", rol: "propietario" },
+  ],
+  "2": [
+    { id: "2", referencia: "CTR-2025-002", tipo: "arriendo", estado: "activo", inmueble: "CC Plaza, Local 3", direccion: "Medellín — El Poblado", rol: "propietario" },
+  ],
+  "3": [
+    { id: "1", referencia: "CTR-2025-001", tipo: "arriendo", estado: "activo", inmueble: "Apto 301 Torre A", direccion: "Cra 15 #93-47, Bogotá", rol: "arrendatario" },
+  ],
+  "4": [
+    { id: "3", referencia: "CTR-2025-003", tipo: "promesa_compraventa", estado: "en_escrituracion", inmueble: "Apto 502", direccion: "Cll 80 #45-12, Bogotá", rol: "propietario" },
+    { id: "4", referencia: "CTR-2025-004", tipo: "arriendo", estado: "por_vencer", inmueble: "Local Granada", direccion: "Cll 50 #10-15, Cali", rol: "arrendatario" },
+  ],
+  "7": [
+    { id: "1", referencia: "CTR-2025-001", tipo: "arriendo", estado: "activo", inmueble: "Apto 301 Torre A", direccion: "Cra 15 #93-47, Bogotá", rol: "codeudor" },
+  ],
+  "9": [
+    { id: "2", referencia: "CTR-2025-002", tipo: "arriendo", estado: "activo", inmueble: "CC Plaza, Local 3", direccion: "Medellín — El Poblado", rol: "propietario" },
+    { id: "5", referencia: "CTR-2025-005", tipo: "arriendo", estado: "finalizado", inmueble: "Local 2 Granada", direccion: "Cll 50 #10-15, Cali", rol: "propietario" },
+  ],
+}
 
 export const CLIENTES_MOCK: Cliente[] = [
   {
