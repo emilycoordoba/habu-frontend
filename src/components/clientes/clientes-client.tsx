@@ -47,11 +47,13 @@ const TIPO_FILTRO_LABEL: Record<TipoCliente | "todos", string> = {
 export function ClientesClient() {
   const [busqueda, setBusqueda] = React.useState("")
   const [tipoFiltro, setTipoFiltro] = React.useState<TipoCliente | "todos">("todos")
+  const [tipoPersonaFiltro, setTipoPersonaFiltro] = React.useState<"todos" | "natural" | "juridica">("todos")
 
   const clientes = CLIENTES_MOCK
 
   const filtrados = clientes.filter(c => {
     if (tipoFiltro !== "todos" && !c.tipos.includes(tipoFiltro)) return false
+    if (tipoPersonaFiltro !== "todos" && c.tipoPersona !== tipoPersonaFiltro) return false
     if (busqueda) {
       const q = busqueda.toLowerCase()
       if (
@@ -143,8 +145,20 @@ export function ClientesClient() {
 
           <div className="flex items-center gap-2 shrink-0">
             <HugeiconsIcon icon={FilterIcon} strokeWidth={1.5} className="size-4 text-muted-foreground" />
+
+            <Select value={tipoPersonaFiltro} onValueChange={v => setTipoPersonaFiltro(v as "todos" | "natural" | "juridica")}>
+              <SelectTrigger className="h-9 w-[160px] text-sm">
+                <SelectValue placeholder="Tipo de persona" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Natural y jurídica</SelectItem>
+                <SelectItem value="natural">Persona natural</SelectItem>
+                <SelectItem value="juridica">Persona jurídica</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Select value={tipoFiltro} onValueChange={v => setTipoFiltro(v as TipoCliente | "todos")}>
-              <SelectTrigger className="h-9 w-[180px] text-sm">
+              <SelectTrigger className="h-9 w-[175px] text-sm">
                 <SelectValue placeholder="Tipo de cliente" />
               </SelectTrigger>
               <SelectContent>
