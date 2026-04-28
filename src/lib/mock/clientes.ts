@@ -5,12 +5,13 @@ import type { TipoContrato, EstadoContrato } from "@/types/contrato.types"
 // Interacciones (historial)
 // ---------------------------------------------------------------------------
 
-export type TipoInteraccion = "visita" | "nota"
+export type TipoInteraccion = "visita" | "llamada" | "mensaje" | "nota"
 
 export interface Interaccion {
   id: string
   tipo: TipoInteraccion
   fecha: string
+  hora?: string
   descripcion: string
   asesor: string
   inmueble?: string

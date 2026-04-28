@@ -43,7 +43,8 @@
 - [x] UI-CL01 — Lista de clientes (tabla con filtros por tipo y búsqueda por nombre/documento)
 - [x] UI-CL02 — Registrar / Editar cliente (datos personales, tipo, persona natural o jurídica)
 - [x] UI-CL03 — Detalle del cliente (tabs: datos, inmuebles asociados, contratos, historial de interacciones)
-- [ ] UI-CL04 — Registrar visita (cliente, inmueble, fecha/hora, notas)
+- [x] UI-CL04 — Registrar visita (cliente, inmueble, fecha/hora, notas) — sheet lateral, tipos: visita/llamada/mensaje/nota
+  - [ ] Pendiente: campo `estado` (pendiente/confirmada/cancelada) para visitas — requiere decisión de diseño (¿se muestra en historial? ¿el asesor lo actualiza después?)
 
 ## Módulos pendientes (UI)
 - [x] Pagos y Mora

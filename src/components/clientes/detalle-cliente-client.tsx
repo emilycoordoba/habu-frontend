@@ -16,6 +16,8 @@ import {
   Store01Icon,
   ChimneyIcon,
   EyeIcon,
+  Call02Icon,
+  BubbleChatIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -50,6 +52,15 @@ const TIPO_INMUEBLE_LABELS: Record<TipoInmueble, string> = {
 
 const TIPO_INMUEBLE_ICON: Record<TipoInmueble, typeof Home01Icon> = {
   casa: ChimneyIcon, apartamento: Building04Icon, local: Store01Icon, otro: Home01Icon,
+}
+
+import type { TipoInteraccion } from "@/lib/mock/clientes"
+
+const INTERACCION_CONFIG: Record<TipoInteraccion, { label: string; icon: typeof EyeIcon; dotClass: string; textClass: string }> = {
+  visita:   { label: "Visita",   icon: EyeIcon,          dotClass: "bg-blue-100",   textClass: "text-blue-600" },
+  llamada:  { label: "Llamada",  icon: Call02Icon,        dotClass: "bg-green-100",  textClass: "text-green-600" },
+  mensaje:  { label: "Mensaje",  icon: BubbleChatIcon,   dotClass: "bg-purple-100", textClass: "text-purple-600" },
+  nota:     { label: "Nota",     icon: PencilEdit01Icon,  dotClass: "bg-amber-100",  textClass: "text-amber-600" },
 }
 
 const ESTADO_INMUEBLE_CONFIG = {
@@ -391,23 +402,20 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
                       {/* Dot */}
                       <div className={cn(
                         "absolute -left-[9px] top-0.5 size-[18px] rounded-full border-2 border-background flex items-center justify-center",
-                        item.tipo === "visita" ? "bg-blue-100" : "bg-amber-100"
+                        INTERACCION_CONFIG[item.tipo].dotClass
                       )}>
                         <HugeiconsIcon
-                          icon={item.tipo === "visita" ? EyeIcon : PencilEdit01Icon}
+                          icon={INTERACCION_CONFIG[item.tipo].icon}
                           strokeWidth={2}
-                          className={cn("size-2.5", item.tipo === "visita" ? "text-blue-600" : "text-amber-600")}
+                          className={cn("size-2.5", INTERACCION_CONFIG[item.tipo].textClass)}
                         />
                       </div>
 
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={cn(
-                              "text-xs font-medium uppercase tracking-wide",
-                              item.tipo === "visita" ? "text-blue-600" : "text-amber-600"
-                            )}>
-                              {item.tipo === "visita" ? "Visita" : "Nota"}
+                            <span className={cn("text-xs font-medium uppercase tracking-wide", INTERACCION_CONFIG[item.tipo].textClass)}>
+                              {INTERACCION_CONFIG[item.tipo].label}
                             </span>
                             {item.inmueble && (
                               <span className="text-xs text-muted-foreground truncate max-w-[200px]">
@@ -418,8 +426,9 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
                           <p className="text-sm mt-1 leading-relaxed">{item.descripcion}</p>
                           <p className="text-xs text-muted-foreground mt-1">{item.asesor}</p>
                         </div>
-                        <span className="text-xs text-muted-foreground shrink-0 mt-0.5">
-                          {formatFecha(item.fecha)}
+                        <span className="text-xs text-muted-foreground shrink-0 mt-0.5 text-right">
+                          <span className="block">{formatFecha(item.fecha)}</span>
+                          {item.hora && <span className="block">{item.hora}</span>}
                         </span>
                       </div>
 
