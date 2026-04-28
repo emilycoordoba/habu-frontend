@@ -373,7 +373,7 @@ function PanelEditor({ plantilla, onGuardar, onCancelar }: PanelEditorProps) {
 
         {modo === "editar" ? (
           <>
-            <ToolbarEditor editor={editor} />
+            {editor && <ToolbarEditor editor={editor} />}
             <div className="flex-1 overflow-y-auto">
               <EditorContent editor={editor} />
             </div>
