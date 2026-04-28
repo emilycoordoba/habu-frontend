@@ -140,7 +140,7 @@ export function DetalleInmuebleClient({ inmuebleId }: DetalleInmuebleClientProps
   const [fotoAmpliada, setFotoAmpliada] = React.useState<FotoInmueble | null>(null)
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
+    <div className="flex flex-col h-full">
 
       {/* Header */}
       <div className="border-b px-6 py-4 flex items-start gap-4">
@@ -216,21 +216,24 @@ export function DetalleInmuebleClient({ inmuebleId }: DetalleInmuebleClientProps
       </div>
 
       {/* Tabs */}
-      <div className="flex-1 px-6 py-6">
-        <div className="max-w-3xl mx-auto">
-          <Tabs defaultValue="info">
-            <TabsList className="mb-6">
-              <TabsTrigger value="info">Información</TabsTrigger>
-              <TabsTrigger value="fotos">
-                Fotos
-                {inmueble.fotos.length > 0 && (
-                  <Badge variant="outline" className="ml-1.5 text-xs px-1.5 py-0">
-                    {inmueble.fotos.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="historial">Historial</TabsTrigger>
-            </TabsList>
+      <Tabs defaultValue="info" className="flex-1 flex flex-col min-h-0">
+        <div className="border-b px-6">
+          <TabsList className="h-auto bg-transparent p-0 gap-0 rounded-none justify-start">
+            <TabsTrigger value="info" className="rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none text-muted-foreground hover:text-foreground px-4 py-3 text-sm">Información</TabsTrigger>
+            <TabsTrigger value="fotos" className="rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none text-muted-foreground hover:text-foreground px-4 py-3 text-sm">
+              Fotos
+              {inmueble.fotos.length > 0 && (
+                <Badge variant="outline" className="ml-1.5 text-xs px-1.5 py-0">
+                  {inmueble.fotos.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="historial" className="rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none text-muted-foreground hover:text-foreground px-4 py-3 text-sm">Historial</TabsTrigger>
+          </TabsList>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="max-w-3xl">
 
             {/* Tab — Información */}
             <TabsContent value="info" className="flex flex-col gap-8">
@@ -370,9 +373,9 @@ export function DetalleInmuebleClient({ inmuebleId }: DetalleInmuebleClientProps
                 ))}
               </div>
             </TabsContent>
-          </Tabs>
+          </div>
         </div>
-      </div>
+      </Tabs>
 
       {/* Lightbox */}
       {fotoAmpliada && (
