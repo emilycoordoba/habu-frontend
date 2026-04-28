@@ -272,6 +272,7 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
       {/* Tabs */}
       <Tabs defaultValue="condiciones" className="flex-1 flex flex-col min-h-0">
         <div className="border-b px-6">
+          <div className="max-w-2xl mx-auto">
           <TabsList className="h-auto bg-transparent p-0 gap-0 rounded-none justify-start">
             <TabsTrigger value="condiciones" className="rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none text-muted-foreground hover:text-foreground px-4 py-3 text-sm">Condiciones</TabsTrigger>
             <TabsTrigger value="documentos" className="rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none text-muted-foreground hover:text-foreground px-4 py-3 text-sm">
@@ -292,10 +293,11 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
             </TabsTrigger>
             <TabsTrigger value="historial" className="rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none text-muted-foreground hover:text-foreground px-4 py-3 text-sm">Historial</TabsTrigger>
           </TabsList>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-6">
-          <div className="max-w-2xl">
+          <div className="max-w-2xl mx-auto">
 
           {/* Tab — Condiciones */}
           <TabsContent value="condiciones" className="flex flex-col gap-6">
