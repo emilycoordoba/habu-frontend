@@ -192,7 +192,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 | Interfaz: UI-CL01 | Realizado por: Emily Perea Córdoba |
 | :---- | :---- |
-| Descripción: Lista de clientes. Tabla con búsqueda por nombre o documento y filtros por tipo de cliente (propietario, arrendatario, prospecto, codeudor) y tipo de persona (natural/jurídica). Muestra badges de tipo, estado activo/inactivo y acceso al detalle. | |
+| Descripción: Lista de clientes. Tabla con filtros por tipo, búsqueda por nombre/documento y acceso al detalle. | |
 | RF: RF-20, RF-21 | |
 
 **Mockup:**
@@ -202,7 +202,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 | Interfaz: UI-CL02 | Realizado por: Emily Perea Córdoba |
 | :---- | :---- |
-| Descripción: Registrar / Editar cliente. Formulario con campos de datos personales, tipo de documento, tipo(s) de cliente y ciudad. Adapta los campos según el tipo de persona: persona natural (nombre completo, CC/CE/PAS) o persona jurídica (razón social, NIT, representante legal). Accesible como página completa desde la lista y desde el detalle del cliente. | |
+| Descripción: Registrar / Editar cliente. Formulario de datos personales adaptado según tipo de persona (natural o jurídica). | |
 | RF: RF-20, RF-22 | |
 
 **Mockup:**
@@ -212,7 +212,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 | Interfaz: UI-CL03 | Realizado por: Emily Perea Córdoba |
 | :---- | :---- |
-| Descripción: Detalle del cliente. Vista organizada en cuatro pestañas: Datos (información personal y de contacto), Inmuebles (listado de inmuebles donde figura como propietario), Contratos (resumen de contratos con su rol en cada uno) e Historial (registro cronológico de interacciones: visitas, llamadas, mensajes y notas). Incluye botón para registrar nueva interacción. | |
+| Descripción: Detalle del cliente. Vista en pestañas: datos personales, inmuebles asociados, contratos e historial de interacciones. | |
 | RF: RF-21, RF-23 | |
 
 **Mockup:**
@@ -222,7 +222,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 | Interfaz: UI-CL04 | Realizado por: Emily Perea Córdoba |
 | :---- | :---- |
-| Descripción: Registrar interacción. Sheet lateral para registrar una interacción con el cliente. Permite seleccionar el tipo (visita, llamada, mensaje o nota), la fecha y hora, una descripción libre y — si es visita — el inmueble visitado mediante un combobox con búsqueda. El asesor se asigna automáticamente al usuario en sesión. | |
+| Descripción: Registrar interacción. Sheet lateral para registrar visitas, llamadas, mensajes o notas asociadas a un cliente. | |
 | RF: RF-23 | |
 
 **Mockup:**
@@ -262,7 +262,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 | Interfaz: UI-A04 | Realizado por: Emily Perea Córdoba |
 | :---- | :---- |
-| Descripción: Esquemas de comisión. Layout maestro-detalle: lista de esquemas a la izquierda y panel de asignación a asesores a la derecha. El dialog de creación/edición incluye tipo de comisión, dos tasas diferenciadas (inmobiliaria y asesor) y un simulador en tiempo real. | |
+| Descripción: Esquemas de comisión. Lista de esquemas con tasas diferenciadas (inmobiliaria y asesor) y panel de asignación a asesores. | |
 | RF: RF-08, RF-09 | |
 
 **Mockup:**
@@ -272,7 +272,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 | Interfaz: UI-A05 | Realizado por: Emily Perea Córdoba |
 | :---- | :---- |
-| Descripción: Documentos requeridos. Tabla CRUD de tipos de documento con configuración de tipo de persona, tipo de inmueble, si aplica a codeudor y toggle de obligatorio. | |
+| Descripción: Documentos requeridos. Tabla CRUD para configurar los tipos de documento obligatorios según persona, inmueble y rol. | |
 | RF: RF-11 | |
 
 **Mockup:**
@@ -281,7 +281,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 | Interfaz: UI-A06 | Realizado por: Emily Perea Córdoba |
 | :---- | :---- |
-| Descripción: Parámetros del sistema. Formulario para configurar el periodo de gracia de mora (días hábiles), tasas de interés por tipo de contrato (residencial/comercial) y días de anticipación para alertas de vencimiento y renovación. Incluye advertencia legal sobre la Ley 820/2003. | |
+| Descripción: Parámetros del sistema. Formulario para configurar periodo de gracia de mora, tasas de interés y días de alerta para vencimientos. | |
 | RF: RF-12 | |
 
 **Mockup:**
@@ -291,7 +291,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 | Interfaz: UI-A07 | Realizado por: Emily Perea Córdoba |
 | :---- | :---- |
-| Descripción: Plantillas de documentos. Layout maestro-detalle: lista de plantillas a la izquierda (con tipo, fecha de última edición y acciones) y panel derecho con dos modos: editor TipTap con barra de formato y paleta de variables (inserción al cursor) o preview con datos de ejemplo resaltados. Permite imprimir o exportar como PDF. | |
+| Descripción: Plantillas de documentos. Editor TipTap con paleta de variables y vista previa. Permite crear, editar y exportar plantillas en PDF. | |
 | RF: RF-10 | |
 
 **Mockup:**
@@ -301,7 +301,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 | Interfaz: UI-L01 | Realizado por: Emily Perea Córdoba |
 | :---- | :---- |
-| Descripción: Login. Formulario de inicio de sesión con correo y contraseña. Incluye toggle de visibilidad de contraseña, enlace a recuperación y manejo de estados de error (credenciales incorrectas, cuenta inactiva). No hay registro propio — los usuarios son creados por el administrador desde UI-A01. | |
+| Descripción: Login. Formulario de inicio de sesión con correo y contraseña. Los usuarios son creados por el administrador desde UI-A01. | |
 | RF: RF-01, RF-05 | |
 
 **Mockup:**
@@ -311,7 +311,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 | Interfaz: UI-L02 | Realizado por: Emily Perea Córdoba |
 | :---- | :---- |
-| Descripción: Recuperar contraseña. Formulario para ingresar el correo al que se enviará el enlace de restablecimiento. Muestra un estado de confirmación genérico (no revela si el correo existe) con instrucciones para revisar la bandeja de entrada. | |
+| Descripción: Recuperar contraseña. Formulario para solicitar el enlace de restablecimiento por correo. | |
 | RF: RF-01 | |
 
 **Mockup:**
@@ -320,7 +320,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 | Interfaz: UI-L03 | Realizado por: Emily Perea Córdoba |
 | :---- | :---- |
-| Descripción: Restablecer contraseña. Formulario accesible desde el enlace del correo para definir una nueva contraseña. Incluye indicadores visuales de fortaleza (longitud mínima, mayúscula, número) y validación de coincidencia entre los dos campos. | |
+| Descripción: Restablecer contraseña. Formulario para definir una nueva contraseña con indicadores de fortaleza. | |
 | RF: RF-01 | |
 
 **Mockup:**
