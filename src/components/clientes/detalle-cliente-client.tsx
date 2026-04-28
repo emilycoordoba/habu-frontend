@@ -147,6 +147,7 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
       {/* Tabs */}
       <Tabs defaultValue="datos" className="flex-1 flex flex-col">
         <div className="border-b px-6">
+          <div className="max-w-2xl mx-auto">
           <TabsList className="h-auto bg-transparent p-0 gap-0 rounded-none">
             {[
               { value: "datos",      label: "Datos" },
@@ -163,13 +164,14 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
               </TabsTrigger>
             ))}
           </TabsList>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-6">
 
           {/* ── Tab: Datos ── */}
           <TabsContent value="datos" className="mt-0">
-            <div className="max-w-2xl space-y-6">
+            <div className="max-w-2xl mx-auto space-y-6">
 
               <Section title="Identificación">
                 <InfoGrid>
@@ -243,7 +245,7 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
                 sub="Al registrar un inmueble, se asocia automáticamente al propietario seleccionado."
               />
             ) : (
-              <div className="border rounded-lg overflow-hidden max-w-4xl">
+              <div className="border rounded-lg overflow-hidden max-w-4xl mx-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 border-b">
                     <tr>
@@ -301,7 +303,7 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
                 mensaje="Este cliente no tiene contratos registrados."
               />
             ) : (
-              <div className="border rounded-lg overflow-hidden max-w-4xl">
+              <div className="border rounded-lg overflow-hidden max-w-4xl mx-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 border-b">
                     <tr>
@@ -354,7 +356,7 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
 
           {/* ── Tab: Historial ── */}
           <TabsContent value="historial" className="mt-0">
-            <div className="max-w-2xl space-y-4">
+            <div className="max-w-2xl mx-auto space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
                   {interacciones.length === 0
