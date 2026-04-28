@@ -484,7 +484,7 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
 
 // --- Subcomponentes ---
 
-function PartCard({ icon, label, nombre }: { icon: object; label: string; nombre: string }) {
+function PartCard({ icon, label, nombre }: { icon: React.ComponentProps<typeof HugeiconsIcon>["icon"]; label: string; nombre: string }) {
   return (
     <div className="flex items-center gap-2.5 rounded-lg border bg-background px-3 py-2">
       <HugeiconsIcon icon={icon} strokeWidth={2} className="size-4 text-muted-foreground shrink-0" />

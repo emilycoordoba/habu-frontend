@@ -538,7 +538,7 @@ function Req() {
   return <span className="text-destructive">*</span>
 }
 
-function SectionHeader({ icon, title, number }: { icon: object; title: string; number: number }) {
+function SectionHeader({ icon, title, number }: { icon: React.ComponentProps<typeof HugeiconsIcon>["icon"]; title: string; number: number }) {
   return (
     <div className="flex items-center gap-3">
       <div className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0">
@@ -583,7 +583,7 @@ function ToggleRow({
   )
 }
 
-function PreviewCard({ icon, label, value, sub }: { icon: object; label: string; value: string; sub?: string }) {
+function PreviewCard({ icon, label, value, sub }: { icon: React.ComponentProps<typeof HugeiconsIcon>["icon"]; label: string; value: string; sub?: string }) {
   return (
     <div className="rounded-lg border bg-background p-3 flex items-start gap-3">
       <HugeiconsIcon icon={icon} strokeWidth={2} className="size-4 text-muted-foreground mt-0.5 shrink-0" />
