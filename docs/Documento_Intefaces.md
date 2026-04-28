@@ -13,7 +13,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-c01-lista-contratos.png)
+![alt text](screenshots_interfaces/ui-c01-lista-contratos.png)
 ---
 
 | Interfaz: UI-C02 | Realizado por: Emily Perea Córdoba |
@@ -23,7 +23,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-c02-iniciar-contrato.png)
+![alt text](screenshots_interfaces/ui-c02-iniciar-contrato.png)
 ---
 
 | Interfaz: UI-C03 | Realizado por: Emily Perea Córdoba |
@@ -33,7 +33,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-c03-formulario-arriendo.png)
+![alt text](screenshots_interfaces/ui-c03-formulario-arriendo.png)
 ---
 
 | Interfaz: UI-C04 | Realizado por: Emily Perea Córdoba |
@@ -42,7 +42,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-28 | |
 
 **Mockup:**
-![alt text](screenshots/ui-c04-formulario-promesa.png)
+![alt text](screenshots_interfaces/ui-c04-formulario-promesa.png)
 
 ---
 
@@ -53,7 +53,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-c05-gestion-documentos.png)
+![alt text](screenshots_interfaces/ui-c05-gestion-documentos.png)
 ---
 
 | Interfaz: UI-C06 | Realizado por: Emily Perea Córdoba |
@@ -63,10 +63,10 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-c06-detalle-contrato-01.png)
-![alt text](screenshots/ui-c06-detalle-contrato-02.png)
-![alt text](screenshots/ui-c06-detalle-contrato-03.png)
-![alt text](screenshots/ui-c06-detalle-contrato-04.png)
+![alt text](screenshots_interfaces/ui-c06-detalle-contrato-01.png)
+![alt text](screenshots_interfaces/ui-c06-detalle-contrato-02.png)
+![alt text](screenshots_interfaces/ui-c06-detalle-contrato-03.png)
+![alt text](screenshots_interfaces/ui-c06-detalle-contrato-04.png)
 ---
 
 | Interfaz: UI-C07 | Realizado por: Emily Perea Córdoba |
@@ -86,7 +86,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-c08-terminacion-anticipada.png)
+![alt text](screenshots_interfaces/ui-c08-terminacion-anticipada.png)
 ---
 
 | Interfaz: UI-C09 | Realizado por: Emily Perea Córdoba |
@@ -106,7 +106,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-p01-lista-cobros.png)
+![alt text](screenshots_interfaces/ui-p01-lista-cobros.png)
 
 ---
 
@@ -117,7 +117,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-p02-registrar-pago.png)
+![alt text](screenshots_interfaces/ui-p02-registrar-pago.png)
 ---
 
 | Interfaz: UI-P03 | Realizado por: Emily Perea Córdoba |
@@ -127,7 +127,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-p03-estado-cuenta.png)
+![alt text](screenshots_interfaces/ui-p03-estado-cuenta.png)
 ---
 
 | Interfaz: UI-P04 | Realizado por: Emily Perea Córdoba |
@@ -137,7 +137,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-p04-reporte-ingresos.png)
+![alt text](screenshots_interfaces/ui-p04-reporte-ingresos.png)
 ---
 
 | Interfaz: UI-P05 | Realizado por: Emily Perea Córdoba |
@@ -147,7 +147,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-p05-mora.png)
+![alt text](screenshots_interfaces/ui-p05-mora.png)
 ## Módulo de Inmuebles
 
 | Interfaz: UI-I01 | Realizado por: Emily Perea Córdoba |
@@ -157,7 +157,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-i01-lista-inmuebles.png)
+![alt text](screenshots_interfaces/ui-i01-lista-inmuebles.png)
 ---
 
 | Interfaz: UI-I02 | Realizado por: Emily Perea Córdoba |
@@ -167,7 +167,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-i02-registrar-inmueble.png)
+![alt text](screenshots_interfaces/ui-i02-registrar-inmueble.png)
 ---
 
 | Interfaz: UI-I03 | Realizado por: Emily Perea Córdoba |
@@ -177,7 +177,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 **Mockup:**
 
-![alt text](screenshots/ui-i03-detalle-inmueble.png)
+![alt text](screenshots_interfaces/ui-i03-detalle-inmueble.png)
 ---
 
 | Interfaz: UI-I04 | Realizado por: Emily Perea Córdoba |
@@ -188,6 +188,48 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 **Mockup:**
 *(Inserta aquí la captura de pantalla de la interfaz)*
 
+## Módulo de Clientes
+
+| Interfaz: UI-CL01 | Realizado por: Emily Perea Córdoba |
+| :---- | :---- |
+| Descripción: Lista de clientes. Tabla con búsqueda por nombre o documento y filtros por tipo de cliente (propietario, arrendatario, prospecto, codeudor) y tipo de persona (natural/jurídica). Muestra badges de tipo, estado activo/inactivo y acceso al detalle. | |
+| RF: RF-20, RF-21 | |
+
+**Mockup:**
+*(Inserta aquí la captura de pantalla de la interfaz)*
+
+---
+
+| Interfaz: UI-CL02 | Realizado por: Emily Perea Córdoba |
+| :---- | :---- |
+| Descripción: Registrar / Editar cliente. Formulario con campos de datos personales, tipo de documento, tipo(s) de cliente y ciudad. Adapta los campos según el tipo de persona: persona natural (nombre completo, CC/CE/PAS) o persona jurídica (razón social, NIT, representante legal). Accesible como página completa desde la lista y desde el detalle del cliente. | |
+| RF: RF-20, RF-22 | |
+
+**Mockup:**
+*(Inserta aquí la captura de pantalla de la interfaz)*
+
+---
+
+| Interfaz: UI-CL03 | Realizado por: Emily Perea Córdoba |
+| :---- | :---- |
+| Descripción: Detalle del cliente. Vista organizada en cuatro pestañas: Datos (información personal y de contacto), Inmuebles (listado de inmuebles donde figura como propietario), Contratos (resumen de contratos con su rol en cada uno) e Historial (registro cronológico de interacciones: visitas, llamadas, mensajes y notas). Incluye botón para registrar nueva interacción. | |
+| RF: RF-21, RF-23 | |
+
+**Mockup:**
+*(Inserta aquí la captura de pantalla de la interfaz)*
+
+---
+
+| Interfaz: UI-CL04 | Realizado por: Emily Perea Córdoba |
+| :---- | :---- |
+| Descripción: Registrar interacción. Sheet lateral para registrar una interacción con el cliente. Permite seleccionar el tipo (visita, llamada, mensaje o nota), la fecha y hora, una descripción libre y — si es visita — el inmueble visitado mediante un combobox con búsqueda. El asesor se asigna automáticamente al usuario en sesión. | |
+| RF: RF-23 | |
+
+**Mockup:**
+*(Inserta aquí la captura de pantalla de la interfaz)*
+
+---
+
 ## Módulo de Administración
 
 | Interfaz: UI-A01 | Realizado por: Emily Perea Córdoba |
@@ -196,7 +238,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-01, RF-02, RF-05 | |
 
 **Mockup:**
-![alt text](screenshots/ui-a01-lista-usuarios.png)
+![alt text](screenshots_interfaces/ui-a01-lista-usuarios.png)
 ---
 
 | Interfaz: UI-A02 | Realizado por: Emily Perea Córdoba |
@@ -205,7 +247,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-01, RF-02, RF-04 | |
 
 **Mockup:**
-![alt text](screenshots/ui-a02-crear-editar-usuario.png)
+![alt text](screenshots_interfaces/ui-a02-crear-editar-usuario.png)
 ---
 
 | Interfaz: UI-A03 | Realizado por: Emily Perea Córdoba |
@@ -214,7 +256,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-03, RF-04 | |
 
 **Mockup:**
-![alt text](screenshots/ui-a03-roles-permisos.png)
+![alt text](screenshots_interfaces/ui-a03-roles-permisos.png)
 
 ---
 
@@ -224,7 +266,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-08, RF-09 | |
 
 **Mockup:**
-![alt text](screenshots/ui-a04-esquemas-comision.png)
+![alt text](screenshots_interfaces/ui-a04-esquemas-comision.png)
 
 ---
 
@@ -234,7 +276,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-11 | |
 
 **Mockup:**
-![alt text](screenshots/ui-a05-documentos-requeridos.png)
+![alt text](screenshots_interfaces/ui-a05-documentos-requeridos.png)
 ---
 
 | Interfaz: UI-A06 | Realizado por: Emily Perea Córdoba |
@@ -243,7 +285,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-12 | |
 
 **Mockup:**
-![alt text](screenshots/ui-a06-parametros-sistema.png)
+![alt text](screenshots_interfaces/ui-a06-parametros-sistema.png)
 
 ---
 
@@ -253,8 +295,8 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-10 | |
 
 **Mockup:**
-![alt text](screenshots/ui-a07-plantillas-documentos-01.png)
-![alt text](screenshots/ui-a07-plantillas-documentos-02.png)
+![alt text](screenshots_interfaces/ui-a07-plantillas-documentos-01.png)
+![alt text](screenshots_interfaces/ui-a07-plantillas-documentos-02.png)
 ## Módulo de Login / Autenticación
 
 | Interfaz: UI-L01 | Realizado por: Emily Perea Córdoba |
@@ -263,7 +305,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-01, RF-05 | |
 
 **Mockup:**
-![alt text](screenshots/ui-l01-login.png)
+![alt text](screenshots_interfaces/ui-l01-login.png)
 
 ---
 
@@ -273,7 +315,7 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-01 | |
 
 **Mockup:**
-![alt text](screenshots/ui-l02-recuperar-contrasena.png)
+![alt text](screenshots_interfaces/ui-l02-recuperar-contrasena.png)
 ---
 
 | Interfaz: UI-L03 | Realizado por: Emily Perea Córdoba |
@@ -282,4 +324,4 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 | RF: RF-01 | |
 
 **Mockup:**
-![alt text](screenshots/ui-l03-restablecer-contrasena.png)
+![alt text](screenshots_interfaces/ui-l03-restablecer-contrasena.png)
