@@ -6,18 +6,34 @@ import { useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowLeft01Icon,
+  ArrowDown01Icon,
   Building04Icon,
   UserIcon,
+  UserCheck01Icon,
   Calendar01Icon,
   MoneyReceive02Icon,
   Home11Icon,
   FileManagementIcon,
+  Tick01Icon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
 import {
   Select,
   SelectContent,
@@ -28,6 +44,10 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { CLIENTES_MOCK } from "@/lib/mock/clientes"
+import { ASESORES_MOCK } from "@/lib/mock/usuarios"
+
+const CLIENTES_CODEUDORES = CLIENTES_MOCK.filter((c) => c.tipos.includes("codeudor"))
 
 // --- Mock: en producción vendría de la API según inmuebleId ---
 const INMUEBLES_MOCK: Record<string, { nombre: string; direccion: string; propietario: string; tipo: string }> = {
@@ -40,6 +60,7 @@ const INMUEBLES_MOCK: Record<string, { nombre: string; direccion: string; propie
 interface FormularioArriendoClientProps {
   inmuebleId: string
   tipo: string
+  asesorId?: string
 }
 
 function formatCOP(value: string): string {
@@ -52,9 +73,10 @@ function parseCOP(value: string): number {
   return parseInt(value.replace(/\D/g, ""), 10) || 0
 }
 
-export function FormularioArriendoClient({ inmuebleId, tipo }: FormularioArriendoClientProps) {
+export function FormularioArriendoClient({ inmuebleId, tipo, asesorId = "" }: FormularioArriendoClientProps) {
   const router = useRouter()
   const inmueble = INMUEBLES_MOCK[inmuebleId]
+  const asesor = ASESORES_MOCK.find((a) => a.id === asesorId)
 
   // — Sección 1: Vigencia
   const [fechaInicio, setFechaInicio] = React.useState("")
@@ -74,8 +96,9 @@ export function FormularioArriendoClient({ inmuebleId, tipo }: FormularioArriend
 
   // — Sección 4: Codeudor
   const [tieneCodudor, setTieneCodudor] = React.useState(false)
-  const [codeudorNombre, setCodeudorNombre] = React.useState("")
-  const [codeudorDoc, setCodeudorDoc] = React.useState("")
+  const [codeudorId, setCodeudorId] = React.useState("")
+  const [codeudorComboOpen, setCodeudorComboOpen] = React.useState(false)
+  const codeudorSeleccionado = CLIENTES_CODEUDORES.find((c) => c.id === codeudorId)
 
   // — Cálculos derivados
   const canon = parseCOP(canonRaw)
@@ -95,7 +118,7 @@ export function FormularioArriendoClient({ inmuebleId, tipo }: FormularioArriend
     !!fechaInicio && !!duracionMeses && canon > 0 &&
     (!incluyeAdmin || adminValor > 0) &&
     (!tieneDeposito || (tipoDeposito === "meses" ? parseInt(mesesDeposito) > 0 : depositoValor > 0)) &&
-    (!tieneCodudor || (!!codeudorNombre && !!codeudorDoc))
+    (!tieneCodudor || !!codeudorId)
 
   function handleCanonChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value.replace(/\D/g, "")
@@ -320,25 +343,59 @@ export function FormularioArriendoClient({ inmuebleId, tipo }: FormularioArriend
               description="Persona que respalda el pago del arrendamiento"
             />
             {tieneCodudor && (
-              <div className="grid grid-cols-2 gap-4 pl-6">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="codeudor-nombre">Nombre completo <Req /></Label>
-                  <Input
-                    id="codeudor-nombre"
-                    value={codeudorNombre}
-                    onChange={(e) => setCodeudorNombre(e.target.value)}
-                    placeholder="Juan Pérez"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="codeudor-doc">Documento <Req /></Label>
-                  <Input
-                    id="codeudor-doc"
-                    value={codeudorDoc}
-                    onChange={(e) => setCodeudorDoc(e.target.value)}
-                    placeholder="CC 1234567890"
-                  />
-                </div>
+              <div className="flex flex-col gap-1.5 pl-6">
+                <Label>Codeudor <Req /></Label>
+                <Popover open={codeudorComboOpen} onOpenChange={setCodeudorComboOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={codeudorComboOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      {codeudorSeleccionado ? (
+                        <span className="truncate">{codeudorSeleccionado.nombre}</span>
+                      ) : (
+                        <span className="text-muted-foreground">Buscar codeudor registrado...</span>
+                      )}
+                      <HugeiconsIcon icon={ArrowDown01Icon} strokeWidth={2} className="size-4 shrink-0 text-muted-foreground" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
+                    <Command>
+                      <CommandInput placeholder="Buscar por nombre o documento..." />
+                      <CommandList>
+                        <CommandEmpty>No hay clientes con tipo codeudor registrados.</CommandEmpty>
+                        <CommandGroup>
+                          {CLIENTES_CODEUDORES.map((c) => (
+                            <CommandItem
+                              key={c.id}
+                              value={`${c.nombre} ${c.documento}`}
+                              onSelect={() => {
+                                setCodeudorId(c.id)
+                                setCodeudorComboOpen(false)
+                              }}
+                              className="flex items-start gap-2 py-2"
+                            >
+                              <HugeiconsIcon
+                                icon={Tick01Icon}
+                                strokeWidth={2}
+                                className={cn(
+                                  "size-4 mt-0.5 shrink-0",
+                                  codeudorId === c.id ? "opacity-100 text-primary" : "opacity-0"
+                                )}
+                              />
+                              <div>
+                                <div className="font-medium text-sm">{c.nombre}</div>
+                                <div className="text-xs text-muted-foreground">{c.tipoDocumento} {c.documento}</div>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
           </section>
@@ -379,6 +436,14 @@ export function FormularioArriendoClient({ inmuebleId, tipo }: FormularioArriend
                 icon={UserIcon}
                 label="Arrendador"
                 value={inmueble.propietario}
+              />
+            )}
+            {asesor && (
+              <PreviewCard
+                icon={UserCheck01Icon}
+                label="Asesor responsable"
+                value={asesor.nombre}
+                sub={asesor.email}
               />
             )}
           </div>
@@ -436,13 +501,13 @@ export function FormularioArriendoClient({ inmuebleId, tipo }: FormularioArriend
             </>
           )}
 
-          {tieneCodudor && (
+          {tieneCodudor && codeudorSeleccionado && (
             <>
               <Separator />
               <div className="flex flex-col gap-2">
                 <p className="text-xs font-medium text-muted-foreground">Codeudor</p>
-                <PreviewRow label="Nombre" value={codeudorNombre || "—"} />
-                <PreviewRow label="Documento" value={codeudorDoc || "—"} />
+                <PreviewRow label="Nombre" value={codeudorSeleccionado.nombre} />
+                <PreviewRow label="Documento" value={`${codeudorSeleccionado.tipoDocumento} ${codeudorSeleccionado.documento}`} />
               </div>
             </>
           )}

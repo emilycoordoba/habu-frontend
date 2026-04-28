@@ -8,6 +8,7 @@ import {
   ArrowLeft01Icon,
   Building04Icon,
   UserIcon,
+  UserCheck01Icon,
   Calendar01Icon,
   MoneyReceive02Icon,
   FileManagementIcon,
@@ -21,6 +22,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { ASESORES_MOCK } from "@/lib/mock/usuarios"
 
 // --- Mock: en producción vendría de la API según inmuebleId ---
 const INMUEBLES_MOCK: Record<string, { nombre: string; direccion: string; propietario: string; tipo: string }> = {
@@ -35,6 +37,7 @@ type FormaPago = "contado" | "credito_hipotecario" | "mixto"
 interface FormularioPromesaClientProps {
   inmuebleId: string
   tipo: string
+  asesorId?: string
 }
 
 function formatCOP(value: string): string {
@@ -47,9 +50,10 @@ function parseCOP(value: string): number {
   return parseInt(value.replace(/\D/g, ""), 10) || 0
 }
 
-export function FormularioPromesaClient({ inmuebleId }: FormularioPromesaClientProps) {
+export function FormularioPromesaClient({ inmuebleId, asesorId = "" }: FormularioPromesaClientProps) {
   const router = useRouter()
   const inmueble = INMUEBLES_MOCK[inmuebleId]
+  const asesor = ASESORES_MOCK.find((a) => a.id === asesorId)
 
   // — Sección 1: Precio y arras
   const [precioRaw, setPrecioRaw] = React.useState("")
@@ -341,6 +345,14 @@ export function FormularioPromesaClient({ inmuebleId }: FormularioPromesaClientP
                 icon={UserIcon}
                 label="Vendedor"
                 value={inmueble.propietario}
+              />
+            )}
+            {asesor && (
+              <PreviewCard
+                icon={UserCheck01Icon}
+                label="Asesor responsable"
+                value={asesor.nombre}
+                sub={asesor.email}
               />
             )}
           </div>

@@ -9,6 +9,7 @@ import {
   ArrowShrink01Icon,
   Building04Icon,
   UserIcon,
+  UserCheck01Icon,
   FileManagementIcon,
   ArrowDown01Icon,
   Tick01Icon,
@@ -40,6 +41,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { TipoContrato } from "@/types/contrato.types"
 import { RegistrarClienteDialog } from "./registrar-cliente-dialog"
+import { ASESORES_MOCK } from "@/lib/mock/usuarios"
 
 // --- Datos mock (se reemplazarán con la API) ---
 const INMUEBLES_DISPONIBLES = [
@@ -67,6 +69,7 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
   const [isFullscreen, setIsFullscreen] = React.useState(false)
   const [inmuebleComboOpen, setInmuebleComboOpen] = React.useState(false)
   const [contraparteComboOpen, setContraparteComboOpen] = React.useState(false)
+  const [asesorComboOpen, setAsesorComboOpen] = React.useState(false)
   const [registrarClienteOpen, setRegistrarClienteOpen] = React.useState(false)
 
   const [inmuebleId, setInmuebleId] = React.useState("")
@@ -74,11 +77,13 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
   const [contraparteId, setContraparteId] = React.useState("")
   const [contraparteNombre, setContraparteNombre] = React.useState("")
   const [contraparteIdentificacion, setContraparteIdentificacion] = React.useState("")
+  const [asesorId, setAsesorId] = React.useState("")
+  const [asesorNombre, setAsesorNombre] = React.useState("")
 
   const inmuebleSeleccionado = INMUEBLES_DISPONIBLES.find((i) => i.id === inmuebleId)
   const labelContraparte = tipo === "arriendo" ? "Arrendatario" : tipo === "promesa_compraventa" ? "Comprador" : "Contraparte"
   const contraparteSeleccionada = !!contraparteId || !!contraparteNombre
-  const puedeConfirmar = !!inmuebleId && !!tipo && contraparteSeleccionada
+  const puedeConfirmar = !!inmuebleId && !!tipo && contraparteSeleccionada && !!asesorId
 
   function handleClienteRegistrado(cliente: { nombre: string; identificacion: string }) {
     // El cliente recién registrado se selecciona automáticamente como contraparte
@@ -90,7 +95,7 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
   function handleConfirmar() {
     if (!puedeConfirmar) return
     const ruta = tipo === "arriendo" ? "/contratos/nuevo/arriendo" : "/contratos/nuevo/promesa"
-    router.push(`${ruta}?inmueble=${inmuebleId}&tipo=${tipo}`)
+    router.push(`${ruta}?inmueble=${inmuebleId}&tipo=${tipo}&asesor=${asesorId}`)
     onOpenChange(false)
   }
 
@@ -100,6 +105,8 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
     setContraparteId("")
     setContraparteNombre("")
     setContraparteIdentificacion("")
+    setAsesorId("")
+    setAsesorNombre("")
     setIsFullscreen(false)
     onOpenChange(false)
   }
@@ -349,6 +356,89 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
                   <div className="text-sm">
                     <div className="font-medium">{contraparteNombre}</div>
                     <div className="text-xs text-muted-foreground">{contraparteIdentificacion}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Paso 4 — Asesor responsable */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  "flex size-6 items-center justify-center rounded-full text-xs font-bold",
+                  contraparteSeleccionada ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                )}>4</div>
+                <span className={cn("text-sm font-medium", !contraparteSeleccionada && "text-muted-foreground")}>
+                  Asesor responsable
+                </span>
+              </div>
+
+              <Popover open={asesorComboOpen} onOpenChange={setAsesorComboOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={asesorComboOpen}
+                    disabled={!contraparteSeleccionada}
+                    className="w-full justify-between font-normal"
+                  >
+                    {asesorNombre ? (
+                      <div className="flex items-center gap-2 truncate">
+                        <HugeiconsIcon icon={UserCheck01Icon} strokeWidth={2} className="size-4 shrink-0 text-muted-foreground" />
+                        <span className="truncate">{asesorNombre}</span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">Seleccionar asesor...</span>
+                    )}
+                    <HugeiconsIcon icon={ArrowDown01Icon} strokeWidth={2} className="size-4 shrink-0 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="p-0"
+                  style={{ width: "var(--radix-popover-trigger-width)" }}
+                >
+                  <Command>
+                    <CommandInput placeholder="Buscar asesor..." />
+                    <CommandList>
+                      <CommandEmpty>No se encontraron asesores.</CommandEmpty>
+                      <CommandGroup>
+                        {ASESORES_MOCK.map((asesor) => (
+                          <CommandItem
+                            key={asesor.id}
+                            value={asesor.nombre}
+                            onSelect={() => {
+                              setAsesorId(asesor.id)
+                              setAsesorNombre(asesor.nombre)
+                              setAsesorComboOpen(false)
+                            }}
+                            className="flex items-start gap-2 py-2"
+                          >
+                            <HugeiconsIcon
+                              icon={Tick01Icon}
+                              strokeWidth={2}
+                              className={cn(
+                                "size-4 mt-0.5 shrink-0",
+                                asesorId === asesor.id ? "opacity-100 text-primary" : "opacity-0"
+                              )}
+                            />
+                            <div>
+                              <div className="font-medium text-sm">{asesor.nombre}</div>
+                              <div className="text-xs text-muted-foreground">{asesor.email}</div>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {asesorNombre && (
+                <div className="rounded-lg border bg-muted/40 p-3 flex items-center gap-3">
+                  <HugeiconsIcon icon={UserCheck01Icon} strokeWidth={2} className="size-4 text-muted-foreground shrink-0" />
+                  <div className="text-sm">
+                    <div className="text-muted-foreground text-xs">Asesor responsable</div>
+                    <div className="font-medium">{asesorNombre}</div>
                   </div>
                 </div>
               )}
