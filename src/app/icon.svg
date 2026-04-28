@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <polygon points="12,35 44,35 44,12" fill="oklch(0.5 0.134 242.749)" />
+  <polygon points="56,12 56,35 88,35" fill="oklch(0.5 0.134 242.749)" />
+  <rect x="12" y="39" width="76" height="13" fill="oklch(0.5 0.134 242.749)" />
+  <rect x="12" y="56" width="32" height="33" fill="oklch(0.5 0.134 242.749)" />
+  <rect x="56" y="56" width="32" height="33" fill="oklch(0.5 0.134 242.749)" />
+</svg>

@@ -230,6 +230,18 @@ A continuación se detallan las interfaces del sistema, mapeadas con sus respect
 
 ---
 
+## Módulo de Cuenta y perfil
+
+| Interfaz: UI-ACC01 | Realizado por: Emily Perea Córdoba |
+| :---- | :---- |
+| Descripción: Mi cuenta. Vista en pestañas: datos personales (nombre, correo, teléfono, ciudad), seguridad (cambiar contraseña con indicador de fortaleza) y notificaciones (toggles de alertas del sistema). Accesible desde el avatar en el footer del sidebar. | |
+| RF: RF-01, RF-02 | |
+
+**Mockup:**
+*(Inserta aquí la captura de pantalla de la interfaz)*
+
+---
+
 ## Módulo de Administración
 
 | Interfaz: UI-A01 | Realizado por: Emily Perea Córdoba |

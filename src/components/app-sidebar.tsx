@@ -16,8 +16,11 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Building04Icon, FileManagementIcon, Invoice03Icon, Wrench01Icon, AiChat01Icon, Settings05Icon, HelpCircleIcon, Camera01Icon, File01Icon, UserSettings01Icon, UserIcon } from "@hugeicons/core-free-icons"
+import { Building04Icon, FileManagementIcon, Invoice03Icon, Wrench01Icon, AiChat01Icon, HelpCircleIcon, Camera01Icon, File01Icon, UserSettings01Icon, UserIcon } from "@hugeicons/core-free-icons"
 import { HabuLogoHouse, HabuLogoMonogram } from "@/components/habu-logo"
+
+// Mock: reemplazar por el rol real del usuario autenticado al conectar la API
+const ROL_USUARIO: "administrador" | "asesor" = "administrador"
 
 const data = {
   user: {
@@ -60,11 +63,11 @@ const data = {
       url: "/chatbot",
       icon: <HugeiconsIcon icon={AiChat01Icon} strokeWidth={2} />,
     },
-    {
+    ...(ROL_USUARIO === "administrador" ? [{
       title: "Administración",
       url: "/administracion",
       icon: <HugeiconsIcon icon={UserSettings01Icon} strokeWidth={2} />,
-    },
+    }] : []),
   ],
   navClouds: [
     {
@@ -122,11 +125,6 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Configuración",
-      url: "#",
-      icon: <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} />,
-    },
-    {
       title: "Ayuda",
       url: "#",
       icon: <HugeiconsIcon icon={HelpCircleIcon} strokeWidth={2} />,
@@ -145,7 +143,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
               <a href="#">
-                <HabuLogoMonogram className="size-5! text-sidebar-primary" />
+                <HabuLogoHouse className="size-5! text-sidebar-primary" />
                 <span className="text-base font-semibold">Habu</span>
               </a>
             </SidebarMenuButton>

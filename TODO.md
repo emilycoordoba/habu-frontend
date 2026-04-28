@@ -46,11 +46,15 @@
 - [x] UI-CL04 — Registrar visita (cliente, inmueble, fecha/hora, notas) — sheet lateral, tipos: visita/llamada/mensaje/nota
   - [ ] Pendiente: campo `estado` (pendiente/confirmada/cancelada) para visitas — requiere decisión de diseño (¿se muestra en historial? ¿el asesor lo actualiza después?)
 
+## Módulo Cuenta — UI
+- [x] UI-ACC01 — Mi cuenta (tabs: datos personales, seguridad, notificaciones) — accesible desde el avatar en el footer del sidebar
+  - [ ] Pendiente: flujo de asignación de asesor en contratos (disparará la notificación "Nuevo contrato asignado")
+
 ## Módulos pendientes (UI)
 - [x] Pagos y Mora
 - [x] Inmuebles
 - [ ] Mantenimiento
-- [ ] Clientes
+- [x] Clientes
 - [x] Administración (UI-A01 a UI-A06 completos; UI-A07 prioridad baja)
 - [x] Login / Autenticación
 - [ ] Chatbot

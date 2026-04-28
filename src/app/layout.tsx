@@ -1,8 +1,17 @@
+import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
+
+export const metadata: Metadata = {
+  title: {
+    template: "%s | Habu",
+    default: "Habu",
+  },
+  description: "Sistema de gestión inmobiliaria",
+}
 
 const fontSans = Geist({
   subsets: ["latin"],

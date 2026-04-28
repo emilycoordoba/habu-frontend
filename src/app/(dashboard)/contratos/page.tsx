@@ -1,4 +1,7 @@
+import type { Metadata } from "next"
 import Link from "next/link"
+
+export const metadata: Metadata = { title: "Contratos" }
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   FilterIcon,
