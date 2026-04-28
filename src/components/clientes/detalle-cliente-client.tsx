@@ -32,11 +32,13 @@ import {
   CLIENTES_MOCK,
   INTERACCIONES_MOCK,
   CONTRATOS_POR_CLIENTE,
+  type Interaccion,
 } from "@/lib/mock/clientes"
 import { INMUEBLES_MOCK } from "@/lib/mock/inmuebles"
 import { TIPO_CLIENTE_CONFIG } from "@/types/cliente.types"
 import { ESTADO_CONTRATO_CONFIG, LABELS_POR_TIPO } from "@/types/contrato.types"
 import type { TipoInmueble } from "@/types/inmueble.types"
+import { RegistrarVisitaSheet } from "@/components/clientes/registrar-visita-sheet"
 
 // ---------------------------------------------------------------------------
 // Config visual
@@ -84,10 +86,15 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
   const inmueblesPropios = Object.values(INMUEBLES_MOCK).filter(
     i => i.propietarioId === clienteId
   )
-  const contratos    = CONTRATOS_POR_CLIENTE[clienteId] ?? []
-  const interacciones = (INTERACCIONES_MOCK[clienteId] ?? []).sort(
-    (a, b) => b.fecha.localeCompare(a.fecha)
+  const contratos = CONTRATOS_POR_CLIENTE[clienteId] ?? []
+
+  const [interacciones, setInteracciones] = React.useState<Interaccion[]>(
+    () => [...(INTERACCIONES_MOCK[clienteId] ?? [])].sort((a, b) => b.fecha.localeCompare(a.fecha))
   )
+
+  function handleRegistrar(nueva: Interaccion) {
+    setInteracciones(prev => [nueva, ...prev])
+  }
 
   const esPropietario = cliente.tipos.includes("propietario")
 
@@ -363,9 +370,12 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
                     ? "Sin interacciones registradas."
                     : `${interacciones.length} interaccione${interacciones.length !== 1 ? "s" : ""} registrada${interacciones.length !== 1 ? "s" : ""}.`}
                 </p>
-                <Link href={`/clientes/${clienteId}/visita`}>
+                <RegistrarVisitaSheet
+                  clienteNombre={cliente.nombre}
+                  onRegistrar={handleRegistrar}
+                >
                   <Button size="sm" variant="outline">Registrar visita</Button>
-                </Link>
+                </RegistrarVisitaSheet>
               </div>
 
               {interacciones.length === 0 ? (
