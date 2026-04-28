@@ -385,7 +385,7 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
                   clienteNombre={cliente.nombre}
                   onRegistrar={handleRegistrar}
                 >
-                  <Button size="sm" variant="outline">Registrar visita</Button>
+                  <Button size="sm" variant="outline">Registrar interacción</Button>
                 </RegistrarVisitaSheet>
               </div>
 

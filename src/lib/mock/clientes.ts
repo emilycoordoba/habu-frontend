@@ -19,26 +19,36 @@ export interface Interaccion {
 
 export const INTERACCIONES_MOCK: Record<string, Interaccion[]> = {
   "1": [
-    { id: "i1", tipo: "nota", fecha: "2025-02-10", descripcion: "Propietaria solicitó revisar cláusula de renovación antes del vencimiento. Prefiere renovar a largo plazo.", asesor: "Emily Perea" },
-    { id: "i2", tipo: "visita", fecha: "2024-09-05", descripcion: "Visita al inmueble Cra 15 #93-47 para revisión previa a la firma del contrato.", asesor: "Emily Perea", inmueble: "Cra 15 #93-47, Apto 301 Torre A" },
+    { id: "i1", tipo: "llamada", fecha: "2025-03-14", hora: "10:20", descripcion: "Propietaria llamó para preguntar por el estado de la renovación. Se le explicó el proceso y se acordó enviarle propuesta por correo.", asesor: "Emily Perea" },
+    { id: "i2", tipo: "mensaje", fecha: "2025-02-28", hora: "15:45", descripcion: "Envió mensaje por WhatsApp solicitando el certificado de paz y salvo del arrendatario. Se le indicó que se gestiona en máximo 3 días hábiles.", asesor: "Emily Perea" },
+    { id: "i3", tipo: "nota", fecha: "2025-02-10", descripcion: "Propietaria solicitó revisar cláusula de renovación antes del vencimiento. Prefiere renovar a largo plazo.", asesor: "Emily Perea" },
+    { id: "i4", tipo: "visita", fecha: "2024-09-05", hora: "11:00", descripcion: "Visita al inmueble Cra 15 #93-47 para revisión previa a la firma del contrato. Inmueble en buen estado.", asesor: "Emily Perea", inmueble: "Cra 15 #93-47, Apto 301 Torre A" },
   ],
   "2": [
-    { id: "i1", tipo: "nota", fecha: "2025-01-15", descripcion: "Empresa solicita facturación mensual antes del día 5. Contacto de pagos: contabilidad@pedrazasas.com.", asesor: "Emily Perea" },
+    { id: "i1", tipo: "mensaje", fecha: "2025-03-22", hora: "09:10", descripcion: "Correo de gerencia solicitando resumen de contratos activos para informe trimestral. Se adjuntó reporte en PDF.", asesor: "Emily Perea" },
+    { id: "i2", tipo: "llamada", fecha: "2025-02-05", hora: "16:30", descripcion: "Llamada con el representante legal para confirmar datos de facturación. Verificado NIT y correo de contabilidad.", asesor: "Emily Perea" },
+    { id: "i3", tipo: "nota", fecha: "2025-01-15", descripcion: "Empresa solicita facturación mensual antes del día 5. Contacto de pagos: contabilidad@pedrazasas.com.", asesor: "Emily Perea" },
   ],
   "3": [
-    { id: "i1", tipo: "nota", fecha: "2024-11-02", descripcion: "Llamó para confirmar disponibilidad del apto en Chapinero. Interesado en contrato desde noviembre.", asesor: "Emily Perea" },
-    { id: "i2", tipo: "visita", fecha: "2024-10-18", descripcion: "Primera visita al apartamento Cra 15 #93-47. Cliente conforme con el espacio y la ubicación.", asesor: "Emily Perea", inmueble: "Cra 15 #93-47, Apto 301 Torre A" },
+    { id: "i1", tipo: "llamada", fecha: "2025-01-10", hora: "14:00", descripcion: "Llamó para preguntar si hay posibilidad de renovar por un año más. Se consultará con el propietario y se da respuesta en 48h.", asesor: "Emily Perea" },
+    { id: "i2", tipo: "nota", fecha: "2024-11-02", descripcion: "Llamó para confirmar disponibilidad del apto en Chapinero. Interesado en contrato desde noviembre.", asesor: "Emily Perea" },
+    { id: "i3", tipo: "visita", fecha: "2024-10-18", hora: "10:30", descripcion: "Primera visita al apartamento Cra 15 #93-47. Cliente conforme con el espacio y la ubicación. Consultó por mascotas — se revisa con propietario.", asesor: "Emily Perea", inmueble: "Cra 15 #93-47, Apto 301 Torre A" },
   ],
   "4": [
-    { id: "i1", tipo: "nota", fecha: "2025-03-20", descripcion: "Propietaria también interesada en arrendar su casa en Usaquén. Solicita avalúo comercial.", asesor: "Emily Perea" },
+    { id: "i1", tipo: "mensaje", fecha: "2025-04-10", hora: "08:55", descripcion: "Envió mensaje solicitando información sobre el proceso para arrendar su local en Cali. Se le envió el checklist de documentos requeridos.", asesor: "Emily Perea" },
+    { id: "i2", tipo: "llamada", fecha: "2025-03-20", hora: "11:15", descripcion: "Llamó para preguntar por el estado de la escrituración del Apto 502. Se le informó que está en revisión notarial.", asesor: "Emily Perea" },
+    { id: "i3", tipo: "nota", fecha: "2025-03-20", descripcion: "Propietaria también interesada en arrendar su casa en Usaquén. Solicita avalúo comercial.", asesor: "Emily Perea" },
   ],
   "6": [
-    { id: "i1", tipo: "visita", fecha: "2025-02-20", descripcion: "Visita a la casa Cra 7 #120-30. Interesada en arrendar. Lleva pareja para segunda visita.", asesor: "Emily Perea", inmueble: "Cra 7 #120-30, Usaquén" },
-    { id: "i2", tipo: "visita", fecha: "2025-03-05", descripcion: "Segunda visita con pareja. Solicitan tiempo para decidir.", asesor: "Emily Perea", inmueble: "Cra 7 #120-30, Usaquén" },
-    { id: "i3", tipo: "nota", fecha: "2025-03-10", descripcion: "Decidieron no avanzar por ahora. Posible interés en 2-3 meses. Anotar para seguimiento.", asesor: "Emily Perea" },
+    { id: "i1", tipo: "llamada", fecha: "2025-03-18", hora: "17:00", descripcion: "Llamó para preguntar si el inmueble en Usaquén sigue disponible. Se confirmó disponibilidad y se ofreció nueva visita.", asesor: "Emily Perea" },
+    { id: "i2", tipo: "nota", fecha: "2025-03-10", descripcion: "Decidieron no avanzar por ahora. Posible interés en 2-3 meses. Anotar para seguimiento.", asesor: "Emily Perea" },
+    { id: "i3", tipo: "visita", fecha: "2025-03-05", hora: "10:00", descripcion: "Segunda visita con pareja. Revisan closets y cocina con detenimiento. Solicitan tiempo para decidir.", asesor: "Emily Perea", inmueble: "Cra 7 #120-30, Usaquén" },
+    { id: "i4", tipo: "visita", fecha: "2025-02-20", hora: "15:30", descripcion: "Primera visita. Interesada en arrendar. Buen recibimiento del inmueble. Regresa con pareja la próxima semana.", asesor: "Emily Perea", inmueble: "Cra 7 #120-30, Usaquén" },
   ],
   "10": [
-    { id: "i1", tipo: "visita", fecha: "2025-04-05", descripcion: "Visita al apartamento Av. Suba #91-20. Cliente llega puntual, hace preguntas sobre parqueadero.", asesor: "Emily Perea", inmueble: "Av. Suba #91-20, Apto 204" },
+    { id: "i1", tipo: "mensaje", fecha: "2025-04-15", hora: "12:30", descripcion: "Envió WhatsApp preguntando si hay apartamentos de 2 habitaciones disponibles en Medellín. Se le compartió listado actualizado.", asesor: "Emily Perea" },
+    { id: "i2", tipo: "visita", fecha: "2025-04-05", hora: "09:00", descripcion: "Visita al apartamento Av. Suba #91-20. Cliente llega puntual, hace preguntas sobre parqueadero y zonas comunes.", asesor: "Emily Perea", inmueble: "Av. Suba #91-20, Apto 204" },
+    { id: "i3", tipo: "llamada", fecha: "2025-03-28", hora: "16:45", descripcion: "Primer contacto. Prospecto interesado en arrendar en Medellín. Se agendó visita para el 5 de abril.", asesor: "Emily Perea" },
   ],
 }
 
