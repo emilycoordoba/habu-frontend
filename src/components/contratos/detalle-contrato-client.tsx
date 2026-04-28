@@ -196,7 +196,7 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
   const firmasPendientes = firmas.filter((f) => f.estado === "pendiente").length
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
+    <div className="flex flex-col h-full">
 
       {/* Header */}
       <div className="border-b px-6 py-4 flex items-start gap-4">
@@ -270,12 +270,12 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
       </div>
 
       {/* Tabs */}
-      <div className="flex-1 px-6 py-4">
-        <div className="max-w-2xl mx-auto">
-        <Tabs defaultValue="condiciones">
-          <TabsList className="mb-4">
-            <TabsTrigger value="condiciones">Condiciones</TabsTrigger>
-            <TabsTrigger value="documentos">
+      <Tabs defaultValue="condiciones" className="flex-1 flex flex-col min-h-0">
+        <div className="border-b px-6">
+          <div className="max-w-2xl mx-auto">
+          <TabsList className="h-auto bg-transparent p-0 gap-0 rounded-none justify-start">
+            <TabsTrigger value="condiciones" className="rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none text-muted-foreground hover:text-foreground px-4 py-3 text-sm">Condiciones</TabsTrigger>
+            <TabsTrigger value="documentos" className="rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none text-muted-foreground hover:text-foreground px-4 py-3 text-sm">
               Documentos
               {docsRecibidos < documentos.length && (
                 <Badge variant="outline" className="ml-1.5 text-xs px-1.5 py-0">
@@ -283,7 +283,7 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="firmas">
+            <TabsTrigger value="firmas" className="rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none text-muted-foreground hover:text-foreground px-4 py-3 text-sm">
               Firmas
               {firmasPendientes > 0 && (
                 <Badge variant="outline" className="ml-1.5 text-xs px-1.5 py-0">
@@ -291,8 +291,13 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="historial">Historial</TabsTrigger>
+            <TabsTrigger value="historial" className="rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none text-muted-foreground hover:text-foreground px-4 py-3 text-sm">Historial</TabsTrigger>
           </TabsList>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="max-w-2xl mx-auto">
 
           {/* Tab — Condiciones */}
           <TabsContent value="condiciones" className="flex flex-col gap-6">
@@ -470,9 +475,9 @@ export function DetalleContratoClient({ contratoId }: DetalleContratoClientProps
               })}
             </div>
           </TabsContent>
-        </Tabs>
+          </div>
         </div>
-      </div>
+      </Tabs>
     </div>
   )
 }

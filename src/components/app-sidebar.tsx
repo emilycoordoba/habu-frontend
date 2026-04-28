@@ -16,7 +16,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Building04Icon, FileManagementIcon, Invoice03Icon, Wrench01Icon, AiChat01Icon, Settings05Icon, HelpCircleIcon, Camera01Icon, File01Icon, UserSettings01Icon } from "@hugeicons/core-free-icons"
+import { Building04Icon, FileManagementIcon, Invoice03Icon, Wrench01Icon, AiChat01Icon, Settings05Icon, HelpCircleIcon, Camera01Icon, File01Icon, UserSettings01Icon, UserIcon } from "@hugeicons/core-free-icons"
 import { HabuLogoHouse, HabuLogoMonogram } from "@/components/habu-logo"
 
 const data = {
@@ -30,6 +30,11 @@ const data = {
       title: "Inmuebles",
       url: "/inmuebles",
       icon: <HugeiconsIcon icon={Building04Icon} strokeWidth={2} />,
+    },
+    {
+      title: "Clientes",
+      url: "/clientes",
+      icon: <HugeiconsIcon icon={UserIcon} strokeWidth={2} />,
     },
     {
       title: "Contratos",
