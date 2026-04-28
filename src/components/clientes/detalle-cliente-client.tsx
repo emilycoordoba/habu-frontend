@@ -146,7 +146,8 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
 
       {/* Tabs */}
       <Tabs defaultValue="datos" className="flex-1 flex flex-col">
-        <div className="border-b px-6 flex justify-center">
+        <div className="border-b px-6">
+          <div className="max-w-2xl mx-auto">
           <TabsList className="h-auto bg-transparent p-0 gap-0 rounded-none">
             {[
               { value: "datos",      label: "Datos" },
@@ -163,6 +164,7 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
               </TabsTrigger>
             ))}
           </TabsList>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-6">
