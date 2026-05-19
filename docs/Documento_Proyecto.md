@@ -654,6 +654,7 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | especialidad | VARCHAR | Tipo de servicio que ofrece |
 | telefono | VARCHAR | Contacto |
 | correo | VARCHAR | Correo electrónico |
+| calificacion | DECIMAL | Calificación del proveedor (1.0 – 5.0, nullable) |
 
 **Modulo Chatbot**
 

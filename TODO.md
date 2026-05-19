@@ -50,6 +50,15 @@
 - [x] UI-ACC01 — Mi cuenta (tabs: datos personales, seguridad, notificaciones) — accesible desde el avatar en el footer del sidebar
   - [ ] Pendiente: flujo de asignación de asesor en contratos (disparará la notificación "Nuevo contrato asignado")
 
+## Módulo Mantenimiento — UI
+- [ ] UI-M01 — Lista de solicitudes de mantenimiento (tabla con filtros por estado, inmueble, tipo y prioridad)
+- [ ] UI-M02 — Registrar solicitud (inmueble, tipo de problema, descripción, prioridad, solicitante)
+- [ ] UI-M03 — Detalle de solicitud (estado actual, historial de cambios, proveedor asignado, fotos de evidencia)
+- [ ] UI-M04 — Asignar proveedor (seleccionar proveedor del catálogo, fecha tentativa de visita, notas)
+- [ ] UI-M05 — Actualizar estado / registrar avance (cambio de estado, nota de avance, foto de evidencia)
+- [ ] UI-M06 — Cerrar solicitud (costo final, adjuntar factura opcional) — solo disponible cuando estado = finalizado
+- [ ] UI-M07 — Gestión de proveedores (tabla CRUD: nombre, especialidad, contacto, calificación 1–5)
+
 ## Módulos pendientes (UI)
 - [x] Pagos y Mora
 - [x] Inmuebles
