@@ -51,34 +51,32 @@
   - [ ] Pendiente: flujo de asignación de asesor en contratos (disparará la notificación "Nuevo contrato asignado")
 
 ## Módulo Mantenimiento — UI
-- [ ] UI-M01 — Lista de solicitudes de mantenimiento (tabla con filtros por estado, inmueble, tipo y prioridad)
-- [ ] UI-M02 — Registrar solicitud (inmueble, tipo de problema, descripción, prioridad, solicitante)
-- [ ] UI-M03 — Detalle de solicitud (estado actual, historial de cambios, proveedor asignado, fotos de evidencia)
-- [ ] UI-M04 — Asignar proveedor (seleccionar proveedor del catálogo, fecha tentativa de visita, notas)
-- [ ] UI-M05 — Actualizar estado / registrar avance (cambio de estado, nota de avance, foto de evidencia)
-- [ ] UI-M06 — Cerrar solicitud (costo final, adjuntar factura opcional) — solo disponible cuando estado = finalizado
-- [ ] UI-M07 — Gestión de proveedores (tabla CRUD: nombre, especialidad, contacto, calificación 1–5)
+- [x] UI-M01 — Lista de solicitudes de mantenimiento (tabla con filtros por estado, inmueble, tipo y prioridad)
+- [x] UI-M02 — Registrar solicitud (inmueble, tipo de problema, descripción, prioridad, solicitante)
+- [x] UI-M03 — Detalle de solicitud (estado actual, historial de cambios, proveedor asignado, fotos de evidencia)
+- [x] UI-M04 — Asignar proveedor (seleccionar proveedor del catálogo, fecha tentativa de visita, notas)
+- [x] UI-M05 — Actualizar estado / registrar avance (cambio de estado, nota de avance, foto de evidencia)
+- [x] UI-M06 — Cerrar solicitud (costo final, adjuntar factura opcional) — solo disponible cuando estado = finalizado
+- [x] UI-M07 — Gestión de proveedores (tabla CRUD: nombre, especialidad, contacto, calificación 1–5)
 
 ## Módulos pendientes (UI)
 - [x] Pagos y Mora
 - [x] Inmuebles
-- [ ] Mantenimiento
+- [x] Mantenimiento
 - [x] Clientes
 - [x] Administración (UI-A01 a UI-A06 completos; UI-A07 prioridad baja)
 - [x] Login / Autenticación
 - [ ] Chatbot
 
-## Infraestructura pendiente
+<!-- ## Infraestructura pendiente
 - [ ] Configurar `lib/api/axios.ts` con interceptores de JWT
 - [ ] Implementar `lib/hooks/use-contratos.ts` con React Query
 - [ ] Configurar `src/proxy.ts` con validación de JWT real
-- [ ] Variables de entorno (`NEXT_PUBLIC_API_URL`)
+- [ ] Variables de entorno (`NEXT_PUBLIC_API_URL`) -->
 
 
 ## Decisiones de diseño pendientes
 - [ ] **Generación de PDF de contratos**: definir estrategia para cuando se conecte la API. Opciones evaluadas en `docs/pdf-generacion-opciones.md`. Recomendación: generación server-side (Puppeteer o PDFLib) para garantizar PDFs idénticos independiente del browser. Alternativa frontend: `@react-pdf/renderer` si no hay backend disponible.
-
-
 - [ ] **Contratos firmados manualmente**: definir si el sistema debe soportar cargar un PDF de contrato firmado fuera de DocuSign (no está contemplado en la documentación actual). Implica cambios en el modelo y en UI-C05.
 - [x] **Pagos parciales**: no se soportan en esta versión. El cobro permanece en mora hasta recibir el monto completo. El asesor registra el pago solo cuando tiene el valor total.
 - [ ] **Usuario con roles Administrador + Asesor simultáneos**: el modelo lo permite (UsuarioRol es muchos-a-muchos). Definir si un administrador con rol asesor activo recibe comisiones por contratos gestionados (`AsesorComision`). Considerar si Administrador debe ser superconjunto explícito de Asesor o si la combinación debe restringirse.
@@ -112,7 +110,6 @@
 
 ## TODO propio
 - [ ] full page sheet no funciona
-- [ ] lista de tabs centrada tambien en detalles de contrato
 - animaciones, transiciones
 - mejorar pdf reportes de ingresos
 - 
