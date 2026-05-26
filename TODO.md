@@ -59,6 +59,11 @@
 - [x] UI-M06 — Cerrar solicitud (costo final, adjuntar factura opcional) — solo disponible cuando estado = finalizado
 - [x] UI-M07 — Gestión de proveedores (tabla CRUD: nombre, especialidad, contacto, calificación 1–5)
 
+## Módulo Chatbot — UI
+- [x] UI-CH01 — Portal de chat (página pública — búsqueda de inmuebles, requisitos, agendar visita, dejar contacto, solicitar asesor humano)
+- [x] UI-CH02 — Bandeja de solicitudes entrantes (tabla para asesores: SolicitudInformacion con filtros por estado y fecha, asignar asesor)
+- [x] UI-CH03 — Detalle de solicitud (datos del prospecto, inmueble de interés, mensaje, historial de conversación, marcar como atendida)
+
 ## Módulos pendientes (UI)
 - [x] Pagos y Mora
 - [x] Inmuebles
@@ -66,7 +71,7 @@
 - [x] Clientes
 - [x] Administración (UI-A01 a UI-A06 completos; UI-A07 prioridad baja)
 - [x] Login / Autenticación
-- [ ] Chatbot
+- [x] Chatbot
 
 <!-- ## Infraestructura pendiente
 - [ ] Configurar `lib/api/axios.ts` con interceptores de JWT
