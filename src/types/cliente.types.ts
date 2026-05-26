@@ -28,8 +28,8 @@ export const TIPO_CLIENTE_CONFIG: Record<
   TipoCliente,
   { label: string; className: string }
 > = {
-  propietario: { label: "Propietario",  className: "bg-blue-100 text-blue-700 border-blue-200" },
-  arrendatario: { label: "Arrendatario", className: "bg-green-100 text-green-700 border-green-200" },
-  prospecto:    { label: "Prospecto",    className: "bg-amber-100 text-amber-700 border-amber-200" },
-  codeudor:     { label: "Codeudor",     className: "bg-purple-100 text-purple-700 border-purple-200" },
+  propietario:  { label: "Propietario",  className: "badge-blue" },
+  arrendatario: { label: "Arrendatario", className: "badge-green" },
+  prospecto:    { label: "Prospecto",    className: "badge-amber" },
+  codeudor:     { label: "Codeudor",     className: "badge-purple" },
 }

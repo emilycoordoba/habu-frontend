@@ -215,18 +215,18 @@ export function EstadoCuentaClient({ contratoId }: EstadoCuentaClientProps) {
             <p className="text-xs text-muted-foreground mb-1">Total cobrado</p>
             <p className="text-xl font-semibold tabular-nums">{formatCOP(totalCargos)}</p>
           </div>
-          <div className="border rounded-lg px-4 py-4 border-green-200 bg-green-50">
+          <div className="border rounded-lg px-4 py-4 alert-green">
             <p className="text-xs text-muted-foreground mb-1">Total pagado</p>
-            <p className="text-xl font-semibold tabular-nums text-green-700">{formatCOP(totalAbonos)}</p>
+            <p className="text-xl font-semibold tabular-nums text-green-700 dark:text-green-300">{formatCOP(totalAbonos)}</p>
           </div>
           <div className={cn(
             "border rounded-lg px-4 py-4",
-            saldoPendiente > 0 ? "border-red-200 bg-red-50" : "border-gray-200"
+            saldoPendiente > 0 ? "alert-red" : ""
           )}>
             <p className="text-xs text-muted-foreground mb-1">Saldo pendiente</p>
             <p className={cn(
               "text-xl font-semibold tabular-nums",
-              saldoPendiente > 0 ? "text-red-700" : "text-gray-800"
+              saldoPendiente > 0 ? "text-red-700 dark:text-red-300" : "text-foreground"
             )}>
               {formatCOP(saldoPendiente)}
             </p>
@@ -235,7 +235,7 @@ export function EstadoCuentaClient({ contratoId }: EstadoCuentaClientProps) {
 
         {/* Aviso residencial */}
         {!contrato.esComercial && saldoEnMora > 0 && (
-          <div className="flex items-start gap-2 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2.5">
+          <div className="flex items-start gap-2 text-sm alert-blue border rounded-md px-3 py-2.5">
             <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} className="size-4 shrink-0 mt-0.5" />
             <span>Inmueble residencial — los cobros en mora no generan intereses (Ley 820 de 2003).</span>
           </div>
@@ -316,12 +316,12 @@ export function EstadoCuentaClient({ contratoId }: EstadoCuentaClientProps) {
         {/* Saldo final */}
         <div className={cn(
           "border rounded-lg px-4 py-4 flex items-center justify-between",
-          saldoPendiente > 0 ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"
+          saldoPendiente > 0 ? "alert-red" : "alert-green"
         )}>
           <p className="text-sm font-semibold">Saldo total al día de hoy</p>
           <p className={cn(
             "text-lg font-bold tabular-nums",
-            saldoPendiente > 0 ? "text-red-700" : "text-green-700"
+            saldoPendiente > 0 ? "text-red-700 dark:text-red-300" : "text-green-700 dark:text-green-300"
           )}>
             {saldoPendiente > 0 ? `${formatCOP(saldoPendiente)} pendiente` : "Al día"}
           </p>

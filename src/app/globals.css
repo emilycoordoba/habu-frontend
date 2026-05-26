@@ -127,3 +127,68 @@
     @apply font-sans;
     }
 }
+
+/* ─── Badge / status colors con soporte dark mode ──────────────────────────
+   Usar estas clases en lugar de bg-*-100 text-*-700 border-*-200 hardcodeados.
+   Cubren todos los estados de contratos, inmuebles, mantenimiento, pagos y chatbot.
+ ─────────────────────────────────────────────────────────────────────────── */
+
+@layer utilities {
+  /* Badges */
+  .badge-blue   { @apply bg-blue-100   text-blue-700   border-blue-200;   }
+  .badge-green  { @apply bg-green-100  text-green-700  border-green-200;  }
+  .badge-yellow { @apply bg-yellow-100 text-yellow-700 border-yellow-200; }
+  .badge-amber  { @apply bg-amber-100  text-amber-700  border-amber-200;  }
+  .badge-orange { @apply bg-orange-100 text-orange-700 border-orange-200; }
+  .badge-red    { @apply bg-red-100    text-red-700    border-red-200;    }
+  .badge-gray   { @apply bg-gray-100   text-gray-600   border-gray-200;   }
+  .badge-indigo { @apply bg-indigo-100 text-indigo-700 border-indigo-200; }
+  .badge-purple { @apply bg-purple-100 text-purple-700 border-purple-200; }
+  .badge-violet { @apply bg-violet-100 text-violet-700 border-violet-200; }
+  .badge-sky    { @apply bg-sky-100    text-sky-700    border-sky-200;    }
+
+  .dark .badge-blue   { @apply bg-blue-500/15   text-blue-300   border-blue-500/30;   }
+  .dark .badge-green  { @apply bg-green-500/15  text-green-300  border-green-500/30;  }
+  .dark .badge-yellow { @apply bg-yellow-500/15 text-yellow-300 border-yellow-500/30; }
+  .dark .badge-amber  { @apply bg-amber-500/15  text-amber-300  border-amber-500/30;  }
+  .dark .badge-orange { @apply bg-orange-500/15 text-orange-300 border-orange-500/30; }
+  .dark .badge-red    { @apply bg-red-500/15    text-red-300    border-red-500/30;    }
+  .dark .badge-gray   { @apply bg-gray-500/15   text-gray-300   border-gray-500/30;   }
+  .dark .badge-indigo { @apply bg-indigo-500/15 text-indigo-300 border-indigo-500/30; }
+  .dark .badge-purple { @apply bg-purple-500/15 text-purple-300 border-purple-500/30; }
+  .dark .badge-violet { @apply bg-violet-500/15 text-violet-300 border-violet-500/30; }
+  .dark .badge-sky    { @apply bg-sky-500/15    text-sky-300    border-sky-500/30;    }
+
+  /* Alert cards */
+  .alert-blue   { @apply bg-blue-50   border-blue-200   text-blue-700;   }
+  .alert-green  { @apply bg-green-50  border-green-200;                  }
+  .alert-red    { @apply bg-red-50    border-red-200;                    }
+  .alert-orange { @apply bg-orange-50 border-orange-200;                 }
+  .alert-amber  { @apply bg-amber-50  border-amber-200  text-amber-700;  }
+
+  .alert-gray   { @apply bg-gray-50   border-gray-200;                               }
+  .alert-purple { @apply bg-purple-50 border-purple-200;                             }
+
+  .dark .alert-blue   { @apply bg-blue-500/10   border-blue-500/30   text-blue-300;   }
+  .dark .alert-green  { @apply bg-green-500/10  border-green-500/30;                  }
+  .dark .alert-red    { @apply bg-red-500/10    border-red-500/30;                    }
+  .dark .alert-orange { @apply bg-orange-500/10 border-orange-500/30;                 }
+  .dark .alert-amber  { @apply bg-amber-500/10  border-amber-500/30  text-amber-300;  }
+  .dark .alert-gray   { @apply bg-gray-500/10   border-gray-500/30;                   }
+  .dark .alert-purple { @apply bg-purple-500/10 border-purple-500/30;                 }
+
+  /* Icon circles */
+  .icon-green  { @apply bg-green-100  text-green-600;  }
+  .icon-red    { @apply bg-red-100    text-red-500;    }
+  .icon-gray   { @apply bg-gray-100   text-gray-500;   }
+  .icon-violet { @apply bg-violet-100 text-violet-600; }
+  .icon-sky    { @apply bg-sky-100    text-sky-600;    }
+  .icon-amber  { @apply bg-amber-100  text-amber-600;  }
+
+  .dark .icon-green  { @apply bg-green-950/50  text-green-400;  }
+  .dark .icon-red    { @apply bg-red-950/50    text-red-400;    }
+  .dark .icon-gray   { @apply bg-gray-800/50   text-gray-400;   }
+  .dark .icon-violet { @apply bg-violet-950/50 text-violet-400; }
+  .dark .icon-sky    { @apply bg-sky-950/50    text-sky-400;    }
+  .dark .icon-amber  { @apply bg-amber-950/50  text-amber-400;  }
+}

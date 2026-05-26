@@ -103,13 +103,13 @@ const ROLES: { key: RolKey; label: string; descripcion: string; className: strin
     key: "administrador",
     label: "Administrador",
     descripcion: "Control total del sistema",
-    className: "bg-purple-100 text-purple-700 border-purple-200",
+    className: "badge-purple",
   },
   {
     key: "asesor",
     label: "Asesor",
     descripcion: "Operación diaria de la inmobiliaria",
-    className: "bg-blue-100 text-blue-700 border-blue-200",
+    className: "badge-blue",
   },
 ]
 
@@ -161,11 +161,11 @@ export function RolesClient() {
                 className={cn(
                   "rounded-lg border-2 p-4",
                   rol.key === "administrador"
-                    ? "border-purple-200 bg-purple-50/50"
-                    : "border-blue-200 bg-blue-50/50"
+                    ? "border-purple-200 bg-purple-50/50 dark:border-purple-500/30 dark:bg-purple-500/10"
+                    : "border-blue-200 bg-blue-50/50 dark:border-blue-500/30 dark:bg-blue-500/10"
                 )}
               >
-                <p className={cn("text-sm font-semibold", rol.key === "administrador" ? "text-purple-700" : "text-blue-700")}>
+                <p className={cn("text-sm font-semibold", rol.key === "administrador" ? "text-purple-700 dark:text-purple-300" : "text-blue-700 dark:text-blue-300")}>
                   {rol.label}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">{rol.descripcion}</p>

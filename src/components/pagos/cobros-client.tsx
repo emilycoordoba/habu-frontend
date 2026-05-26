@@ -87,9 +87,9 @@ const TIPO_LABELS: Record<TipoCobro, string> = {
 }
 
 const ESTADO_CONFIG: Record<EstadoCobro, { label: string; className: string; icon: IconSvgElement }> = {
-  pendiente: { label: "Pendiente", className: "bg-gray-100 text-gray-600 border-gray-200",    icon: Clock01Icon },
-  pagado:    { label: "Pagado",    className: "bg-green-100 text-green-700 border-green-200", icon: CheckmarkCircle02Icon },
-  en_mora:   { label: "En mora",   className: "bg-red-100 text-red-700 border-red-200",       icon: Alert02Icon },
+  pendiente: { label: "Pendiente", className: "badge-gray",  icon: Clock01Icon },
+  pagado:    { label: "Pagado",    className: "badge-green", icon: CheckmarkCircle02Icon },
+  en_mora:   { label: "En mora",   className: "badge-red",   icon: Alert02Icon },
 }
 
 type FiltroEstado = "todos" | EstadoCobro
@@ -155,20 +155,20 @@ export function CobrosClient({ contratoId }: CobrosClientProps) {
           <SummaryCard
             label={`En mora${countMora > 0 ? ` (${countMora} cobro${countMora > 1 ? "s" : ""})` : ""}`}
             value={formatCOP(totalMora)}
-            className={countMora > 0 ? "border-red-200 bg-red-50" : "border-gray-200"}
-            valueClassName={countMora > 0 ? "text-red-700" : "text-gray-800"}
+            className={countMora > 0 ? "alert-red" : "border-gray-200"}
+            valueClassName={countMora > 0 ? "text-red-700 dark:text-red-300" : "text-gray-800 dark:text-gray-200"}
           />
           <SummaryCard
             label="Total pagado"
             value={formatCOP(totalPagado)}
-            className="border-green-200 bg-green-50"
-            valueClassName="text-green-700"
+            className="alert-green"
+            valueClassName="text-green-700 dark:text-green-300"
           />
         </div>
 
         {/* Aviso inmueble residencial */}
         {!contrato.esComercial && countMora > 0 && (
-          <div className="flex items-start gap-2 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2.5">
+          <div className="flex items-start gap-2 text-sm alert-blue border rounded-md px-3 py-2.5">
             <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4 shrink-0 mt-0.5" />
             <span>Inmueble residencial — los cobros en mora <strong>no generan intereses</strong> según la Ley 820 de 2003.</span>
           </div>

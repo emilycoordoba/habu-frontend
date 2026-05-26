@@ -97,33 +97,33 @@ export function ClientesClient() {
             label="Propietarios"
             value={totalPropietarios}
             icon={ShieldUserIcon}
-            className="border-blue-200 bg-blue-50"
-            valueClassName="text-blue-700"
-            iconClassName="text-blue-400"
+            className="alert-blue"
+            valueClassName="text-blue-700 dark:text-blue-300"
+            iconClassName="text-blue-400 dark:text-blue-500"
           />
           <SummaryCard
             label="Arrendatarios"
             value={totalArrendatarios}
             icon={UserIcon}
-            className="border-green-200 bg-green-50"
-            valueClassName="text-green-700"
-            iconClassName="text-green-400"
+            className="alert-green"
+            valueClassName="text-green-700 dark:text-green-300"
+            iconClassName="text-green-400 dark:text-green-500"
           />
           <SummaryCard
             label="Prospectos"
             value={totalProspectos}
             icon={Search01Icon}
-            className="border-amber-200 bg-amber-50"
-            valueClassName="text-amber-700"
-            iconClassName="text-amber-400"
+            className="alert-amber"
+            valueClassName="text-amber-700 dark:text-amber-300"
+            iconClassName="text-amber-400 dark:text-amber-500"
           />
           <SummaryCard
             label="Codeudores"
             value={totalCodeudores}
             icon={UserAdd01Icon}
-            className="border-purple-200 bg-purple-50"
-            valueClassName="text-purple-700"
-            iconClassName="text-purple-400"
+            className="alert-purple"
+            valueClassName="text-purple-700 dark:text-purple-300"
+            iconClassName="text-purple-400 dark:text-purple-500"
           />
         </div>
 

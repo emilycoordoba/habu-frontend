@@ -81,9 +81,9 @@ function formatCOP(value: number) {
 }
 
 function urgenciaMora(dias: number): { label: string; className: string } {
-  if (dias >= 30) return { label: `${dias} días`, className: "bg-red-100 text-red-700 border-red-200" }
-  if (dias >= 15) return { label: `${dias} días`, className: "bg-orange-100 text-orange-700 border-orange-200" }
-  return { label: `${dias} días`, className: "bg-amber-100 text-amber-700 border-amber-200" }
+  if (dias >= 30) return { label: `${dias} días`, className: "badge-red" }
+  if (dias >= 15) return { label: `${dias} días`, className: "badge-orange" }
+  return { label: `${dias} días`, className: "badge-amber" }
 }
 
 // ---------------------------------------------------------------------------
@@ -122,14 +122,14 @@ export function MoraClient() {
 
         {/* Cards de resumen */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="border rounded-lg px-4 py-4 border-red-200 bg-red-50">
+          <div className="border rounded-lg px-4 py-4 alert-red">
             <p className="text-xs text-muted-foreground mb-1">Total en mora</p>
-            <p className="text-xl font-semibold tabular-nums text-red-700">{formatCOP(totalEnMora)}</p>
+            <p className="text-xl font-semibold tabular-nums text-red-700 dark:text-red-300">{formatCOP(totalEnMora)}</p>
             <p className="text-xs text-muted-foreground mt-1">{cobros.length} cobros</p>
           </div>
-          <div className="border rounded-lg px-4 py-4 border-orange-200 bg-orange-50">
+          <div className="border rounded-lg px-4 py-4 alert-orange">
             <p className="text-xs text-muted-foreground mb-1">Intereses acumulados</p>
-            <p className="text-xl font-semibold tabular-nums text-orange-700">{formatCOP(totalIntereses)}</p>
+            <p className="text-xl font-semibold tabular-nums text-orange-700 dark:text-orange-300">{formatCOP(totalIntereses)}</p>
             <p className="text-xs text-muted-foreground mt-1">Solo inmuebles comerciales</p>
           </div>
           <div className="border rounded-lg px-4 py-4">

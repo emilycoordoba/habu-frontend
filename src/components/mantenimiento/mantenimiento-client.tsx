@@ -41,16 +41,16 @@ const ESTADO_CONFIG: Record<EstadoMantenimiento, {
   className: string
   icon: IconSvgElement
 }> = {
-  pendiente:   { label: "Pendiente",   className: "bg-amber-100 text-amber-700 border-amber-200",   icon: Clock01Icon },
-  en_proceso:  { label: "En proceso",  className: "bg-blue-100 text-blue-700 border-blue-200",      icon: Wrench01Icon },
-  finalizado:  { label: "Finalizado",  className: "bg-green-100 text-green-700 border-green-200",   icon: CheckmarkCircle01Icon },
-  cancelado:   { label: "Cancelado",   className: "bg-gray-100 text-gray-500 border-gray-200",      icon: Cancel01Icon },
+  pendiente:   { label: "Pendiente",   className: "badge-amber",  icon: Clock01Icon },
+  en_proceso:  { label: "En proceso",  className: "badge-blue",   icon: Wrench01Icon },
+  finalizado:  { label: "Finalizado",  className: "badge-green",  icon: CheckmarkCircle01Icon },
+  cancelado:   { label: "Cancelado",   className: "badge-gray",   icon: Cancel01Icon },
 }
 
 const PRIORIDAD_CONFIG: Record<PrioridadMantenimiento, { label: string; className: string }> = {
-  baja:  { label: "Baja",  className: "bg-gray-100 text-gray-500 border-gray-200" },
-  media: { label: "Media", className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  alta:  { label: "Alta",  className: "bg-red-100 text-red-700 border-red-200" },
+  baja:  { label: "Baja",  className: "badge-gray" },
+  media: { label: "Media", className: "badge-yellow" },
+  alta:  { label: "Alta",  className: "badge-red" },
 }
 
 // ---------------------------------------------------------------------------
@@ -112,10 +112,10 @@ export function MantenimientoClient() {
 
         {/* Cards de resumen */}
         <div className="grid grid-cols-4 gap-4">
-          <SummaryCard label="Pendientes"  value={totalPendientes}  className="border-amber-200 bg-amber-50"  valueClassName="text-amber-700" />
-          <SummaryCard label="En proceso"  value={totalEnProceso}   className="border-blue-200 bg-blue-50"    valueClassName="text-blue-700" />
-          <SummaryCard label="Finalizadas" value={totalFinalizadas} className="border-green-200 bg-green-50"  valueClassName="text-green-700" />
-          <SummaryCard label="Canceladas"  value={totalCanceladas}  className="border-gray-200 bg-gray-50"    valueClassName="text-gray-500" />
+          <SummaryCard label="Pendientes"  value={totalPendientes}  className="alert-amber"  valueClassName="text-amber-700  dark:text-amber-300" />
+          <SummaryCard label="En proceso"  value={totalEnProceso}   className="alert-blue"   valueClassName="text-blue-700   dark:text-blue-300" />
+          <SummaryCard label="Finalizadas" value={totalFinalizadas} className="alert-green"  valueClassName="text-green-700  dark:text-green-300" />
+          <SummaryCard label="Canceladas"  value={totalCanceladas}  className="alert-gray"   valueClassName="text-gray-500   dark:text-gray-400" />
         </div>
 
         {/* Filtros */}

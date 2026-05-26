@@ -139,8 +139,8 @@ export function RegistrarPagoClient({ contratoId, cobroId }: RegistrarPagoClient
               <div className={cn(
                 "flex items-start gap-2.5 rounded-md border px-3 py-3 text-sm",
                 cobro.esComercial
-                  ? "bg-red-50 border-red-200 text-red-700"
-                  : "bg-amber-50 border-amber-200 text-amber-700"
+                  ? "alert-red text-red-700 dark:text-red-300"
+                  : "alert-amber text-amber-700 dark:text-amber-300"
               )}>
                 <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4 shrink-0 mt-0.5" />
                 <div>

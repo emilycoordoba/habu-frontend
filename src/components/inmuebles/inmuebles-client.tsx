@@ -115,11 +115,11 @@ function formatCOP(value: number) {
 }
 
 const ESTADO_CONFIG: Record<EstadoInmueble, { label: string; className: string }> = {
-  disponible:        { label: "Disponible",         className: "bg-green-100 text-green-700 border-green-200" },
-  arrendado:         { label: "Arrendado",           className: "bg-blue-100 text-blue-700 border-blue-200" },
-  en_proceso_venta:  { label: "En proceso de venta", className: "bg-purple-100 text-purple-700 border-purple-200" },
-  vendido:           { label: "Vendido",             className: "bg-gray-100 text-gray-500 border-gray-200" },
-  en_mantenimiento:  { label: "En mantenimiento",    className: "bg-amber-100 text-amber-700 border-amber-200" },
+  disponible:        { label: "Disponible",         className: "badge-green" },
+  arrendado:         { label: "Arrendado",           className: "badge-blue" },
+  en_proceso_venta:  { label: "En proceso de venta", className: "badge-purple" },
+  vendido:           { label: "Vendido",             className: "badge-gray" },
+  en_mantenimiento:  { label: "En mantenimiento",    className: "badge-amber" },
 }
 
 const TIPO_LABELS: Record<TipoInmueble, string> = {
@@ -198,10 +198,10 @@ export function InmueblesClient() {
 
         {/* Cards de resumen */}
         <div className="grid grid-cols-4 gap-4">
-          <SummaryCard label="Disponibles"        value={totalDisponibles}   className="border-green-200 bg-green-50"  valueClassName="text-green-700" />
-          <SummaryCard label="Arrendados"          value={totalArrendados}    className="border-blue-200 bg-blue-50"    valueClassName="text-blue-700" />
-          <SummaryCard label="En proceso de venta" value={totalEnVenta}       className="border-purple-200 bg-purple-50" valueClassName="text-purple-700" />
-          <SummaryCard label="En mantenimiento"    value={totalMantenimiento} className="border-amber-200 bg-amber-50"  valueClassName="text-amber-700" />
+          <SummaryCard label="Disponibles"        value={totalDisponibles}   className="alert-green"  valueClassName="text-green-700  dark:text-green-300" />
+          <SummaryCard label="Arrendados"          value={totalArrendados}    className="alert-blue"   valueClassName="text-blue-700   dark:text-blue-300" />
+          <SummaryCard label="En proceso de venta" value={totalEnVenta}       className="alert-purple" valueClassName="text-purple-700 dark:text-purple-300" />
+          <SummaryCard label="En mantenimiento"    value={totalMantenimiento} className="alert-amber"  valueClassName="text-amber-700  dark:text-amber-300" />
         </div>
 
         {/* Filtros */}

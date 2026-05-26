@@ -218,9 +218,9 @@ export function ReportesClient() {
 
           {/* Cards de resumen */}
           <div className="px-6 py-5 border-b grid grid-cols-3 gap-4">
-            <div className="border rounded-lg px-4 py-3 border-green-200 bg-green-50">
+            <div className="border rounded-lg px-4 py-3 alert-green">
               <p className="text-xs text-muted-foreground mb-1">Total recibido</p>
-              <p className="text-xl font-semibold tabular-nums text-green-700">{formatCOP(totalRecibido)}</p>
+              <p className="text-xl font-semibold tabular-nums text-green-700 dark:text-green-300">{formatCOP(totalRecibido)}</p>
               <p className="text-xs text-muted-foreground mt-1">{pagosFiltrados.length} pago{pagosFiltrados.length !== 1 ? "s" : ""}</p>
             </div>
             <div className="border rounded-lg px-4 py-3">

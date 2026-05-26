@@ -78,8 +78,8 @@ const USUARIOS_MOCK: Usuario[] = [
 // ---------------------------------------------------------------------------
 
 const ROL_CONFIG: Record<RolUsuario, { label: string; className: string }> = {
-  administrador: { label: "Administrador", className: "bg-purple-100 text-purple-700 border-purple-200" },
-  asesor:        { label: "Asesor",         className: "bg-blue-100 text-blue-700 border-blue-200" },
+  administrador: { label: "Administrador", className: "badge-purple" },
+  asesor:        { label: "Asesor",         className: "badge-blue" },
 }
 
 function formatFecha(iso: string) {
@@ -264,9 +264,7 @@ export function UsuariosClient() {
                       variant="outline"
                       className={cn(
                         "text-xs font-medium gap-1",
-                        usuario.estado === "activo"
-                          ? "bg-green-100 text-green-700 border-green-200"
-                          : "bg-gray-100 text-gray-500 border-gray-200"
+                        usuario.estado === "activo" ? "badge-green" : "badge-gray"
                       )}
                     >
                       <HugeiconsIcon

@@ -93,19 +93,19 @@ const TIPO_CONFIG: Record<TipoComision, {
     label: "Administración",
     descripcionBase: "% mensual sobre el canon de arriendo",
     icon: Building04Icon,
-    className: "bg-blue-100 text-blue-700 border-blue-200",
+    className: "badge-blue",
   },
   colocacion: {
     label: "Colocación",
     descripcionBase: "% del primer canon al activar el contrato (pago único)",
     icon: FileManagementIcon,
-    className: "bg-violet-100 text-violet-700 border-violet-200",
+    className: "badge-violet",
   },
   venta: {
     label: "Venta",
     descripcionBase: "% sobre el precio total de escrituración",
     icon: Home01Icon,
-    className: "bg-amber-100 text-amber-700 border-amber-200",
+    className: "badge-amber",
   },
 }
 
@@ -410,9 +410,7 @@ function PanelAsesores({ esquema, asignaciones, onAsignar, onDesasignar }: Panel
             variant="outline"
             className={cn(
               "text-xs font-medium shrink-0",
-              esquema.estado === "activo"
-                ? "bg-green-100 text-green-700 border-green-200"
-                : "bg-gray-100 text-gray-500 border-gray-200"
+              esquema.estado === "activo" ? "badge-green" : "badge-gray"
             )}
           >
             {esquema.estado === "activo" ? "Activo" : "Inactivo"}
