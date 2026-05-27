@@ -32,7 +32,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontSans.variable, fontMono.variable, "font-sans")}
+      className={cn("antialiased scroll-smooth", fontSans.variable, fontMono.variable, "font-sans")}
     >
       <body>
         <ThemeProvider><TooltipProvider>{children}</TooltipProvider></ThemeProvider>
