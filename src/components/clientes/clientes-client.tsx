@@ -44,10 +44,13 @@ const TIPO_FILTRO_LABEL: Record<TipoCliente | "todos", string> = {
 // Componente
 // ---------------------------------------------------------------------------
 
+const POR_PAGINA = 10
+
 export function ClientesClient() {
   const [busqueda, setBusqueda] = React.useState("")
   const [tipoFiltro, setTipoFiltro] = React.useState<TipoCliente | "todos">("todos")
   const [tipoPersonaFiltro, setTipoPersonaFiltro] = React.useState<"todos" | "natural" | "juridica">("todos")
+  const [pagina, setPagina] = React.useState(1)
 
   const clientes = CLIENTES_MOCK
 
@@ -64,6 +67,10 @@ export function ClientesClient() {
     }
     return true
   })
+
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA))
+  const paginaActual = Math.min(pagina, totalPaginas)
+  const paginados = filtrados.slice((paginaActual - 1) * POR_PAGINA, paginaActual * POR_PAGINA)
 
   const totalPropietarios  = clientes.filter(c => c.tipos.includes("propietario")).length
   const totalArrendatarios = clientes.filter(c => c.tipos.includes("arrendatario")).length
@@ -138,7 +145,7 @@ export function ClientesClient() {
             <Input
               placeholder="Buscar por nombre, documento o email…"
               value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
+              onChange={e => { setBusqueda(e.target.value); setPagina(1) }}
               className="pl-9 h-9"
             />
           </div>
@@ -146,7 +153,7 @@ export function ClientesClient() {
           <div className="flex items-center gap-2 shrink-0">
             <HugeiconsIcon icon={FilterIcon} strokeWidth={1.5} className="size-4 text-muted-foreground" />
 
-            <Select value={tipoPersonaFiltro} onValueChange={v => setTipoPersonaFiltro(v as "todos" | "natural" | "juridica")}>
+            <Select value={tipoPersonaFiltro} onValueChange={v => { setTipoPersonaFiltro(v as "todos" | "natural" | "juridica"); setPagina(1) }}>
               <SelectTrigger className="h-9 w-[160px] text-sm">
                 <SelectValue placeholder="Tipo de persona" />
               </SelectTrigger>
@@ -157,7 +164,7 @@ export function ClientesClient() {
               </SelectContent>
             </Select>
 
-            <Select value={tipoFiltro} onValueChange={v => setTipoFiltro(v as TipoCliente | "todos")}>
+            <Select value={tipoFiltro} onValueChange={v => { setTipoFiltro(v as TipoCliente | "todos"); setPagina(1) }}>
               <SelectTrigger className="h-9 w-[175px] text-sm">
                 <SelectValue placeholder="Tipo de cliente" />
               </SelectTrigger>
@@ -191,7 +198,7 @@ export function ClientesClient() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {filtrados.map(cliente => (
+                {paginados.map(cliente => (
                   <tr key={cliente.id} className="hover:bg-muted/30 transition-colors">
 
                     {/* Cliente */}
@@ -262,12 +269,39 @@ export function ClientesClient() {
                 ))}
               </tbody>
             </table>
+            {/* Paginación */}
+            <div className="flex items-center justify-between border-t px-4 py-3">
+              <p className="text-sm text-muted-foreground">
+                Mostrando{" "}
+                <span className="font-medium">
+                  {Math.min((paginaActual - 1) * POR_PAGINA + 1, filtrados.length)}–{Math.min(paginaActual * POR_PAGINA, filtrados.length)}
+                </span>{" "}
+                de <span className="font-medium">{filtrados.length}</span> clientes
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={paginaActual <= 1}
+                  onClick={() => setPagina(p => p - 1)}
+                >
+                  Anterior
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Página {paginaActual} de {totalPaginas}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={paginaActual >= totalPaginas}
+                  onClick={() => setPagina(p => p + 1)}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
           </div>
         )}
-
-        <p className="text-xs text-muted-foreground text-right">
-          {filtrados.length} de {clientes.length} clientes
-        </p>
 
       </div>
     </div>

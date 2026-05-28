@@ -146,11 +146,14 @@ const TIPO_ICON: Record<TipoInmueble, React.ReactNode> = {
 // Componente
 // ---------------------------------------------------------------------------
 
+const POR_PAGINA = 10
+
 export function InmueblesClient() {
   const [busqueda,  setBusqueda]  = React.useState("")
   const [tipo,      setTipo]      = React.useState<TipoInmueble | "todos">("todos")
   const [modalidad, setModalidad] = React.useState<ModalidadInmueble | "todos">("todos")
   const [estado,    setEstado]    = React.useState<EstadoInmueble | "todos">("todos")
+  const [pagina,    setPagina]    = React.useState(1)
 
   const inmuebles = INMUEBLES_MOCK
 
@@ -168,6 +171,14 @@ export function InmueblesClient() {
     }
     return true
   })
+
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA))
+  const paginaActual = Math.min(pagina, totalPaginas)
+  const paginados = filtrados.slice((paginaActual - 1) * POR_PAGINA, paginaActual * POR_PAGINA)
+
+  function cambiarFiltro<T>(setter: React.Dispatch<React.SetStateAction<T>>) {
+    return (v: T) => { setter(v); setPagina(1) }
+  }
 
   // Cards de resumen
   const totalDisponibles   = inmuebles.filter(i => i.estado === "disponible").length
@@ -211,7 +222,7 @@ export function InmueblesClient() {
             <Input
               placeholder="Buscar por dirección, ciudad o propietario…"
               value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
+              onChange={e => { setBusqueda(e.target.value); setPagina(1) }}
               className="pl-9 h-9"
             />
           </div>
@@ -219,7 +230,7 @@ export function InmueblesClient() {
           <div className="flex items-center gap-2 shrink-0">
             <HugeiconsIcon icon={FilterIcon} strokeWidth={1.5} className="size-4 text-muted-foreground" />
 
-            <Select value={tipo} onValueChange={v => setTipo(v as TipoInmueble | "todos")}>
+            <Select value={tipo} onValueChange={cambiarFiltro<TipoInmueble | "todos">(setTipo)}>
               <SelectTrigger className="h-9 w-[140px] text-sm">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
@@ -232,7 +243,7 @@ export function InmueblesClient() {
               </SelectContent>
             </Select>
 
-            <Select value={modalidad} onValueChange={v => setModalidad(v as ModalidadInmueble | "todos")}>
+            <Select value={modalidad} onValueChange={cambiarFiltro<ModalidadInmueble | "todos">(setModalidad)}>
               <SelectTrigger className="h-9 w-[160px] text-sm">
                 <SelectValue placeholder="Modalidad" />
               </SelectTrigger>
@@ -244,7 +255,7 @@ export function InmueblesClient() {
               </SelectContent>
             </Select>
 
-            <Select value={estado} onValueChange={v => setEstado(v as EstadoInmueble | "todos")}>
+            <Select value={estado} onValueChange={cambiarFiltro<EstadoInmueble | "todos">(setEstado)}>
               <SelectTrigger className="h-9 w-[170px] text-sm">
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
@@ -280,7 +291,7 @@ export function InmueblesClient() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {filtrados.map(inmueble => {
+                {paginados.map(inmueble => {
                   const estadoCfg = ESTADO_CONFIG[inmueble.estado]
                   return (
                     <tr key={inmueble.id} className="hover:bg-muted/30 transition-colors">
@@ -346,12 +357,40 @@ export function InmueblesClient() {
                 })}
               </tbody>
             </table>
+
+            {/* Paginación */}
+            <div className="flex items-center justify-between border-t px-4 py-3">
+              <p className="text-sm text-muted-foreground">
+                Mostrando{" "}
+                <span className="font-medium">
+                  {Math.min((paginaActual - 1) * POR_PAGINA + 1, filtrados.length)}–{Math.min(paginaActual * POR_PAGINA, filtrados.length)}
+                </span>{" "}
+                de <span className="font-medium">{filtrados.length}</span> inmuebles
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={paginaActual <= 1}
+                  onClick={() => setPagina(p => p - 1)}
+                >
+                  Anterior
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Página {paginaActual} de {totalPaginas}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={paginaActual >= totalPaginas}
+                  onClick={() => setPagina(p => p + 1)}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
           </div>
         )}
-
-        <p className="text-xs text-muted-foreground text-right">
-          {filtrados.length} de {inmuebles.length} inmuebles
-        </p>
 
       </div>
     </div>
