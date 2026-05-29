@@ -23,21 +23,18 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { ASESORES_MOCK } from "@/lib/mock/usuarios"
+import { obtenerInmueble } from "@/lib/api/inmuebles"
+import { crearPromesa } from "@/lib/api/contratos"
+import type { FormaPago } from "@/types/contrato.types"
+import { toast } from "sonner"
 
-// --- Mock: en producción vendría de la API según inmuebleId ---
-const INMUEBLES_MOCK: Record<string, { nombre: string; direccion: string; propietario: string; tipo: string }> = {
-  i1: { nombre: "Apto 502 Torres del Norte", direccion: "Cll 127 #15-40, Bogotá", propietario: "Jorge Herrera", tipo: "Apartamento" },
-  i2: { nombre: "Local 8 CC Bulevar", direccion: "Av. El Dorado #68C-61, Bogotá", propietario: "Inversiones XYZ", tipo: "Local" },
-  i3: { nombre: "Casa 5 Urb. Los Pinos", direccion: "Cll 12 #45-30, Medellín", propietario: "María Ospina", tipo: "Casa" },
-  i4: { nombre: "Oficina 301 Ed. Empresarial", direccion: "Cra 43 #11-61, Medellín", propietario: "Rodrigo Castaño", tipo: "Oficina" },
-}
-
-type FormaPago = "contado" | "credito_hipotecario" | "mixto"
+interface InmuebleInfo { nombre: string; direccion: string; propietario: string }
 
 interface FormularioPromesaClientProps {
   inmuebleId: string
   tipo: string
   asesorId?: string
+  contraparteId?: string
 }
 
 function formatCOP(value: string): string {
@@ -50,10 +47,22 @@ function parseCOP(value: string): number {
   return parseInt(value.replace(/\D/g, ""), 10) || 0
 }
 
-export function FormularioPromesaClient({ inmuebleId, asesorId = "" }: FormularioPromesaClientProps) {
+export function FormularioPromesaClient({ inmuebleId, asesorId = "", contraparteId = "" }: FormularioPromesaClientProps) {
   const router = useRouter()
-  const inmueble = INMUEBLES_MOCK[inmuebleId]
   const asesor = ASESORES_MOCK.find((a) => a.id === asesorId)
+
+  const [inmuebleInfo, setInmuebleInfo] = React.useState<InmuebleInfo | null>(null)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+
+  React.useEffect(() => {
+    if (!inmuebleId) return
+    obtenerInmueble(inmuebleId)
+      .then(res => {
+        const d = res.data
+        setInmuebleInfo({ nombre: d.direccion, direccion: d.ubicacion, propietario: d.propietario })
+      })
+      .catch(() => {})
+  }, [inmuebleId])
 
   // — Sección 1: Precio y arras
   const [precioRaw, setPrecioRaw] = React.useState("")
@@ -61,7 +70,7 @@ export function FormularioPromesaClient({ inmuebleId, asesorId = "" }: Formulari
   const [fechaLimiteArras, setFechaLimiteArras] = React.useState("")
 
   // — Sección 2: Forma de pago
-  const [formaPago, setFormaPago] = React.useState<FormaPago | "">("")
+  const [formaPago, setFormaPago] = React.useState<FormaPago | "">("") // eslint-disable-line @typescript-eslint/no-unused-vars
   const [contadoRaw, setContadoRaw] = React.useState("")
   const [creditoRaw, setCreditoRaw] = React.useState("")
   const [entidadFinanciera, setEntidadFinanciera] = React.useState("")
@@ -122,7 +131,7 @@ export function FormularioPromesaClient({ inmuebleId, asesorId = "" }: Formulari
         <div>
           <h1 className="text-lg font-semibold leading-none">Promesa de compraventa</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {inmueble ? inmueble.nombre : "Inmueble no encontrado"} · Borrador
+            {inmuebleInfo ? inmuebleInfo.nombre : inmuebleId ? "Cargando inmueble…" : "Inmueble no especificado"} · Borrador
           </p>
         </div>
         <Badge variant="outline" className="ml-auto bg-gray-100 text-gray-600 border-gray-200">
@@ -315,11 +324,37 @@ export function FormularioPromesaClient({ inmuebleId, asesorId = "" }: Formulari
               <Button variant="outline">Cancelar</Button>
             </Link>
             <Button
-              disabled={!puedeGuardar}
-              onClick={() => router.push("/contratos/5/documentos")}
+              disabled={!puedeGuardar || isSubmitting}
+              onClick={async () => {
+                if (!puedeGuardar || isSubmitting || !formaPago) return
+                setIsSubmitting(true)
+                try {
+                  const tieneCredito = formaPago === "credito_hipotecario" || formaPago === "mixto"
+                  const res = await crearPromesa({
+                    inmuebleId,
+                    contraparteId,
+                    asesor: asesor?.nombre ?? asesorId,
+                    precioVenta: precio,
+                    valorArras: arras,
+                    fechaLimiteArras,
+                    formaPago,
+                    ...(tieneCredito && entidadFinanciera ? { entidadFinanciera } : {}),
+                    ...(fechaAprobacionCredito ? { fechaAprobacionCredito } : {}),
+                    ...(formaPago === "mixto" ? { valorContado: contado, valorCredito: credito } : {}),
+                    ...(fechaEscrituracion ? { fechaEscrituracion } : {}),
+                    ...(notaria ? { notaria } : {}),
+                  })
+                  toast.success("Promesa creada como borrador")
+                  router.push(`/contratos/${res.data.id}/documentos`)
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Error al crear la promesa")
+                } finally {
+                  setIsSubmitting(false)
+                }
+              }}
             >
               <HugeiconsIcon icon={FileManagementIcon} strokeWidth={2} className="size-4" />
-              Guardar y continuar
+              {isSubmitting ? "Guardando…" : "Guardar y continuar"}
             </Button>
           </div>
         </div>
@@ -330,21 +365,17 @@ export function FormularioPromesaClient({ inmuebleId, asesorId = "" }: Formulari
 
           {/* Partes */}
           <div className="flex flex-col gap-3">
-            {inmueble ? (
-              <PreviewCard
-                icon={Building04Icon}
-                label="Inmueble"
-                value={inmueble.nombre}
-                sub={inmueble.direccion}
-              />
-            ) : (
-              <PreviewCard icon={Building04Icon} label="Inmueble" value="—" />
-            )}
-            {inmueble && (
+            <PreviewCard
+              icon={Building04Icon}
+              label="Inmueble"
+              value={inmuebleInfo?.nombre ?? "—"}
+              sub={inmuebleInfo?.direccion}
+            />
+            {inmuebleInfo && (
               <PreviewCard
                 icon={UserIcon}
                 label="Vendedor"
-                value={inmueble.propietario}
+                value={inmuebleInfo.propietario}
               />
             )}
             {asesor && (

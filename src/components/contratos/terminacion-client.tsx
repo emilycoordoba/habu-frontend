@@ -28,39 +28,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-
-// ---------------------------------------------------------------------------
-// Mocks — se reemplazan con la API
-// ---------------------------------------------------------------------------
-
-const CONTRATOS_MOCK: Record<string, ContratoMock> = {
-  "1": {
-    id: "1",
-    referencia: "CTR-2025-001",
-    tipo: "arriendo",
-    inmueble: "Apto 302 Ed. Torres del Parque",
-    direccion: "Cra 7 #32-16, Bogotá",
-    propietario: "Carlos Ramírez",
-    contraparte: "Laura Gómez",
-    canon: 2200000,
-    deposito: 4400000,
-    saldosPendientes: [
-      { concepto: "Canon marzo 2025", valor: 2200000, diasMora: 12 },
-      { concepto: "Canon abril 2025", valor: 2200000, diasMora: 0 },
-    ],
-  },
-  "promesa-1": {
-    id: "promesa-1",
-    referencia: "CTR-2025-005",
-    tipo: "promesa_compraventa",
-    inmueble: "Casa 5 Urb. Los Pinos",
-    direccion: "Cll 12 #45-30, Medellín",
-    propietario: "María Ospina",
-    contraparte: "Felipe Morales",
-    arras: 32000000,
-    saldosPendientes: [],
-  },
-}
+import { obtenerContrato, terminarContrato, listarCobros } from "@/lib/api/contratos"
+import type { TerminarContratoBody } from "@/lib/api/contratos"
+import { toast } from "sonner"
 
 interface SaldoPendiente {
   concepto: string
@@ -151,7 +121,7 @@ const CAUSAS_ARRIENDO = [
   { value: "otro", label: "Otro" },
 ]
 
-function FlujoArriendo({ contrato }: { contrato: ContratoMock }) {
+function FlujoArriendo({ contrato, onTerminar }: { contrato: ContratoMock; onTerminar: (body: TerminarContratoBody) => Promise<void> }) {
   const router = useRouter()
 
   // Sección 1
@@ -416,7 +386,13 @@ function FlujoArriendo({ contrato }: { contrato: ContratoMock }) {
               </Link>
               <Button
                 disabled={!todoCorrecto}
-                onClick={() => router.push(`/contratos/${contrato.id}`)}
+                onClick={async () => {
+                  await onTerminar({
+                    motivo: causa === "otro" ? causaDetalle || "Otro" : causa,
+                    fechaTerminacion: fechaEntrega,
+                    enDisputa: causa === "incumplimiento_arrendatario" || causa === "incumplimiento_arrendador",
+                  })
+                }}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
                 Registrar terminación anticipada
@@ -534,7 +510,7 @@ function calcularArras(arras: number, quienDesiste: QuienDesiste): {
   }
 }
 
-function FlujoPromesa({ contrato }: { contrato: ContratoMock }) {
+function FlujoPromesa({ contrato, onTerminar }: { contrato: ContratoMock; onTerminar: (body: TerminarContratoBody) => Promise<void> }) {
   const router = useRouter()
 
   const [quienDesiste, setQuienDesiste] = React.useState<QuienDesiste>("")
@@ -683,7 +659,13 @@ function FlujoPromesa({ contrato }: { contrato: ContratoMock }) {
               </Link>
               <Button
                 disabled={!todoCorrecto}
-                onClick={() => router.push(`/contratos/${contrato.id}`)}
+                onClick={async () => {
+                  await onTerminar({
+                    motivo: `Desiste: ${quienDesiste}`,
+                    fechaTerminacion: fechaEntrega,
+                    enDisputa: quienDesiste !== "mutuo_acuerdo",
+                  })
+                }}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
                 Registrar terminación anticipada
@@ -765,11 +747,66 @@ interface TerminacionClientProps {
 }
 
 export function TerminacionClient({ contratoId }: TerminacionClientProps) {
-  const contrato = CONTRATOS_MOCK[contratoId] ?? CONTRATOS_MOCK["1"]
+  const router = useRouter()
+  const [contrato, setContrato] = React.useState<ContratoMock | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
 
-  if (contrato.tipo === "promesa_compraventa") {
-    return <FlujoPromesa contrato={contrato} />
+  React.useEffect(() => {
+    let cancelado = false
+    Promise.all([
+      obtenerContrato(contratoId),
+      listarCobros(contratoId, { limit: 100 }),
+    ])
+      .then(([c, cobros]) => {
+        if (cancelado) return
+        const d = c.data
+        const saldosPendientes = cobros.data
+          .filter(co => co.estado === "pendiente" || co.estado === "en_mora")
+          .map(co => ({
+            concepto: co.periodo ?? co.tipo,
+            valor: co.valor,
+            diasMora: co.diasMora ?? 0,
+          }))
+        setContrato({
+          id: d.id,
+          referencia: d.referencia,
+          tipo: d.tipo,
+          inmueble: d.inmueble.nombre,
+          direccion: d.inmueble.direccion,
+          propietario: d.propietario.nombre,
+          contraparte: d.contraparte.nombre,
+          canon: d.condicionesArriendo?.valorCanon,
+          deposito: d.condicionesArriendo?.valorDeposito,
+          arras: d.condicionesPromesa?.valorArras,
+          saldosPendientes,
+        })
+        setIsLoading(false)
+      })
+      .catch(() => setIsLoading(false))
+    return () => { cancelado = true }
+  }, [contratoId])
+
+  async function handleTerminar(body: TerminarContratoBody) {
+    try {
+      await terminarContrato(contratoId, body)
+      toast.success("Terminación registrada")
+      router.push(`/contratos/${contratoId}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al registrar")
+    }
   }
 
-  return <FlujoArriendo contrato={contrato} />
+  if (isLoading || !contrato) {
+    return (
+      <div className="flex h-full items-center justify-center text-muted-foreground">
+        <div className="animate-pulse text-sm">Cargando contrato…</div>
+      </div>
+    )
+  }
+
+  if (contrato.tipo === "promesa_compraventa") {
+    return <FlujoPromesa contrato={contrato} onTerminar={handleTerminar} />
+  }
+
+  return <FlujoArriendo contrato={contrato} onTerminar={handleTerminar} />
 }

@@ -42,22 +42,21 @@ import { cn } from "@/lib/utils"
 import type { TipoContrato } from "@/types/contrato.types"
 import { RegistrarClienteDialog } from "./registrar-cliente-dialog"
 import { ASESORES_MOCK } from "@/lib/mock/usuarios"
+import { listarInmuebles } from "@/lib/api/inmuebles"
+import { listarClientes } from "@/lib/api/clientes"
 
-// --- Datos mock (se reemplazarán con la API) ---
-const INMUEBLES_DISPONIBLES = [
-  { id: "i1", nombre: "Apto 502 Torres del Norte", direccion: "Cll 127 #15-40, Bogotá", propietario: "Jorge Herrera", propietarioId: "p1" },
-  { id: "i2", nombre: "Local 8 CC Bulevar", direccion: "Av. El Dorado #68C-61, Bogotá", propietario: "Inversiones XYZ", propietarioId: "p2" },
-  { id: "i3", nombre: "Casa 5 Urb. Los Pinos", direccion: "Cll 12 #45-30, Medellín", propietario: "María Ospina", propietarioId: "p3" },
-  { id: "i4", nombre: "Oficina 301 Ed. Empresarial", direccion: "Cra 43 #11-61, Medellín", propietario: "Rodrigo Castaño", propietarioId: "p4" },
-]
+interface InmuebleItem {
+  id: string
+  nombre: string
+  direccion: string
+  propietario: string
+}
 
-const CLIENTES_DISPONIBLES = [
-  { id: "c1", nombre: "Andrés Ramírez", identificacion: "CC 1020304050" },
-  { id: "c2", nombre: "Laura Gómez", identificacion: "CC 1234567890" },
-  { id: "c3", nombre: "Constructora Cementos S.A.S.", identificacion: "NIT 900123456-7" },
-  { id: "c4", nombre: "Felipe Morales", identificacion: "CE 987654321" },
-  { id: "c5", nombre: "Inversiones del Valle Ltda.", identificacion: "NIT 800987654-3" },
-]
+interface ClienteItem {
+  id: string
+  nombre: string
+  identificacion: string
+}
 
 interface IniciarContratoSheetProps {
   open: boolean
@@ -72,15 +71,52 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
   const [asesorComboOpen, setAsesorComboOpen] = React.useState(false)
   const [registrarClienteOpen, setRegistrarClienteOpen] = React.useState(false)
 
-  const [inmuebleId, setInmuebleId] = React.useState("")
-  const [tipo, setTipo] = React.useState<TipoContrato | "">("")
-  const [contraparteId, setContraparteId] = React.useState("")
-  const [contraparteNombre, setContraparteNombre] = React.useState("")
+  const [inmuebleId, setInmuebleId]                   = React.useState("")
+  const [tipo, setTipo]                               = React.useState<TipoContrato | "">("")
+  const [contraparteId, setContraparteId]             = React.useState("")
+  const [contraparteNombre, setContraparteNombre]     = React.useState("")
   const [contraparteIdentificacion, setContraparteIdentificacion] = React.useState("")
-  const [asesorId, setAsesorId] = React.useState("")
-  const [asesorNombre, setAsesorNombre] = React.useState("")
+  const [asesorId, setAsesorId]                       = React.useState("")
+  const [asesorNombre, setAsesorNombre]               = React.useState("")
+  const [inmuebles, setInmuebles]                     = React.useState<InmuebleItem[]>([])
+  const [clientes, setClientes]                       = React.useState<ClienteItem[]>([])
+  const [clienteBusqueda, setClienteBusqueda]         = React.useState("")
+  const [isSearchingClientes, setIsSearchingClientes] = React.useState(false)
 
-  const inmuebleSeleccionado = INMUEBLES_DISPONIBLES.find((i) => i.id === inmuebleId)
+  const inmuebleSeleccionado = inmuebles.find((i) => i.id === inmuebleId)
+
+  // Carga inmuebles disponibles al abrir el sheet
+  React.useEffect(() => {
+    if (!open) return
+    listarInmuebles({ disponibles: true, limit: 100 })
+      .then(res => setInmuebles(res.data.map(i => ({
+        id: i.id,
+        nombre: i.direccion,
+        direccion: i.ubicacion,
+        propietario: i.propietario,
+      }))))
+      .catch(() => {})
+  }, [open])
+
+  // Búsqueda debounced de clientes para el combobox de contraparte
+  React.useEffect(() => {
+    if (clienteBusqueda.length < 2) {
+      setClientes([])
+      return
+    }
+    setIsSearchingClientes(true)
+    const t = setTimeout(() => {
+      listarClientes({ busqueda: clienteBusqueda, limit: 20 })
+        .then(res => setClientes(res.data.map(c => ({
+          id: c.id,
+          nombre: c.nombre,
+          identificacion: `${c.tipoDocumento} ${c.documento}`,
+        }))))
+        .catch(() => {})
+        .finally(() => setIsSearchingClientes(false))
+    }, 400)
+    return () => clearTimeout(t)
+  }, [clienteBusqueda])
   const labelContraparte = tipo === "arriendo" ? "Arrendatario" : tipo === "promesa_compraventa" ? "Comprador" : "Contraparte"
   const contraparteSeleccionada = !!contraparteId || !!contraparteNombre
   const puedeConfirmar = !!inmuebleId && !!tipo && contraparteSeleccionada && !!asesorId
@@ -95,7 +131,13 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
   function handleConfirmar() {
     if (!puedeConfirmar) return
     const ruta = tipo === "arriendo" ? "/contratos/nuevo/arriendo" : "/contratos/nuevo/promesa"
-    router.push(`${ruta}?inmueble=${inmuebleId}&tipo=${tipo}&asesor=${asesorId}`)
+    const params = new URLSearchParams({
+      inmueble:   inmuebleId,
+      tipo:       tipo,
+      asesor:     asesorId,
+      contraparte: contraparteId,
+    })
+    router.push(`${ruta}?${params.toString()}`)
     onOpenChange(false)
   }
 
@@ -107,6 +149,8 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
     setContraparteIdentificacion("")
     setAsesorId("")
     setAsesorNombre("")
+    setClienteBusqueda("")
+    setClientes([])
     setIsFullscreen(false)
     onOpenChange(false)
   }
@@ -179,9 +223,9 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
                   <Command>
                     <CommandInput placeholder="Buscar por nombre o dirección..." />
                     <CommandList>
-                      <CommandEmpty>No se encontraron inmuebles.</CommandEmpty>
+                      <CommandEmpty>{inmuebles.length === 0 ? "Cargando inmuebles…" : "No se encontraron inmuebles."}</CommandEmpty>
                       <CommandGroup>
-                        {INMUEBLES_DISPONIBLES.map((inmueble) => (
+                        {inmuebles.map((inmueble) => (
                           <CommandItem
                             key={inmueble.id}
                             value={`${inmueble.nombre} ${inmueble.direccion}`}
@@ -299,12 +343,22 @@ export function IniciarContratoSheet({ open, onOpenChange }: IniciarContratoShee
                   className="p-0"
                   style={{ width: "var(--radix-popover-trigger-width)" }}
                 >
-                  <Command>
-                    <CommandInput placeholder="Buscar por nombre o documento..." />
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Buscar por nombre o documento..."
+                      value={clienteBusqueda}
+                      onValueChange={setClienteBusqueda}
+                    />
                     <CommandList>
-                      <CommandEmpty>No se encontraron clientes.</CommandEmpty>
+                      <CommandEmpty>
+                        {clienteBusqueda.length < 2
+                          ? "Escribe al menos 2 caracteres para buscar."
+                          : isSearchingClientes
+                          ? "Buscando..."
+                          : "No se encontraron clientes."}
+                      </CommandEmpty>
                       <CommandGroup heading="Clientes registrados">
-                        {CLIENTES_DISPONIBLES.map((cliente) => (
+                        {clientes.map((cliente) => (
                           <CommandItem
                             key={cliente.id}
                             value={`${cliente.nombre} ${cliente.identificacion}`}

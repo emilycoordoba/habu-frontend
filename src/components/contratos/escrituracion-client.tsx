@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowLeft01Icon,
@@ -22,19 +23,8 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-
-// --- Mock del contrato (se reemplaza con la API) ---
-const CONTRATO_MOCK = {
-  id: "promesa-1",
-  referencia: "CTR-2025-005",
-  inmueble: "Casa 5 Urb. Los Pinos",
-  direccion: "Cll 12 #45-30, Medellín",
-  vendedor: "María Ospina",
-  comprador: "Felipe Morales",
-  precio: 320000000,
-  arras: 32000000,
-  fechaEscrituracionPactada: "2025-06-15",
-}
+import { obtenerContrato, escriturar } from "@/lib/api/contratos"
+import { toast } from "sonner"
 
 function formatCOP(value: number) {
   return `$${new Intl.NumberFormat("es-CO").format(value)}`
@@ -50,7 +40,41 @@ interface EscrituracionClientProps {
 }
 
 export function EscrituracionClient({ contratoId }: EscrituracionClientProps) {
-  const contrato = { ...CONTRATO_MOCK, id: contratoId }
+  const router = useRouter()
+
+  interface ContratoInfo {
+    id: string; referencia: string; inmueble: string; direccion: string
+    vendedor: string; comprador: string
+    precio: number; arras: number; fechaEscrituracionPactada?: string
+  }
+  const [contratoInfo, setContratoInfo] = React.useState<ContratoInfo | null>(null)
+  const [isLoading, setIsLoading]       = React.useState(true)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+
+  React.useEffect(() => {
+    obtenerContrato(contratoId)
+      .then(res => {
+        const d = res.data
+        setContratoInfo({
+          id:                       d.id,
+          referencia:               d.referencia,
+          inmueble:                 d.inmueble.nombre,
+          direccion:                d.inmueble.direccion,
+          vendedor:                 d.propietario.nombre,
+          comprador:                d.contraparte.nombre,
+          precio:                   d.condicionesPromesa?.precioVenta ?? 0,
+          arras:                    d.condicionesPromesa?.valorArras ?? 0,
+          fechaEscrituracionPactada: d.condicionesPromesa?.fechaEscrituracion,
+        })
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false))
+  }, [contratoId])
+
+  const contrato = contratoInfo ?? {
+    id: contratoId, referencia: "—", inmueble: "—", direccion: "—", vendedor: "—", comprador: "—",
+    precio: 0, arras: 0,
+  }
 
   // — Sección 1: Escritura pública
   const [fechaEscritura, setFechaEscritura] = React.useState("")
@@ -216,9 +240,25 @@ export function EscrituracionClient({ contratoId }: EscrituracionClientProps) {
             <Link href={`/contratos/${contrato.id}`}>
               <Button variant="outline">Cancelar</Button>
             </Link>
-            <Button disabled={!puedeFinalizarVenta} className="gap-2">
+            <Button
+              disabled={!puedeFinalizarVenta || isSubmitting || isLoading}
+              className="gap-2"
+              onClick={async () => {
+                if (!puedeFinalizarVenta || isSubmitting) return
+                setIsSubmitting(true)
+                try {
+                  await escriturar(contratoId, { fechaEscrituracion: fechaEscritura, notaria })
+                  toast.success("Escrituración registrada")
+                  router.push(`/contratos/${contratoId}`)
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Error al registrar")
+                } finally {
+                  setIsSubmitting(false)
+                }
+              }}
+            >
               <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
-              Finalizar venta
+              {isSubmitting ? "Registrando…" : "Finalizar venta"}
             </Button>
           </div>
         </div>

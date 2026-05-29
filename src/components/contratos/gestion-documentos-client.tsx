@@ -22,6 +22,9 @@ import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { LABELS_POR_TIPO } from "@/types/contrato.types"
 import type { TipoContrato } from "@/types/contrato.types"
+import { obtenerContrato, listarDocumentos, subirDocumento } from "@/lib/api/contratos"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 // --- Tipos ---
 type EstadoDoc = "pendiente" | "recibido" | "rechazado"
@@ -40,6 +43,7 @@ interface DocCargado {
   fechaCarga: string
   estado: EstadoDoc
   objectUrl: string
+  apiDocId?: string
 }
 
 // --- Mock: en producción esta lista vendría del endpoint configurado en el
@@ -75,29 +79,46 @@ function getDocumentosPorTipo(tipo: TipoContrato, tieneCodudor: boolean): TipoDo
   return [...docsContraparte, ...docsCodudor, ...docsPropietario, ...docsContrato]
 }
 
-// --- Mock contrato ---
-const CONTRATO_MOCK = {
-  id: "5",
-  referencia: "CTR-2025-004",
-  tipo: "arriendo" as TipoContrato,
-  inmueble: "Apto 502 Torres del Norte",
-  contraparte: "Carlos Mendoza",
-  propietario: "Jorge Herrera",
-  tieneCodudor: false,
-}
-
 interface GestionDocumentosClientProps {
   contratoId: string
 }
 
 export function GestionDocumentosClient({ contratoId }: GestionDocumentosClientProps) {
-  // En producción, el contrato vendría de la API según contratoId
-  const contrato = { ...CONTRATO_MOCK, id: contratoId }
-  const labels = LABELS_POR_TIPO[contrato.tipo]
-  const documentos = getDocumentosPorTipo(contrato.tipo, contrato.tieneCodudor)
+  const router = useRouter()
+  const [tipo, setTipo]           = React.useState<TipoContrato>("arriendo")
+  const [contratoHeader, setContratoHeader] = React.useState({ referencia: "—", inmueble: "—", propietario: "—", contraparte: "—", tieneCodudor: false })
+  const [docsCargados, setDocsCargados]     = React.useState<DocCargado[]>([])
+  const [cargando, setCargando]             = React.useState<string | null>(null)
 
-  const [docsCargados, setDocsCargados] = React.useState<DocCargado[]>([])
-  const [cargando, setCargando] = React.useState<string | null>(null)
+  React.useEffect(() => {
+    Promise.all([
+      obtenerContrato(contratoId),
+      listarDocumentos(contratoId),
+    ])
+      .then(([c, d]) => {
+        const cd = c.data
+        setTipo(cd.tipo)
+        setContratoHeader({
+          referencia:   cd.referencia,
+          inmueble:     cd.inmueble.nombre,
+          propietario:  cd.propietario.nombre,
+          contraparte:  cd.contraparte.nombre,
+          tieneCodudor: !!cd.codeudor,
+        })
+        setDocsCargados(d.data.map(doc => ({
+          tipoDocId:    doc.tipo,
+          nombreArchivo: doc.nombre,
+          fechaCarga:   doc.fechaSubida ?? "",
+          estado:       doc.estado,
+          objectUrl:    doc.urlArchivo ?? "",
+          apiDocId:     doc.id,
+        })))
+      })
+      .catch(() => {})
+  }, [contratoId])
+
+  const labels    = LABELS_POR_TIPO[tipo]
+  const documentos = getDocumentosPorTipo(tipo, contratoHeader.tieneCodudor)
 
   const obligatorios = documentos.filter((d) => d.obligatorio)
   const recibidos = docsCargados.filter((d) => d.estado === "recibido")
@@ -120,31 +141,35 @@ export function GestionDocumentosClient({ contratoId }: GestionDocumentosClientP
     return docsCargados.find((d) => d.tipoDocId === tipoDocId)
   }
 
-  function handleCargar(tipoDocId: string, archivo: File) {
-    // Validación de formato y tamaño (PDF/JPG/PNG, máx 10MB)
+  async function handleCargar(tipoDocId: string, archivo: File) {
     const formatosPermitidos = ["application/pdf", "image/jpeg", "image/png"]
     if (!formatosPermitidos.includes(archivo.type)) return
     if (archivo.size > 10 * 1024 * 1024) return
 
-    setCargando(tipoDocId)
-    // Simula carga con 800ms de delay
-    setTimeout(() => {
-      setDocsCargados((prev) => {
-        // Revoca la URL anterior si existía
-        const anterior = prev.find((d) => d.tipoDocId === tipoDocId)
-        if (anterior) URL.revokeObjectURL(anterior.objectUrl)
+    const doc = documentos.find(d => d.id === tipoDocId)
+    if (!doc) return
 
+    setCargando(tipoDocId)
+    try {
+      const res = await subirDocumento(contratoId, tipoDocId, doc.nombre, archivo)
+      setDocsCargados((prev) => {
+        const anterior = prev.find((d) => d.tipoDocId === tipoDocId)
+        if (anterior && !anterior.apiDocId) URL.revokeObjectURL(anterior.objectUrl)
         const sinEste = prev.filter((d) => d.tipoDocId !== tipoDocId)
         return [...sinEste, {
           tipoDocId,
           nombreArchivo: archivo.name,
           fechaCarga: new Date().toLocaleDateString("es-CO"),
-          estado: "recibido",
-          objectUrl: URL.createObjectURL(archivo),
+          estado: "recibido" as EstadoDoc,
+          objectUrl: res.data.urlArchivo ?? URL.createObjectURL(archivo),
+          apiDocId: res.data.id,
         }]
       })
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al cargar el documento")
+    } finally {
       setCargando(null)
-    }, 800)
+    }
   }
 
   // Agrupa los documentos por categoría
@@ -154,7 +179,7 @@ export function GestionDocumentosClient({ contratoId }: GestionDocumentosClientP
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="border-b px-6 py-4 flex items-center gap-4">
-        <Link href={`/contratos/${contrato.id}`}>
+        <Link href={`/contratos/${contratoId}`}>
           <Button variant="ghost" size="icon" className="size-8">
             <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
           </Button>
@@ -162,7 +187,7 @@ export function GestionDocumentosClient({ contratoId }: GestionDocumentosClientP
         <div>
           <h1 className="text-lg font-semibold leading-none">Documentos del contrato</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {contrato.referencia} · {contrato.inmueble}
+            {contratoHeader.referencia} · {contratoHeader.inmueble}
           </p>
         </div>
         <Badge variant="outline" className="ml-auto bg-gray-100 text-gray-600 border-gray-200">
@@ -306,11 +331,11 @@ export function GestionDocumentosClient({ contratoId }: GestionDocumentosClientP
             <div className="flex flex-col gap-1.5 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-xs">{labels.propietario}</span>
-                <span className="font-medium text-xs truncate max-w-40 text-right">{contrato.propietario}</span>
+                <span className="font-medium text-xs truncate max-w-40 text-right">{contratoHeader.propietario}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-xs">{labels.contraparte}</span>
-                <span className="font-medium text-xs truncate max-w-40 text-right">{contrato.contraparte}</span>
+                <span className="font-medium text-xs truncate max-w-40 text-right">{contratoHeader.contraparte}</span>
               </div>
             </div>
           </div>
@@ -377,7 +402,11 @@ export function GestionDocumentosClient({ contratoId }: GestionDocumentosClientP
                 Faltan {obligatorios.length - recibidos.filter((r) => obligatorios.some((o) => o.id === r.tipoDocId)).length} documento(s) obligatorio(s)
               </p>
             )}
-            <Button disabled={!obligatoriosCompletos} className="w-full">
+            <Button
+              disabled={!obligatoriosCompletos}
+              className="w-full"
+              onClick={() => router.push(`/contratos/${contratoId}`)}
+            >
               Enviar a firmas
               <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
             </Button>

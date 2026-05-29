@@ -44,23 +44,20 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { CLIENTES_MOCK } from "@/lib/mock/clientes"
 import { ASESORES_MOCK } from "@/lib/mock/usuarios"
+import { obtenerInmueble } from "@/lib/api/inmuebles"
+import { listarClientes } from "@/lib/api/clientes"
+import { crearArriendo } from "@/lib/api/contratos"
+import type { ClienteResumen } from "@/types/cliente.types"
+import { toast } from "sonner"
 
-const CLIENTES_CODEUDORES = CLIENTES_MOCK.filter((c) => c.tipos.includes("codeudor"))
-
-// --- Mock: en producción vendría de la API según inmuebleId ---
-const INMUEBLES_MOCK: Record<string, { nombre: string; direccion: string; propietario: string; tipo: string }> = {
-  i1: { nombre: "Apto 502 Torres del Norte", direccion: "Cll 127 #15-40, Bogotá", propietario: "Jorge Herrera", tipo: "Apartamento" },
-  i2: { nombre: "Local 8 CC Bulevar", direccion: "Av. El Dorado #68C-61, Bogotá", propietario: "Inversiones XYZ", tipo: "Local" },
-  i3: { nombre: "Casa 5 Urb. Los Pinos", direccion: "Cll 12 #45-30, Medellín", propietario: "María Ospina", tipo: "Casa" },
-  i4: { nombre: "Oficina 301 Ed. Empresarial", direccion: "Cra 43 #11-61, Medellín", propietario: "Rodrigo Castaño", tipo: "Oficina" },
-}
+interface InmuebleInfo { nombre: string; direccion: string; propietario: string }
 
 interface FormularioArriendoClientProps {
   inmuebleId: string
   tipo: string
   asesorId?: string
+  contraparteId?: string
 }
 
 function formatCOP(value: string): string {
@@ -73,10 +70,29 @@ function parseCOP(value: string): number {
   return parseInt(value.replace(/\D/g, ""), 10) || 0
 }
 
-export function FormularioArriendoClient({ inmuebleId, tipo, asesorId = "" }: FormularioArriendoClientProps) {
+export function FormularioArriendoClient({ inmuebleId, tipo, asesorId = "", contraparteId = "" }: FormularioArriendoClientProps) {
   const router = useRouter()
-  const inmueble = INMUEBLES_MOCK[inmuebleId]
   const asesor = ASESORES_MOCK.find((a) => a.id === asesorId)
+
+  const [inmuebleInfo, setInmuebleInfo]   = React.useState<InmuebleInfo | null>(null)
+  const [codeudores, setCodeudores]       = React.useState<ClienteResumen[]>([])
+  const [isSubmitting, setIsSubmitting]   = React.useState(false)
+
+  React.useEffect(() => {
+    if (!inmuebleId) return
+    obtenerInmueble(inmuebleId)
+      .then(res => {
+        const d = res.data
+        setInmuebleInfo({ nombre: d.direccion, direccion: d.ubicacion, propietario: d.propietario })
+      })
+      .catch(() => {})
+  }, [inmuebleId])
+
+  React.useEffect(() => {
+    listarClientes({ tipo: "codeudor", limit: 100 })
+      .then(res => setCodeudores(res.data))
+      .catch(() => {})
+  }, [])
 
   // — Sección 1: Vigencia
   const [fechaInicio, setFechaInicio] = React.useState("")
@@ -98,7 +114,7 @@ export function FormularioArriendoClient({ inmuebleId, tipo, asesorId = "" }: Fo
   const [tieneCodudor, setTieneCodudor] = React.useState(false)
   const [codeudorId, setCodeudorId] = React.useState("")
   const [codeudorComboOpen, setCodeudorComboOpen] = React.useState(false)
-  const codeudorSeleccionado = CLIENTES_CODEUDORES.find((c) => c.id === codeudorId)
+  const codeudorSeleccionado = codeudores.find((c) => c.id === codeudorId)
 
   // — Cálculos derivados
   const canon = parseCOP(canonRaw)
@@ -147,7 +163,7 @@ export function FormularioArriendoClient({ inmuebleId, tipo, asesorId = "" }: Fo
         <div>
           <h1 className="text-lg font-semibold leading-none">Contrato de arriendo</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {inmueble ? inmueble.nombre : "Inmueble no encontrado"} · Borrador
+            {inmuebleInfo ? inmuebleInfo.nombre : inmuebleId ? "Cargando inmueble…" : "Inmueble no especificado"} · Borrador
           </p>
         </div>
         <Badge variant="outline" className="ml-auto bg-gray-100 text-gray-600 border-gray-200">
@@ -161,7 +177,8 @@ export function FormularioArriendoClient({ inmuebleId, tipo, asesorId = "" }: Fo
         {/* Columna izquierda — formulario */}
         <div className="w-full max-w-2xl overflow-y-auto px-6 py-6 flex flex-col gap-8">
 
-          {/* Sección 1 — Vigencia */}
+          {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
+      {/* Sección 1 — Vigencia */}
           <section className="flex flex-col gap-4">
             <SectionHeader icon={Calendar01Icon} title="Vigencia del contrato" number={1} />
             <div className="grid grid-cols-2 gap-4">
@@ -367,7 +384,7 @@ export function FormularioArriendoClient({ inmuebleId, tipo, asesorId = "" }: Fo
                       <CommandList>
                         <CommandEmpty>No hay clientes con tipo codeudor registrados.</CommandEmpty>
                         <CommandGroup>
-                          {CLIENTES_CODEUDORES.map((c) => (
+                          {codeudores.map((c) => (
                             <CommandItem
                               key={c.id}
                               value={`${c.nombre} ${c.documento}`}
@@ -406,11 +423,44 @@ export function FormularioArriendoClient({ inmuebleId, tipo, asesorId = "" }: Fo
               <Button variant="outline">Cancelar</Button>
             </Link>
             <Button
-              disabled={!puedeGuardar}
-              onClick={() => router.push("/contratos/5/documentos")}
+              disabled={!puedeGuardar || isSubmitting}
+              onClick={async () => {
+                if (!puedeGuardar || isSubmitting) return
+                setIsSubmitting(true)
+                try {
+                  const res = await crearArriendo({
+                    inmuebleId,
+                    contraparteId,
+                    asesor: asesor?.nombre ?? asesorId,
+                    fechaInicio,
+                    duracionMeses: parseInt(duracionMeses, 10),
+                    valorCanon: canon,
+                    diaCorte: parseInt(diaCorte, 10),
+                    incluyeAdministracion: incluyeAdmin,
+                    ...(incluyeAdmin && adminValor > 0 ? { valorAdministracion: adminValor } : {}),
+                    tieneDeposito,
+                    ...(tieneDeposito ? {
+                      tipoDeposito: tipoDeposito === "meses" ? "meses_canon" : "valor_fijo",
+                      ...(tipoDeposito === "meses"
+                        ? { mesesDeposito: parseInt(mesesDeposito, 10) }
+                        : { valorDeposito: depositoValor }),
+                    } : {}),
+                    tieneCodeudor: tieneCodudor,
+                    ...(tieneCodudor && codeudorSeleccionado ? {
+                      codeudor: { nombre: codeudorSeleccionado.nombre, documento: codeudorSeleccionado.documento },
+                    } : {}),
+                  })
+                  toast.success("Contrato creado como borrador")
+                  router.push(`/contratos/${res.data.id}/documentos`)
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Error al crear el contrato")
+                } finally {
+                  setIsSubmitting(false)
+                }
+              }}
             >
               <HugeiconsIcon icon={FileManagementIcon} strokeWidth={2} className="size-4" />
-              Guardar y continuar
+              {isSubmitting ? "Guardando…" : "Guardar y continuar"}
             </Button>
           </div>
         </div>
@@ -421,21 +471,17 @@ export function FormularioArriendoClient({ inmuebleId, tipo, asesorId = "" }: Fo
 
           {/* Partes */}
           <div className="flex flex-col gap-3">
-            {inmueble ? (
-              <PreviewCard
-                icon={Building04Icon}
-                label="Inmueble"
-                value={inmueble.nombre}
-                sub={inmueble.direccion}
-              />
-            ) : (
-              <PreviewCard icon={Building04Icon} label="Inmueble" value="—" />
-            )}
-            {inmueble && (
+            <PreviewCard
+              icon={Building04Icon}
+              label="Inmueble"
+              value={inmuebleInfo?.nombre ?? "—"}
+              sub={inmuebleInfo?.direccion}
+            />
+            {inmuebleInfo && (
               <PreviewCard
                 icon={UserIcon}
                 label="Arrendador"
-                value={inmueble.propietario}
+                value={inmuebleInfo.propietario}
               />
             )}
             {asesor && (

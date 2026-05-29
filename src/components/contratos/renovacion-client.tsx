@@ -25,7 +25,9 @@ import { cn } from "@/lib/utils"
 // Mock — se reemplaza con la API
 // ---------------------------------------------------------------------------
 
-import { CONTRATOS_MOCK } from "@/lib/mock/contratos"
+import { obtenerContrato, renovarContrato, terminarContrato } from "@/lib/api/contratos"
+import type { ContratoMock } from "@/lib/mock/contratos"
+import { toast } from "sonner"
 
 function formatCOP(value: number) {
   return `$${new Intl.NumberFormat("es-CO").format(value)}`
@@ -127,8 +129,44 @@ interface RenovacionClientProps {
 
 export function RenovacionClient({ contratoId }: RenovacionClientProps) {
   const router = useRouter()
-  const contrato = CONTRATOS_MOCK[contratoId]
-  if (!contrato) return null
+  const [contrato, setContrato]   = React.useState<ContratoMock | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+
+  React.useEffect(() => {
+    let cancelado = false
+    obtenerContrato(contratoId)
+      .then(res => {
+        if (cancelado) return
+        const d = res.data
+        setContrato({
+          id:           d.id,
+          referencia:   d.referencia,
+          tipo:         d.tipo,
+          estado:       d.estado,
+          inmueble:     d.inmueble.nombre,
+          direccion:    d.inmueble.direccion,
+          propietario:  d.propietario.nombre,
+          contraparte:  d.contraparte.nombre,
+          asesor:       d.asesor,
+          tieneCodudor: !!d.codeudor,
+          canon:        d.condicionesArriendo?.valorCanon,
+          deposito:     d.condicionesArriendo?.valorDeposito,
+          fechaInicio:  d.fechaInicio,
+          fechaFin:     d.fechaFin,
+          diaCorte:     d.condicionesArriendo?.diaCorte,
+        })
+        setIsLoading(false)
+      })
+      .catch(() => setIsLoading(false))
+    return () => { cancelado = true }
+  }, [contratoId])
+
+  if (isLoading || !contrato) return (
+    <div className="flex h-full items-center justify-center text-muted-foreground">
+      <div className="animate-pulse text-sm">Cargando contrato…</div>
+    </div>
+  )
 
   // Campos requeridos para este flujo (contratos de arriendo siempre los tienen)
   const fechaFin      = contrato.fechaFin    ?? ""
@@ -400,11 +438,35 @@ export function RenovacionClient({ contratoId }: RenovacionClientProps) {
                   <Button variant="outline">Cancelar</Button>
                 </Link>
                 <Button
-                  disabled={!todoCorrecto}
-                  onClick={() => router.push("/contratos")}
+                  disabled={!todoCorrecto || isSubmitting}
+                  onClick={async () => {
+                    if (!todoCorrecto || isSubmitting) return
+                    setIsSubmitting(true)
+                    try {
+                      if (decision === "renovar") {
+                        await renovarContrato(contratoId, {
+                          nuevaFechaFin,
+                          nuevoValorCanon: canonNum !== canon ? canonNum : undefined,
+                        })
+                        toast.success("Contrato renovado exitosamente")
+                      } else {
+                        await terminarContrato(contratoId, {
+                          motivo: "No renovación al vencimiento",
+                          fechaTerminacion: fechaEntrega,
+                          enDisputa: false,
+                        })
+                        toast.success("Contrato marcado para no renovar")
+                      }
+                      router.push(`/contratos/${contratoId}`)
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Error al procesar")
+                    } finally {
+                      setIsSubmitting(false)
+                    }
+                  }}
                   className={cn(decision === "no_renovar" && "bg-red-600 hover:bg-red-700 text-white")}
                 >
-                  {decision === "renovar" ? "Crear contrato de renovación" : "Confirmar no renovación"}
+                  {isSubmitting ? "Procesando…" : decision === "renovar" ? "Crear contrato de renovación" : "Confirmar no renovación"}
                 </Button>
               </div>
             )}
