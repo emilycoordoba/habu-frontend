@@ -22,6 +22,7 @@ import {
   Store01Icon,
   ChimneyIcon,
   FileEditIcon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -34,8 +35,8 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
-import type { TipoInmueble, ModalidadInmueble, EstadoInmueble } from "@/types/inmueble.types"
-import { INMUEBLES_MOCK, type InmuebleDetalle, type FotoInmueble } from "@/lib/mock/inmuebles"
+import type { TipoInmueble, ModalidadInmueble, EstadoInmueble, InmuebleDetalle, FotoInmueble } from "@/types/inmueble.types"
+import { obtenerInmueble } from "@/lib/api/inmuebles"
 
 const MapaInmueble = dynamic(
   () => import("./mapa-inmueble").then(m => m.MapaInmueble),
@@ -44,14 +45,6 @@ const MapaInmueble = dynamic(
     loading: () => <div className="w-full h-52 rounded-lg bg-muted animate-pulse" />,
   }
 )
-
-// ---------------------------------------------------------------------------
-// Mock — se reemplaza con hook useInmueble(id) — datos en @/lib/mock/inmuebles
-// ---------------------------------------------------------------------------
-
-// Re-export para compatibilidad
-export type { InmuebleDetalle } from "@/lib/mock/inmuebles"
-export { INMUEBLES_MOCK } from "@/lib/mock/inmuebles"
 
 // ---------------------------------------------------------------------------
 // Config visual
@@ -124,6 +117,49 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
+function DetalleInmuebleSkeleton() {
+  return (
+    <div className="flex flex-col h-full animate-pulse">
+      <div className="border-b px-6 py-4 flex items-start gap-4">
+        <div className="size-8 rounded-md bg-muted mt-0.5 shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-5 w-72 rounded bg-muted" />
+          <div className="h-4 w-52 rounded bg-muted" />
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <div className="h-8 w-28 rounded-md bg-muted" />
+          <div className="h-8 w-20 rounded-md bg-muted" />
+        </div>
+      </div>
+      <div className="px-6 py-3 border-b flex gap-6">
+        {[80, 64, 96, 56].map(w => (
+          <div key={w} className={`h-4 rounded bg-muted`} style={{ width: w }} />
+        ))}
+      </div>
+      <div className="border-b px-6 flex">
+        {["Información", "Fotos", "Historial"].map(t => (
+          <div key={t} className="px-4 py-3">
+            <div className="h-4 w-20 rounded bg-muted" />
+          </div>
+        ))}
+      </div>
+      <div className="flex-1 px-6 py-6">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div className="h-3 w-32 rounded bg-muted" />
+          <div className="grid grid-cols-3 gap-x-6 gap-y-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-1.5">
+                <div className="h-3 w-14 rounded bg-muted" />
+                <div className="h-4 w-24 rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
@@ -133,11 +169,62 @@ interface DetalleInmuebleClientProps {
 }
 
 export function DetalleInmuebleClient({ inmuebleId }: DetalleInmuebleClientProps) {
-  const inmueble = INMUEBLES_MOCK[inmuebleId] ?? INMUEBLES_MOCK["1"]
+  const [inmueble, setInmueble]         = React.useState<InmuebleDetalle | null>(null)
+  const [isLoading, setIsLoading]       = React.useState(true)
+  const [error, setError]               = React.useState<string | null>(null)
+  const [retryKey, setRetryKey]         = React.useState(0)
+  // fotoAmpliada debe declararse antes de cualquier return condicional
+  const [fotoAmpliada, setFotoAmpliada] = React.useState<FotoInmueble | null>(null)
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+
+    obtenerInmueble(inmuebleId)
+      .then(res => {
+        if (cancelado) return
+        setInmueble(res.data)
+        setIsLoading(false)
+      })
+      .catch(err => {
+        if (cancelado) return
+        setError(err instanceof Error ? err.message : "Error al cargar el inmueble")
+        setIsLoading(false)
+      })
+
+    return () => { cancelado = true }
+  }, [inmuebleId, retryKey])
+
+  if (isLoading) return <DetalleInmuebleSkeleton />
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center gap-2 text-muted-foreground">
+        <HugeiconsIcon icon={Building04Icon} strokeWidth={1.5} className="size-10 opacity-30" />
+        <p className="text-sm font-medium">{error}</p>
+        <Button variant="outline" size="sm" className="mt-1 gap-1.5" onClick={() => setRetryKey(k => k + 1)}>
+          <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-3.5" />
+          Reintentar
+        </Button>
+      </div>
+    )
+  }
+
+  if (!inmueble) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center gap-2 text-muted-foreground">
+        <HugeiconsIcon icon={Building04Icon} strokeWidth={1.5} className="size-10 opacity-30" />
+        <p className="text-sm font-medium">Inmueble no encontrado</p>
+        <Link href="/inmuebles">
+          <Button variant="outline" size="sm" className="mt-1">Volver a inmuebles</Button>
+        </Link>
+      </div>
+    )
+  }
+
   const estadoConfig = ESTADO_CONFIG[inmueble.estado]
   const TipoIcono = TIPO_ICON[inmueble.tipo]
-
-  const [fotoAmpliada, setFotoAmpliada] = React.useState<FotoInmueble | null>(null)
 
   return (
     <div className="flex flex-col h-full">
@@ -277,7 +364,7 @@ export function DetalleInmuebleClient({ inmuebleId }: DetalleInmuebleClientProps
                   <InfoRow label="Dirección" value={inmueble.direccion} />
                   <InfoRow label="Ciudad / Zona" value={inmueble.ubicacion} />
                 </div>
-                <MapaInmueble coordenadas={inmueble.coordenadas} />
+                <MapaInmueble coordenadas={inmueble.coordenadas ?? null} />
               </div>
 
               <Separator />

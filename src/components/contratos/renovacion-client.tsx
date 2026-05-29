@@ -25,37 +25,7 @@ import { cn } from "@/lib/utils"
 // Mock — se reemplaza con la API
 // ---------------------------------------------------------------------------
 
-const CONTRATOS_MOCK: Record<string, ContratoMock> = {
-  "1": {
-    id: "1",
-    referencia: "CTR-2025-001",
-    inmueble: "Apto 302 Ed. Torres del Parque",
-    direccion: "Cra 7 #32-16, Bogotá",
-    propietario: "Carlos Ramírez",
-    contraparte: "Laura Gómez",
-    asesor: "Andrés López",
-    canon: 2200000,
-    deposito: 4400000,
-    fechaInicio: "2024-05-01",
-    fechaFin: "2025-05-01",
-    diasRestantes: 18,
-  },
-}
-
-interface ContratoMock {
-  id: string
-  referencia: string
-  inmueble: string
-  direccion: string
-  propietario: string
-  contraparte: string
-  asesor: string
-  canon: number
-  deposito: number
-  fechaInicio: string
-  fechaFin: string
-  diasRestantes: number
-}
+import { CONTRATOS_MOCK } from "@/lib/mock/contratos"
 
 function formatCOP(value: number) {
   return `$${new Intl.NumberFormat("es-CO").format(value)}`
@@ -157,18 +127,31 @@ interface RenovacionClientProps {
 
 export function RenovacionClient({ contratoId }: RenovacionClientProps) {
   const router = useRouter()
-  const contrato = CONTRATOS_MOCK[contratoId] ?? CONTRATOS_MOCK["1"]
+  const contrato = CONTRATOS_MOCK[contratoId]
+  if (!contrato) return null
+
+  // Campos requeridos para este flujo (contratos de arriendo siempre los tienen)
+  const fechaFin      = contrato.fechaFin    ?? ""
+  const canon         = contrato.canon       ?? 0
+  const deposito      = contrato.deposito    ?? 0
+  const fechaInicio   = contrato.fechaInicio ?? ""
+
+  // Días restantes calculados desde hoy
+  const diasRestantes = Math.max(
+    0,
+    Math.ceil((new Date(fechaFin + "T00:00:00").getTime() - Date.now()) / 86_400_000),
+  )
 
   // Sección 1: decisión
   type Decision = "renovar" | "no_renovar" | ""
   const [decision, setDecision] = React.useState<Decision>("")
 
   // Sección 2: nuevas condiciones (solo si renueva)
-  const nuevaFechaInicio = diaSiguiente(contrato.fechaFin)
-  const [nuevoCanon, setNuevoCanon] = React.useState(formatInput(String(contrato.canon)))
+  const nuevaFechaInicio = diaSiguiente(fechaFin)
+  const [nuevoCanon, setNuevoCanon] = React.useState(formatInput(String(canon)))
   const [nuevaFechaFin, setNuevaFechaFin] = React.useState(sumarMeses(nuevaFechaInicio, 12))
   const [mismoDeposito, setMismoDeposito] = React.useState(true)
-  const [nuevoDeposito, setNuevoDeposito] = React.useState(formatInput(String(contrato.deposito)))
+  const [nuevoDeposito, setNuevoDeposito] = React.useState(formatInput(String(deposito)))
   const [fechaEntrega, setFechaEntrega] = React.useState("")
 
   // Validaciones
@@ -179,7 +162,7 @@ export function RenovacionClient({ contratoId }: RenovacionClientProps) {
   const todoCorrecto = s1Completa && s2Completa
 
   const canonNum = parseInput(nuevoCanon)
-  const depositoFinal = mismoDeposito ? contrato.deposito : parseInput(nuevoDeposito)
+  const depositoFinal = mismoDeposito ? deposito : parseInput(nuevoDeposito)
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -196,15 +179,15 @@ export function RenovacionClient({ contratoId }: RenovacionClientProps) {
             {contrato.referencia} · {contrato.inmueble}
           </p>
         </div>
-        {contrato.diasRestantes <= 30 && (
+        {diasRestantes <= 30 && (
           <div className={cn(
             "flex items-center gap-1.5 rounded-md px-2.5 py-1 border text-xs font-medium",
-            contrato.diasRestantes <= 10
+            diasRestantes <= 10
               ? "bg-red-50 border-red-200 text-red-700"
               : "bg-amber-50 border-amber-200 text-amber-700"
           )}>
             <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3.5 shrink-0" />
-            Vence en {contrato.diasRestantes} días
+            Vence en {diasRestantes} días
           </div>
         )}
       </div>
@@ -282,9 +265,9 @@ export function RenovacionClient({ contratoId }: RenovacionClientProps) {
                             onChange={(e) => setNuevoCanon(formatInput(e.target.value))}
                           />
                         </div>
-                        {canonNum !== contrato.canon && (
+                        {canonNum !== canon && (
                           <p className="text-xs text-amber-600">
-                            Variación: {canonNum > contrato.canon ? "+" : ""}{formatCOP(canonNum - contrato.canon)} respecto al actual
+                            Variación: {canonNum > canon ? "+" : ""}{formatCOP(canonNum - canon)} respecto al actual
                           </p>
                         )}
                       </div>
@@ -326,7 +309,7 @@ export function RenovacionClient({ contratoId }: RenovacionClientProps) {
                         )}>
                           {mismoDeposito && <HugeiconsIcon icon={Tick02Icon} strokeWidth={3} className="size-2.5 text-white" />}
                         </div>
-                        <span>Mantener el mismo depósito ({formatCOP(contrato.deposito)})</span>
+                        <span>Mantener el mismo depósito ({formatCOP(deposito)})</span>
                       </button>
 
                       {!mismoDeposito && (
@@ -353,23 +336,23 @@ export function RenovacionClient({ contratoId }: RenovacionClientProps) {
                   <div className="border rounded-md px-4 py-3 divide-y">
                     <CambioRow
                       label="Fecha inicio"
-                      anterior={contrato.fechaInicio}
+                      anterior={fechaInicio}
                       nuevo={nuevaFechaInicio}
                     />
                     <CambioRow
                       label="Fecha fin"
-                      anterior={contrato.fechaFin}
+                      anterior={fechaFin}
                       nuevo={nuevaFechaFin}
                     />
                     <CambioRow
                       label="Canon"
-                      anterior={formatCOP(contrato.canon)}
+                      anterior={formatCOP(canon)}
                       nuevo={formatCOP(canonNum)}
                       destacado
                     />
                     <CambioRow
                       label="Depósito"
-                      anterior={formatCOP(contrato.deposito)}
+                      anterior={formatCOP(deposito)}
                       nuevo={formatCOP(depositoFinal)}
                     />
                   </div>
@@ -388,7 +371,7 @@ export function RenovacionClient({ contratoId }: RenovacionClientProps) {
                 <div>
                   <SectionHeader numero={2} titulo="Fecha de entrega" completa={s2Completa} />
                   <p className="text-sm text-muted-foreground mb-4">
-                    El contrato vence el <strong>{contrato.fechaFin}</strong>. Registra la fecha en que el arrendatario hará entrega del inmueble.
+                    El contrato vence el <strong>{fechaFin}</strong>. Registra la fecha en que el arrendatario hará entrega del inmueble.
                   </p>
                   <div className="space-y-1.5 max-w-xs">
                     <Label>Fecha efectiva de entrega</Label>
@@ -454,26 +437,26 @@ export function RenovacionClient({ contratoId }: RenovacionClientProps) {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Canon</span>
-              <span className="font-medium">{formatCOP(contrato.canon)}</span>
+              <span className="font-medium">{formatCOP(canon)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Depósito</span>
-              <span className="font-medium">{formatCOP(contrato.deposito)}</span>
+              <span className="font-medium">{formatCOP(deposito)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Inicio</span>
-              <span>{contrato.fechaInicio}</span>
+              <span>{fechaInicio}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Vencimiento</span>
-              <span>{contrato.fechaFin}</span>
+              <span>{fechaFin}</span>
             </div>
             <div className={cn(
               "flex justify-between font-semibold pt-1",
-              contrato.diasRestantes <= 10 ? "text-red-600" : "text-amber-600"
+              diasRestantes <= 10 ? "text-red-600" : "text-amber-600"
             )}>
               <span>Días restantes</span>
-              <span>{contrato.diasRestantes}</span>
+              <span>{diasRestantes}</span>
             </div>
           </div>
 
@@ -484,7 +467,7 @@ export function RenovacionClient({ contratoId }: RenovacionClientProps) {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Canon</span>
-                  <span className={cn("font-medium", canonNum !== contrato.canon && "text-green-700")}>{formatCOP(canonNum)}</span>
+                  <span className={cn("font-medium", canonNum !== canon && "text-green-700")}>{formatCOP(canonNum)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Depósito</span>

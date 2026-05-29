@@ -51,6 +51,10 @@ import {
 import { cn } from "@/lib/utils"
 import type { TipoInmueble, ModalidadInmueble, EstadoInmueble } from "@/types/inmueble.types"
 import { RegistrarClienteDialog } from "@/components/contratos/registrar-cliente-dialog"
+import { obtenerInmueble, registrarInmueble, editarInmueble, subirFoto, eliminarFoto as eliminarFotoApi } from "@/lib/api/inmuebles"
+import { listarClientes } from "@/lib/api/clientes"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 // Carga el mapa solo en el cliente (Leaflet no funciona con SSR)
 const MapaInmueble = dynamic(
@@ -115,7 +119,6 @@ export interface RegistrarInmuebleInitialData {
 interface RegistrarInmuebleClientProps {
   mode?: "crear" | "editar"
   inmuebleId?: string
-  initialData?: RegistrarInmuebleInitialData
 }
 
 // ---------------------------------------------------------------------------
@@ -125,57 +128,83 @@ interface RegistrarInmuebleClientProps {
 export function RegistrarInmuebleClient({
   mode = "crear",
   inmuebleId,
-  initialData,
 }: RegistrarInmuebleClientProps = {}) {
   const esEdicion = mode === "editar"
+  const router    = useRouter()
 
-  const [form, setForm] = React.useState<FormState>(() =>
-    initialData
-      ? {
-          tipo:          initialData.tipo,
-          modalidad:     initialData.modalidad,
-          estado:        initialData.estado,
-          publicado:     initialData.publicado,
-          direccion:     initialData.direccion,
-          ubicacion:     initialData.ubicacion,
-          area:          String(initialData.area),
-          precio:        String(initialData.precio),
-          propietarioId: initialData.propietarioId,
-        }
-      : {
-          tipo:          "",
-          modalidad:     "",
-          estado:        "disponible",
-          publicado:     true,
-          direccion:     "",
-          ubicacion:     "",
-          area:          "",
-          precio:        "",
-          propietarioId: "",
-        }
-  )
+  const [form, setForm] = React.useState<FormState>({
+    tipo:          "",
+    modalidad:     "",
+    estado:        "disponible",
+    publicado:     true,
+    direccion:     "",
+    ubicacion:     "",
+    area:          "",
+    precio:        "",
+    propietarioId: "",
+  })
 
-  // Si estamos editando, inyectamos el propietario actual por si no está en la lista cargada
-  const propietariosIniciales = React.useMemo(() => {
-    if (!initialData) return PROPIETARIOS_INICIALES
-    const yaEsta = PROPIETARIOS_INICIALES.some(p => p.id === initialData.propietarioId)
-    return yaEsta
-      ? PROPIETARIOS_INICIALES
-      : [...PROPIETARIOS_INICIALES, { id: initialData.propietarioId, nombre: initialData.propietarioNombre }]
-  }, [initialData])
-
-  const [propietarios, setPropietarios]         = React.useState(propietariosIniciales)
-  const [fotos, setFotos] = React.useState<FotoPreview[]>(() =>
-    initialData?.fotos.map(f => ({ kind: "existente" as const, id: f.id, url: f.url, descripcion: f.descripcion })) ?? []
-  )
-  const [fotosEliminadas, setFotosEliminadas]   = React.useState<string[]>([])
-  const [propietarioOpen, setPropietarioOpen]   = React.useState(false)
-  const [registrarOpen, setRegistrarOpen]       = React.useState(false)
-  const [fotoAmpliada, setFotoAmpliada]         = React.useState<string | null>(null)
-  const [coordenadas, setCoordenadas]           = React.useState<[number, number] | null>(
-    initialData?.coordenadas ?? null
-  )
+  const [propietarios, setPropietarios]       = React.useState(PROPIETARIOS_INICIALES)
+  const [fotos, setFotos]                     = React.useState<FotoPreview[]>([])
+  const [fotosEliminadas, setFotosEliminadas] = React.useState<string[]>([])
+  const [propietarioOpen, setPropietarioOpen] = React.useState(false)
+  const [registrarOpen, setRegistrarOpen]     = React.useState(false)
+  const [fotoAmpliada, setFotoAmpliada]       = React.useState<string | null>(null)
+  const [coordenadas, setCoordenadas]         = React.useState<[number, number] | null>(null)
+  const [isLoadingData, setIsLoadingData]     = React.useState(esEdicion)
+  const [isSubmitting, setIsSubmitting]       = React.useState(false)
   const inputRef = React.useRef<HTMLInputElement>(null)
+
+  // Carga propietarios desde la API para el combobox
+  React.useEffect(() => {
+    listarClientes({ tipo: "propietario", limit: 100 })
+      .then(res => {
+        if (res.data.length > 0) {
+          setPropietarios(res.data.map(c => ({ id: c.id, nombre: c.nombre })))
+        }
+      })
+      .catch(() => { /* conserva la lista inicial si falla */ })
+  }, [])
+
+  // En modo edición: carga los datos del inmueble para pre-poblar el formulario
+  React.useEffect(() => {
+    if (!esEdicion || !inmuebleId) return
+    let cancelado = false
+    setIsLoadingData(true)
+
+    obtenerInmueble(inmuebleId)
+      .then(res => {
+        if (cancelado) return
+        const d = res.data
+        setForm({
+          tipo:          d.tipo,
+          modalidad:     d.modalidad,
+          estado:        d.estado,
+          publicado:     d.publicado,
+          direccion:     d.direccion,
+          ubicacion:     d.ubicacion,
+          area:          String(d.area),
+          precio:        String(d.precio),
+          propietarioId: d.propietarioId,
+        })
+        setCoordenadas(d.coordenadas ?? null)
+        setFotos(d.fotos.map(f => ({ kind: "existente" as const, id: f.id, url: f.url, descripcion: f.descripcion })))
+        // Inyecta el propietario en la lista si aún no está
+        setPropietarios(prev =>
+          prev.some(p => p.id === d.propietarioId)
+            ? prev
+            : [...prev, { id: d.propietarioId, nombre: d.propietario }]
+        )
+        setIsLoadingData(false)
+      })
+      .catch(() => {
+        if (cancelado) return
+        toast.error("No se pudo cargar el inmueble")
+        setIsLoadingData(false)
+      })
+
+    return () => { cancelado = true }
+  }, [esEdicion, inmuebleId])
 
   // Limpia ObjectURLs solo de fotos NUEVAS al desmontar; las existentes son URLs remotas
   React.useEffect(() => {
@@ -229,6 +258,51 @@ export function RegistrarInmuebleClient({
     })
   }
 
+  async function handleSubmit() {
+    if (!puedeGuardar || form.tipo === "" || form.modalidad === "") return
+    setIsSubmitting(true)
+
+    try {
+      const body = {
+        tipo:          form.tipo as TipoInmueble,
+        modalidad:     form.modalidad as ModalidadInmueble,
+        estado:        form.estado,
+        publicado:     form.publicado,
+        direccion:     form.direccion.trim(),
+        ubicacion:     form.ubicacion.trim(),
+        area:          Number(form.area),
+        precio:        Number(form.precio),
+        propietarioId: form.propietarioId,
+        ...(coordenadas ? { coordenadas } : {}),
+      }
+
+      let id: string
+
+      if (esEdicion && inmuebleId) {
+        const res = await editarInmueble(inmuebleId, body)
+        id = res.data.id
+        if (fotosEliminadas.length > 0) {
+          await Promise.all(fotosEliminadas.map(fotoId => eliminarFotoApi(id, fotoId)))
+        }
+      } else {
+        const res = await registrarInmueble(body)
+        id = res.data.id
+      }
+
+      const fotasNuevas = fotos.filter((f): f is Extract<FotoPreview, { kind: "nueva" }> => f.kind === "nueva")
+      if (fotasNuevas.length > 0) {
+        await Promise.all(fotasNuevas.map(f => subirFoto(id, f.file)))
+      }
+
+      toast.success(esEdicion ? "Inmueble actualizado" : "Inmueble registrado")
+      router.push(`/inmuebles/${id}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al guardar el inmueble")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   function handlePropietarioRegistrado({ nombre }: { nombre: string; identificacion: string }) {
     const nuevoId = `p-nuevo-${Date.now()}`
     setPropietarios(prev => [...prev, { id: nuevoId, nombre }])
@@ -259,6 +333,35 @@ export function RegistrarInmuebleClient({
     form.area.trim() !== "" && form.precio.trim() !== "" &&
     form.propietarioId !== ""
 
+  if (isLoadingData) {
+    return (
+      <div className="flex flex-col h-full animate-pulse">
+        <div className="border-b px-6 py-4 flex items-center gap-4">
+          <div className="size-8 rounded-md bg-muted" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-5 w-40 rounded bg-muted" />
+            <div className="h-3.5 w-56 rounded bg-muted" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-8 w-20 rounded-md bg-muted" />
+            <div className="h-8 w-28 rounded-md bg-muted" />
+          </div>
+        </div>
+        <div className="flex-1 px-6 py-8 max-w-[960px] mx-auto w-full space-y-8">
+          {[1, 2, 3, 4].map(s => (
+            <div key={s} className="space-y-4">
+              <div className="h-4 w-36 rounded bg-muted" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="h-9 rounded-md bg-muted" />
+                <div className="h-9 rounded-md bg-muted" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-full overflow-y-auto">
 
@@ -281,8 +384,8 @@ export function RegistrarInmuebleClient({
           <Link href={esEdicion && inmuebleId ? `/inmuebles/${inmuebleId}` : "/inmuebles"}>
             <Button variant="outline" size="sm">Cancelar</Button>
           </Link>
-          <Button size="sm" disabled={!puedeGuardar}>
-            {esEdicion ? "Guardar cambios" : "Guardar inmueble"}
+          <Button size="sm" disabled={!puedeGuardar || isSubmitting} onClick={handleSubmit}>
+            {isSubmitting ? (esEdicion ? "Guardando…" : "Registrando…") : (esEdicion ? "Guardar cambios" : "Guardar inmueble")}
           </Button>
         </div>
       </div>

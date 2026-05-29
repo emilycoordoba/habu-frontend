@@ -25,114 +25,18 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import type {
-  TipoInmueble,
-  ModalidadInmueble,
-  EstadoInmueble,
-} from "@/types/inmueble.types"
+import { listarInmuebles } from "@/lib/api/inmuebles"
+import type { InmuebleResumen, TipoInmueble, ModalidadInmueble, EstadoInmueble } from "@/types/inmueble.types"
+import { ESTADO_INMUEBLE_CONFIG, TIPO_INMUEBLE_LABELS, MODALIDAD_LABELS } from "@/types/inmueble.types"
 
 // ---------------------------------------------------------------------------
-// Mock
+// Config
 // ---------------------------------------------------------------------------
 
-interface Inmueble {
-  id: string
-  tipo: TipoInmueble
-  modalidad: ModalidadInmueble
-  direccion: string
-  ubicacion: string
-  area: number
-  precio: number
-  estado: EstadoInmueble
-  publicado: boolean
-  propietario: string
-  fechaRegistro: string
-  fotos: number
-}
+const POR_PAGINA = 10
 
-const INMUEBLES_MOCK: Inmueble[] = [
-  {
-    id: "1", tipo: "apartamento", modalidad: "arriendo",
-    direccion: "Cra 15 #93-47, Apto 301 Torre A", ubicacion: "Bogotá — Chapinero",
-    area: 68, precio: 2800000, estado: "arrendado",
-    publicado: true, propietario: "Ana Martínez",
-    fechaRegistro: "2025-01-15", fotos: 6,
-  },
-  {
-    id: "2", tipo: "local", modalidad: "arriendo",
-    direccion: "CC Plaza, Local 3", ubicacion: "Medellín — El Poblado",
-    area: 120, precio: 4800000, estado: "arrendado",
-    publicado: true, propietario: "Inversiones Pedraza S.A.S.",
-    fechaRegistro: "2025-01-20", fotos: 4,
-  },
-  {
-    id: "3", tipo: "apartamento", modalidad: "venta",
-    direccion: "Cll 80 #45-12, Apto 502", ubicacion: "Bogotá — Barrios Unidos",
-    area: 54, precio: 320000000, estado: "en_proceso_venta",
-    publicado: true, propietario: "Luis Gómez",
-    fechaRegistro: "2025-02-03", fotos: 8,
-  },
-  {
-    id: "4", tipo: "casa", modalidad: "ambos",
-    direccion: "Cra 7 #120-30", ubicacion: "Bogotá — Usaquén",
-    area: 180, precio: 5200000, estado: "disponible",
-    publicado: true, propietario: "María Ospina",
-    fechaRegistro: "2025-03-10", fotos: 10,
-  },
-  {
-    id: "5", tipo: "apartamento", modalidad: "arriendo",
-    direccion: "Av. Suba #91-20, Apto 204", ubicacion: "Bogotá — Suba",
-    area: 52, precio: 1900000, estado: "disponible",
-    publicado: false, propietario: "Carlos Reyes",
-    fechaRegistro: "2025-03-18", fotos: 0,
-  },
-  {
-    id: "6", tipo: "local", modalidad: "arriendo",
-    direccion: "Cll 50 #10-15, Local 2", ubicacion: "Cali — Granada",
-    area: 90, precio: 3200000, estado: "en_mantenimiento",
-    publicado: false, propietario: "Fondos Cali S.A.",
-    fechaRegistro: "2025-04-01", fotos: 3,
-  },
-  {
-    id: "7", tipo: "casa", modalidad: "venta",
-    direccion: "Cra 45 #60-10", ubicacion: "Medellín — Laureles",
-    area: 240, precio: 850000000, estado: "disponible",
-    publicado: true, propietario: "Hernando Castro",
-    fechaRegistro: "2025-04-05", fotos: 12,
-  },
-]
-
-// ---------------------------------------------------------------------------
-// Helpers y config
-// ---------------------------------------------------------------------------
-
-function formatCOP(value: number) {
-  if (value >= 1_000_000) {
-    const millones = value / 1_000_000
-    return `$${millones % 1 === 0 ? millones : millones.toFixed(1)}M`
-  }
-  return `$${new Intl.NumberFormat("es-CO").format(value)}`
-}
-
-const ESTADO_CONFIG: Record<EstadoInmueble, { label: string; className: string }> = {
-  disponible:        { label: "Disponible",         className: "badge-green" },
-  arrendado:         { label: "Arrendado",           className: "badge-blue" },
-  en_proceso_venta:  { label: "En proceso de venta", className: "badge-purple" },
-  vendido:           { label: "Vendido",             className: "badge-gray" },
-  en_mantenimiento:  { label: "En mantenimiento",    className: "badge-amber" },
-}
-
-const TIPO_LABELS: Record<TipoInmueble, string> = {
-  casa:         "Casa",
-  apartamento:  "Apartamento",
-  local:        "Local",
-  otro:         "Otro",
-}
-
-const MODALIDAD_LABELS: Record<ModalidadInmueble, string> = {
-  arriendo: "Arriendo",
-  venta:    "Venta",
-  ambos:    "Arriendo y venta",
+const RESUMEN_VACIO: Record<EstadoInmueble, number> = {
+  disponible: 0, arrendado: 0, en_proceso_venta: 0, vendido: 0, en_mantenimiento: 0,
 }
 
 const TIPO_ICON: Record<TipoInmueble, React.ReactNode> = {
@@ -142,49 +46,71 @@ const TIPO_ICON: Record<TipoInmueble, React.ReactNode> = {
   otro:        <HugeiconsIcon icon={ChimneyIcon}    strokeWidth={1.5} className="size-4 shrink-0 text-muted-foreground" />,
 }
 
+function formatCOP(value: number) {
+  if (value >= 1_000_000) {
+    const m = value / 1_000_000
+    return `$${m % 1 === 0 ? m : m.toFixed(1)}M`
+  }
+  return `$${new Intl.NumberFormat("es-CO").format(value)}`
+}
+
 // ---------------------------------------------------------------------------
 // Componente
 // ---------------------------------------------------------------------------
 
-const POR_PAGINA = 10
-
 export function InmueblesClient() {
-  const [busqueda,  setBusqueda]  = React.useState("")
-  const [tipo,      setTipo]      = React.useState<TipoInmueble | "todos">("todos")
-  const [modalidad, setModalidad] = React.useState<ModalidadInmueble | "todos">("todos")
-  const [estado,    setEstado]    = React.useState<EstadoInmueble | "todos">("todos")
-  const [pagina,    setPagina]    = React.useState(1)
+  const [busquedaInput, setBusquedaInput] = React.useState("")
+  const [busqueda,      setBusqueda]      = React.useState("")
+  const [tipo,          setTipo]          = React.useState<TipoInmueble | "todos">("todos")
+  const [modalidad,     setModalidad]     = React.useState<ModalidadInmueble | "todos">("todos")
+  const [estado,        setEstado]        = React.useState<EstadoInmueble | "todos">("todos")
+  const [pagina,        setPagina]        = React.useState(1)
 
-  const inmuebles = INMUEBLES_MOCK
+  const [inmuebles,      setInmuebles]      = React.useState<InmuebleResumen[]>([])
+  const [total,          setTotal]          = React.useState(0)
+  const [totalPaginas,   setTotalPaginas]   = React.useState(1)
+  const [resumenEstados, setResumenEstados] = React.useState<Record<EstadoInmueble, number>>(RESUMEN_VACIO)
+  const [isLoading,      setIsLoading]      = React.useState(true)
+  const [error,          setError]          = React.useState<string | null>(null)
 
-  const filtrados = inmuebles.filter(i => {
-    if (tipo      !== "todos" && i.tipo      !== tipo)      return false
-    if (modalidad !== "todos" && i.modalidad !== modalidad) return false
-    if (estado    !== "todos" && i.estado    !== estado)    return false
-    if (busqueda) {
-      const q = busqueda.toLowerCase()
-      if (
-        !i.direccion.toLowerCase().includes(q) &&
-        !i.ubicacion.toLowerCase().includes(q) &&
-        !i.propietario.toLowerCase().includes(q)
-      ) return false
-    }
-    return true
-  })
+  // Debounce: espera 400 ms tras el último keystroke antes de actualizar el filtro real
+  React.useEffect(() => {
+    const t = setTimeout(() => { setBusqueda(busquedaInput); setPagina(1) }, 400)
+    return () => clearTimeout(t)
+  }, [busquedaInput])
 
-  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA))
-  const paginaActual = Math.min(pagina, totalPaginas)
-  const paginados = filtrados.slice((paginaActual - 1) * POR_PAGINA, paginaActual * POR_PAGINA)
+  // Fetch al cambiar cualquier filtro o página
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+
+    listarInmuebles({
+      page:  pagina,
+      limit: POR_PAGINA,
+      ...(busqueda         && { busqueda }),
+      ...(tipo      !== "todos" && { tipo }),
+      ...(modalidad !== "todos" && { modalidad }),
+      ...(estado    !== "todos" && { estado }),
+    })
+      .then(res => {
+        if (cancelado) return
+        setInmuebles(res.data ?? [])
+        setTotal(res.total ?? 0)
+        setTotalPaginas(res.totalPaginas ?? 1)
+        setResumenEstados(res.resumenEstados ?? RESUMEN_VACIO)
+      })
+      .catch(err => { if (!cancelado) setError((err as Error).message) })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+
+    return () => { cancelado = true }
+  }, [busqueda, tipo, modalidad, estado, pagina])
 
   function cambiarFiltro<T>(setter: React.Dispatch<React.SetStateAction<T>>) {
     return (v: T) => { setter(v); setPagina(1) }
   }
 
-  // Cards de resumen
-  const totalDisponibles   = inmuebles.filter(i => i.estado === "disponible").length
-  const totalArrendados    = inmuebles.filter(i => i.estado === "arrendado").length
-  const totalEnVenta       = inmuebles.filter(i => i.estado === "en_proceso_venta").length
-  const totalMantenimiento = inmuebles.filter(i => i.estado === "en_mantenimiento").length
+  const paginaActual = Math.min(pagina, Math.max(1, totalPaginas))
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -194,7 +120,7 @@ export function InmueblesClient() {
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-semibold">Inmuebles</h1>
           <p className="text-sm text-muted-foreground">
-            {inmuebles.length} inmuebles registrados
+            {isLoading ? "Cargando…" : `${total} inmuebles registrados`}
           </p>
         </div>
         <Link href="/inmuebles/nuevo">
@@ -207,12 +133,12 @@ export function InmueblesClient() {
 
       <div className="px-6 py-6 space-y-6 max-w-6xl mx-auto w-full">
 
-        {/* Cards de resumen */}
+        {/* Cards de resumen — vienen de resumenEstados en la respuesta de la API */}
         <div className="grid grid-cols-4 gap-4">
-          <SummaryCard label="Disponibles"        value={totalDisponibles}   className="alert-green"  valueClassName="text-green-700  dark:text-green-300" />
-          <SummaryCard label="Arrendados"          value={totalArrendados}    className="alert-blue"   valueClassName="text-blue-700   dark:text-blue-300" />
-          <SummaryCard label="En proceso de venta" value={totalEnVenta}       className="alert-purple" valueClassName="text-purple-700 dark:text-purple-300" />
-          <SummaryCard label="En mantenimiento"    value={totalMantenimiento} className="alert-amber"  valueClassName="text-amber-700  dark:text-amber-300" />
+          <SummaryCard label="Disponibles"        value={resumenEstados.disponible}       className="alert-green"  valueClassName="text-green-700  dark:text-green-300" />
+          <SummaryCard label="Arrendados"          value={resumenEstados.arrendado}        className="alert-blue"   valueClassName="text-blue-700   dark:text-blue-300" />
+          <SummaryCard label="En proceso de venta" value={resumenEstados.en_proceso_venta} className="alert-purple" valueClassName="text-purple-700 dark:text-purple-300" />
+          <SummaryCard label="En mantenimiento"    value={resumenEstados.en_mantenimiento} className="alert-amber"  valueClassName="text-amber-700  dark:text-amber-300" />
         </div>
 
         {/* Filtros */}
@@ -221,8 +147,8 @@ export function InmueblesClient() {
             <HugeiconsIcon icon={Search01Icon} strokeWidth={1.5} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             <Input
               placeholder="Buscar por dirección, ciudad o propietario…"
-              value={busqueda}
-              onChange={e => { setBusqueda(e.target.value); setPagina(1) }}
+              value={busquedaInput}
+              onChange={e => setBusquedaInput(e.target.value)}
               className="pl-9 h-9"
             />
           </div>
@@ -231,9 +157,7 @@ export function InmueblesClient() {
             <HugeiconsIcon icon={FilterIcon} strokeWidth={1.5} className="size-4 text-muted-foreground" />
 
             <Select value={tipo} onValueChange={cambiarFiltro<TipoInmueble | "todos">(setTipo)}>
-              <SelectTrigger className="h-9 w-[140px] text-sm">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
+              <SelectTrigger className="h-9 w-[140px] text-sm"><SelectValue placeholder="Tipo" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos los tipos</SelectItem>
                 <SelectItem value="apartamento">Apartamento</SelectItem>
@@ -244,9 +168,7 @@ export function InmueblesClient() {
             </Select>
 
             <Select value={modalidad} onValueChange={cambiarFiltro<ModalidadInmueble | "todos">(setModalidad)}>
-              <SelectTrigger className="h-9 w-[160px] text-sm">
-                <SelectValue placeholder="Modalidad" />
-              </SelectTrigger>
+              <SelectTrigger className="h-9 w-[160px] text-sm"><SelectValue placeholder="Modalidad" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todas</SelectItem>
                 <SelectItem value="arriendo">Arriendo</SelectItem>
@@ -256,9 +178,7 @@ export function InmueblesClient() {
             </Select>
 
             <Select value={estado} onValueChange={cambiarFiltro<EstadoInmueble | "todos">(setEstado)}>
-              <SelectTrigger className="h-9 w-[170px] text-sm">
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
+              <SelectTrigger className="h-9 w-[170px] text-sm"><SelectValue placeholder="Estado" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos los estados</SelectItem>
                 <SelectItem value="disponible">Disponible</SelectItem>
@@ -271,39 +191,61 @@ export function InmueblesClient() {
           </div>
         </div>
 
-        {/* Tabla */}
-        {filtrados.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">
-            <HugeiconsIcon icon={Building04Icon} strokeWidth={1.5} className="size-10 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No hay inmuebles que coincidan con los filtros.</p>
+        {/* Error */}
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+            {error}
           </div>
-        ) : (
-          <div className="border rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 border-b">
+        )}
+
+        {/* Tabla */}
+        <div className="border rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 border-b">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Inmueble</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Ubicación</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Modalidad</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Precio</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Estado</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-4 py-4">
+                      <div className="h-4 bg-muted rounded w-3/4" />
+                      <div className="h-3 bg-muted rounded w-1/2 mt-2" />
+                    </td>
+                    <td className="px-4 py-4"><div className="h-4 bg-muted rounded w-2/3" /></td>
+                    <td className="px-4 py-4"><div className="h-4 bg-muted rounded w-1/2" /></td>
+                    <td className="px-4 py-4"><div className="h-4 bg-muted rounded w-16 ml-auto" /></td>
+                    <td className="px-4 py-4"><div className="h-5 bg-muted rounded w-20 mx-auto" /></td>
+                    <td className="px-4 py-4"><div className="h-7 bg-muted rounded w-16 ml-auto" /></td>
+                  </tr>
+                ))
+              ) : inmuebles.length === 0 ? (
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Inmueble</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Ubicación</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Modalidad</th>
-                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">Precio</th>
-                  <th className="text-center px-4 py-3 font-medium text-muted-foreground">Estado</th>
-                  <th className="px-4 py-3" />
+                  <td colSpan={6} className="py-16 text-center text-muted-foreground">
+                    <HugeiconsIcon icon={Building04Icon} strokeWidth={1.5} className="size-10 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No hay inmuebles que coincidan con los filtros.</p>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y">
-                {paginados.map(inmueble => {
-                  const estadoCfg = ESTADO_CONFIG[inmueble.estado]
+              ) : (
+                inmuebles.map(inmueble => {
+                  const estadoCfg = ESTADO_INMUEBLE_CONFIG[inmueble.estado]
                   return (
                     <tr key={inmueble.id} className="hover:bg-muted/30 transition-colors">
 
-                      {/* Inmueble */}
                       <td className="px-4 py-3">
                         <div className="flex items-start gap-2.5">
                           {TIPO_ICON[inmueble.tipo]}
                           <div className="min-w-0">
                             <p className="font-medium truncate max-w-[220px]">{inmueble.direccion}</p>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-xs text-muted-foreground">{TIPO_LABELS[inmueble.tipo]}</span>
+                              <span className="text-xs text-muted-foreground">{TIPO_INMUEBLE_LABELS[inmueble.tipo]}</span>
                               <span className="text-xs text-muted-foreground">·</span>
                               <span className="text-xs text-muted-foreground">{inmueble.area} m²</span>
                               {!inmueble.publicado && (
@@ -314,7 +256,6 @@ export function InmueblesClient() {
                         </div>
                       </td>
 
-                      {/* Ubicación */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5 text-muted-foreground">
                           <HugeiconsIcon icon={Location01Icon} strokeWidth={1.5} className="size-3.5 shrink-0" />
@@ -323,12 +264,10 @@ export function InmueblesClient() {
                         <p className="text-xs text-muted-foreground mt-0.5 pl-5">{inmueble.propietario}</p>
                       </td>
 
-                      {/* Modalidad */}
                       <td className="px-4 py-3 text-muted-foreground">
                         {MODALIDAD_LABELS[inmueble.modalidad]}
                       </td>
 
-                      {/* Precio */}
                       <td className="px-4 py-3 text-right font-semibold tabular-nums">
                         {formatCOP(inmueble.precio)}
                         <p className="text-xs text-muted-foreground font-normal mt-0.5">
@@ -336,61 +275,51 @@ export function InmueblesClient() {
                         </p>
                       </td>
 
-                      {/* Estado */}
                       <td className="px-4 py-3 text-center">
                         <Badge variant="outline" className={cn("text-xs", estadoCfg.className)}>
                           {estadoCfg.label}
                         </Badge>
                       </td>
 
-                      {/* Acción */}
                       <td className="px-4 py-3 text-right">
                         <Link href={`/inmuebles/${inmueble.id}`}>
-                          <Button variant="ghost" size="sm" className="h-7 text-xs">
-                            Ver detalle
-                          </Button>
+                          <Button variant="ghost" size="sm" className="h-7 text-xs">Ver detalle</Button>
                         </Link>
                       </td>
 
                     </tr>
                   )
-                })}
-              </tbody>
-            </table>
+                })
+              )}
+            </tbody>
+          </table>
 
-            {/* Paginación */}
-            <div className="flex items-center justify-between border-t px-4 py-3">
-              <p className="text-sm text-muted-foreground">
-                Mostrando{" "}
-                <span className="font-medium">
-                  {Math.min((paginaActual - 1) * POR_PAGINA + 1, filtrados.length)}–{Math.min(paginaActual * POR_PAGINA, filtrados.length)}
-                </span>{" "}
-                de <span className="font-medium">{filtrados.length}</span> inmuebles
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={paginaActual <= 1}
-                  onClick={() => setPagina(p => p - 1)}
-                >
-                  Anterior
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  Página {paginaActual} de {totalPaginas}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={paginaActual >= totalPaginas}
-                  onClick={() => setPagina(p => p + 1)}
-                >
-                  Siguiente
-                </Button>
-              </div>
+          {/* Paginación */}
+          <div className="flex items-center justify-between border-t px-4 py-3">
+            <p className="text-sm text-muted-foreground">
+              {isLoading ? "Cargando…" : total === 0 ? "Sin resultados" : (
+                <>
+                  Mostrando{" "}
+                  <span className="font-medium">
+                    {(paginaActual - 1) * POR_PAGINA + 1}–{Math.min(paginaActual * POR_PAGINA, total)}
+                  </span>{" "}
+                  de <span className="font-medium">{total}</span> inmuebles
+                </>
+              )}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled={paginaActual <= 1 || isLoading} onClick={() => setPagina(p => p - 1)}>
+                Anterior
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Página {paginaActual} de {Math.max(1, totalPaginas)}
+              </span>
+              <Button variant="outline" size="sm" disabled={paginaActual >= totalPaginas || isLoading} onClick={() => setPagina(p => p + 1)}>
+                Siguiente
+              </Button>
             </div>
           </div>
-        )}
+        </div>
 
       </div>
     </div>
@@ -402,10 +331,7 @@ export function InmueblesClient() {
 // ---------------------------------------------------------------------------
 
 function SummaryCard({
-  label,
-  value,
-  className,
-  valueClassName,
+  label, value, className, valueClassName,
 }: {
   label: string
   value: number
