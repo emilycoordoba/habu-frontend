@@ -24,9 +24,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { CLIENTES_MOCK } from "@/lib/mock/clientes"
 import type { TipoPersona, TipoCliente, Cliente } from "@/types/cliente.types"
 import { TIPO_CLIENTE_CONFIG } from "@/types/cliente.types"
+import { obtenerCliente, crearCliente, editarCliente } from "@/lib/api/clientes"
+import type { CrearClienteBody } from "@/lib/api/clientes"
 
 // ---------------------------------------------------------------------------
 // Tipos internos del form
@@ -71,25 +72,40 @@ export function RegistrarClienteClient({ clienteId }: { clienteId?: string }) {
   const router = useRouter()
   const esEdicion = !!clienteId
 
-  const [form, setForm] = React.useState<FormState>(ESTADO_INICIAL)
+  const [form, setForm]           = React.useState<FormState>(ESTADO_INICIAL)
   const [guardando, setGuardando] = React.useState(false)
+  const [isLoadingData, setIsLoadingData] = React.useState(!!clienteId)
 
-  // Carga datos en modo edición
+  // Carga datos en modo edición vía API
   React.useEffect(() => {
     if (!clienteId) return
-    const cliente = CLIENTES_MOCK.find(c => c.id === clienteId)
-    if (!cliente) return
-    setForm({
-      tipoPersona: cliente.tipoPersona,
-      nombre: cliente.nombre,
-      tipoDocumento: cliente.tipoDocumento,
-      documento: cliente.documento,
-      telefono: cliente.telefono,
-      email: cliente.email,
-      ciudad: cliente.ciudad,
-      representanteLegal: cliente.representanteLegal ?? "",
-      tipos: cliente.tipos,
-    })
+    let cancelado = false
+    setIsLoadingData(true)
+
+    obtenerCliente(clienteId)
+      .then(res => {
+        if (cancelado) return
+        const d = res.data
+        setForm({
+          tipoPersona:       d.tipoPersona,
+          nombre:            d.nombre,
+          tipoDocumento:     d.tipoDocumento,
+          documento:         d.documento,
+          telefono:          d.telefono,
+          email:             d.email,
+          ciudad:            d.ciudad,
+          representanteLegal: d.representanteLegal ?? "",
+          tipos:             d.tipos,
+        })
+        setIsLoadingData(false)
+      })
+      .catch(() => {
+        if (cancelado) return
+        toast.error("No se pudo cargar el cliente")
+        setIsLoadingData(false)
+      })
+
+    return () => { cancelado = true }
   }, [clienteId])
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -123,17 +139,63 @@ export function RegistrarClienteClient({ clienteId }: { clienteId?: string }) {
     form.tipos.length > 0 &&
     (form.tipoPersona === "natural" || form.representanteLegal.trim() !== "")
 
-  function handleGuardar() {
+  async function handleGuardar() {
     if (!puedeGuardar || guardando) return
     setGuardando(true)
-    setTimeout(() => {
-      setGuardando(false)
+
+    try {
+      const base = {
+        tipos:    form.tipos,
+        telefono: form.telefono.trim(),
+        email:    form.email.trim(),
+        ciudad:   form.ciudad.trim(),
+      }
+      const body: CrearClienteBody = form.tipoPersona === "juridica"
+        ? { ...base, tipoPersona: "juridica", nombre: form.nombre.trim(), documento: form.documento.trim(), tipoDocumento: "NIT", representanteLegal: form.representanteLegal.trim() }
+        : { ...base, tipoPersona: "natural",  nombre: form.nombre.trim(), documento: form.documento.trim(), tipoDocumento: form.tipoDocumento as "CC" | "CE" | "PAS" }
+
+      if (esEdicion && clienteId) {
+        await editarCliente(clienteId, body)
+      } else {
+        await crearCliente(body)
+      }
+
       toast.success(esEdicion ? "Cliente actualizado" : "Cliente registrado correctamente")
       router.push("/clientes")
-    }, 600)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al guardar")
+    } finally {
+      setGuardando(false)
+    }
   }
 
   const esNatural = form.tipoPersona === "natural"
+
+  if (isLoadingData) {
+    return (
+      <div className="flex flex-col h-full animate-pulse">
+        <div className="border-b px-6 py-4 flex items-center gap-3">
+          <div className="size-8 rounded-md bg-muted" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-5 w-36 rounded bg-muted" />
+            <div className="h-3.5 w-52 rounded bg-muted" />
+          </div>
+          <div className="h-8 w-28 rounded-md bg-muted" />
+        </div>
+        <div className="px-6 py-8 max-w-2xl mx-auto w-full space-y-8">
+          {[1, 2, 3, 4].map(s => (
+            <div key={s} className="space-y-4">
+              <div className="h-3.5 w-32 rounded bg-muted" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-9 rounded-md bg-muted" />
+                <div className="h-9 rounded-md bg-muted" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">

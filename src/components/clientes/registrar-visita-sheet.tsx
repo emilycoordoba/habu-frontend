@@ -39,12 +39,14 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
-import { INMUEBLES_MOCK } from "@/lib/mock/inmuebles"
-import type { Interaccion, TipoInteraccion } from "@/lib/mock/clientes"
+import type { Interaccion, TipoInteraccion } from "@/types/cliente.types"
+import { registrarInteraccion } from "@/lib/api/clientes"
+import { listarInmuebles } from "@/lib/api/inmuebles"
 
 // ---------------------------------------------------------------------------
 
 interface Props {
+  clienteId: string
   clienteNombre: string
   onRegistrar: (interaccion: Interaccion) => void
   children: React.ReactNode
@@ -58,6 +60,12 @@ interface FormState {
   descripcion: string
 }
 
+interface InmuebleItem {
+  id: string
+  label: string
+  sub: string
+}
+
 const TIPOS: {
   value: TipoInteraccion
   label: string
@@ -69,28 +77,33 @@ const TIPOS: {
   { value: "nota",    label: "Nota",     icon: PencilEdit01Icon },
 ]
 
-const INMUEBLES_LISTA = Object.values(INMUEBLES_MOCK).map(i => ({
-  id: i.id,
-  label: i.direccion,
-  sub: i.ubicacion,
-}))
-
 const hoy = () => new Date().toISOString().split("T")[0]
 const ahoraHora = () => new Date().toTimeString().slice(0, 5)
 
 // ---------------------------------------------------------------------------
 
-export function RegistrarVisitaSheet({ clienteNombre, onRegistrar, children }: Props) {
-  const [open, setOpen] = React.useState(false)
+export function RegistrarVisitaSheet({ clienteId, clienteNombre, onRegistrar, children }: Props) {
+  const [open, setOpen]           = React.useState(false)
   const [comboOpen, setComboOpen] = React.useState(false)
-  const [form, setForm] = React.useState<FormState>({
+  const [form, setForm]           = React.useState<FormState>({
     tipo: "visita",
     inmuebleId: "",
     fecha: hoy(),
     hora: ahoraHora(),
     descripcion: "",
   })
-  const [errors, setErrors] = React.useState<Partial<Record<keyof FormState, string>>>({})
+  const [errors, setErrors]           = React.useState<Partial<Record<keyof FormState, string>>>({})
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [inmuebles, setInmuebles]     = React.useState<InmuebleItem[]>([])
+
+  // Carga la lista de inmuebles para el combobox de visitas
+  React.useEffect(() => {
+    listarInmuebles({ limit: 100 })
+      .then(res => {
+        setInmuebles(res.data.map(i => ({ id: i.id, label: i.direccion, sub: i.ubicacion })))
+      })
+      .catch(() => { /* el combobox queda vacío */ })
+  }, [])
 
   function reset() {
     setForm({ tipo: "visita", inmuebleId: "", fecha: hoy(), hora: ahoraHora(), descripcion: "" })
@@ -107,30 +120,34 @@ export function RegistrarVisitaSheet({ clienteNombre, onRegistrar, children }: P
     return Object.keys(e).length === 0
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
+    setIsSubmitting(true)
 
-    const inmueble = INMUEBLES_MOCK[form.inmuebleId]
-    const nueva: Interaccion = {
-      id: `i${Date.now()}`,
-      tipo: form.tipo,
-      fecha: form.fecha,
-      hora: form.hora,
-      descripcion: form.descripcion.trim(),
-      asesor: "Emily Perea",
-      ...(inmueble ? { inmueble: inmueble.direccion } : {}),
+    try {
+      const res = await registrarInteraccion(clienteId, {
+        tipo: form.tipo,
+        fecha: form.fecha,
+        hora: form.hora,
+        descripcion: form.descripcion.trim(),
+        ...(form.inmuebleId ? { inmuebleId: form.inmuebleId } : {}),
+      })
+
+      onRegistrar(res.data)
+      toast.success(
+        form.tipo === "visita"   ? "Visita registrada" :
+        form.tipo === "llamada"  ? "Llamada registrada" :
+        form.tipo === "mensaje"  ? "Mensaje registrado" :
+                                   "Nota guardada"
+      )
+      setOpen(false)
+      reset()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al registrar")
+    } finally {
+      setIsSubmitting(false)
     }
-
-    onRegistrar(nueva)
-    toast.success(
-      form.tipo === "visita" ? "Visita registrada" :
-      form.tipo === "llamada" ? "Llamada registrada" :
-      form.tipo === "mensaje" ? "Mensaje registrado" :
-      "Nota guardada"
-    )
-    setOpen(false)
-    reset()
   }
 
   function handleOpenChange(next: boolean) {
@@ -138,8 +155,8 @@ export function RegistrarVisitaSheet({ clienteNombre, onRegistrar, children }: P
     if (!next) reset()
   }
 
-  const tipoActual = TIPOS.find(t => t.value === form.tipo)!
-  const inmuebleSeleccionado = form.inmuebleId ? INMUEBLES_MOCK[form.inmuebleId] : null
+  const tipoActual          = TIPOS.find(t => t.value === form.tipo)!
+  const inmuebleSeleccionado = inmuebles.find(i => i.id === form.inmuebleId) ?? null
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
@@ -198,7 +215,7 @@ export function RegistrarVisitaSheet({ clienteNombre, onRegistrar, children }: P
                       )}
                     >
                       <span className="truncate text-left">
-                        {inmuebleSeleccionado ? inmuebleSeleccionado.direccion : "Seleccionar inmueble…"}
+                        {inmuebleSeleccionado ? inmuebleSeleccionado.label : "Seleccionar inmueble…"}
                       </span>
                       <HugeiconsIcon icon={ArrowDown01Icon} strokeWidth={2} className="size-4 shrink-0 ml-2 opacity-50" />
                     </button>
@@ -207,9 +224,11 @@ export function RegistrarVisitaSheet({ clienteNombre, onRegistrar, children }: P
                     <Command>
                       <CommandInput placeholder="Buscar por dirección…" />
                       <CommandList>
-                        <CommandEmpty>Sin resultados.</CommandEmpty>
+                        <CommandEmpty>
+                          {inmuebles.length === 0 ? "Cargando inmuebles…" : "Sin resultados."}
+                        </CommandEmpty>
                         <CommandGroup>
-                          {INMUEBLES_LISTA.map(inm => (
+                          {inmuebles.map(inm => (
                             <CommandItem
                               key={inm.id}
                               value={inm.label}
@@ -301,12 +320,13 @@ export function RegistrarVisitaSheet({ clienteNombre, onRegistrar, children }: P
 
           {/* Footer */}
           <div className="border-t px-6 py-4 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={isSubmitting}>
               <HugeiconsIcon icon={tipoActual.icon} strokeWidth={2} className="size-4" />
-              {form.tipo === "visita"  ? "Registrar visita" :
+              {isSubmitting ? "Guardando…" :
+               form.tipo === "visita"  ? "Registrar visita" :
                form.tipo === "llamada" ? "Registrar llamada" :
                form.tipo === "mensaje" ? "Registrar mensaje" :
                "Guardar nota"}

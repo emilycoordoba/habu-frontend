@@ -18,6 +18,7 @@ import {
   EyeIcon,
   Call02Icon,
   BubbleChatIcon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -30,17 +31,25 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
-import {
-  CLIENTES_MOCK,
-  INTERACCIONES_MOCK,
-  CONTRATOS_POR_CLIENTE,
-  type Interaccion,
-} from "@/lib/mock/clientes"
-import { INMUEBLES_MOCK } from "@/lib/mock/inmuebles"
+import type {
+  ClienteDetalle,
+  Interaccion,
+  TipoInteraccion,
+  ContratoClienteResumen,
+  InmuebleClienteResumen,
+  TipoCliente,
+} from "@/types/cliente.types"
 import { TIPO_CLIENTE_CONFIG } from "@/types/cliente.types"
 import { ESTADO_CONTRATO_CONFIG, LABELS_POR_TIPO } from "@/types/contrato.types"
 import type { TipoInmueble } from "@/types/inmueble.types"
+import type { EstadoContrato } from "@/types/contrato.types"
 import { RegistrarVisitaSheet } from "@/components/clientes/registrar-visita-sheet"
+import {
+  obtenerCliente,
+  listarInteracciones,
+  listarContratosCliente,
+  listarInmueblesCliente,
+} from "@/lib/api/clientes"
 
 // ---------------------------------------------------------------------------
 // Config visual
@@ -53,8 +62,6 @@ const TIPO_INMUEBLE_LABELS: Record<TipoInmueble, string> = {
 const TIPO_INMUEBLE_ICON: Record<TipoInmueble, typeof Home01Icon> = {
   casa: ChimneyIcon, apartamento: Building04Icon, local: Store01Icon, otro: Home01Icon,
 }
-
-import type { TipoInteraccion } from "@/lib/mock/clientes"
 
 const INTERACCION_CONFIG: Record<TipoInteraccion, { label: string; icon: typeof EyeIcon; dotClass: string; textClass: string }> = {
   visita:   { label: "Visita",   icon: EyeIcon,          dotClass: "bg-blue-100",   textClass: "text-blue-600" },
@@ -78,11 +85,101 @@ function formatFecha(iso: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Componente
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function DetalleClienteSkeleton() {
+  return (
+    <div className="flex flex-col h-full animate-pulse">
+      <div className="border-b px-6 py-4 flex items-center gap-3">
+        <div className="size-8 rounded-md bg-muted" />
+        <div className="flex-1 space-y-2">
+          <div className="h-5 w-52 rounded bg-muted" />
+          <div className="h-3.5 w-36 rounded bg-muted" />
+        </div>
+        <div className="h-8 w-20 rounded-md bg-muted" />
+      </div>
+      <div className="border-b px-6 flex">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="px-4 py-3">
+            <div className="h-4 w-16 rounded bg-muted" />
+          </div>
+        ))}
+      </div>
+      <div className="flex-1 px-6 py-6 max-w-2xl mx-auto w-full space-y-6">
+        <div className="h-3 w-28 rounded bg-muted" />
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="space-y-1.5">
+              <div className="h-3 w-20 rounded bg-muted" />
+              <div className="h-4 w-32 rounded bg-muted" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Componente principal
 // ---------------------------------------------------------------------------
 
 export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
-  const cliente = CLIENTES_MOCK.find(c => c.id === clienteId)
+  const [cliente, setCliente]             = React.useState<ClienteDetalle | null>(null)
+  const [interacciones, setInteracciones] = React.useState<Interaccion[]>([])
+  const [contratos, setContratos]         = React.useState<ContratoClienteResumen[]>([])
+  const [inmuebles, setInmuebles]         = React.useState<InmuebleClienteResumen[]>([])
+  const [isLoading, setIsLoading]         = React.useState(true)
+  const [error, setError]                 = React.useState<string | null>(null)
+  const [retryKey, setRetryKey]           = React.useState(0)
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+
+    Promise.all([
+      obtenerCliente(clienteId),
+      listarInteracciones(clienteId),
+      listarContratosCliente(clienteId),
+      listarInmueblesCliente(clienteId),
+    ])
+      .then(([clienteRes, interaccionesRes, contratosRes, inmueblesRes]) => {
+        if (cancelado) return
+        setCliente(clienteRes.data)
+        setInteracciones([...interaccionesRes.data].sort((a, b) => b.fecha.localeCompare(a.fecha)))
+        setContratos(contratosRes.data)
+        setInmuebles(inmueblesRes.data)
+        setIsLoading(false)
+      })
+      .catch(err => {
+        if (cancelado) return
+        setError(err instanceof Error ? err.message : "Error al cargar el cliente")
+        setIsLoading(false)
+      })
+
+    return () => { cancelado = true }
+  }, [clienteId, retryKey])
+
+  function handleRegistrar(nueva: Interaccion) {
+    setInteracciones(prev => [nueva, ...prev])
+  }
+
+  if (isLoading) return <DetalleClienteSkeleton />
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center text-muted-foreground gap-2">
+        <HugeiconsIcon icon={UserIcon} strokeWidth={1.5} className="size-10 opacity-30" />
+        <p className="text-sm">{error}</p>
+        <Button variant="outline" size="sm" className="mt-1 gap-1.5" onClick={() => setRetryKey(k => k + 1)}>
+          <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-3.5" />
+          Reintentar
+        </Button>
+      </div>
+    )
+  }
 
   if (!cliente) {
     return (
@@ -92,19 +189,6 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
         <Link href="/clientes"><Button variant="outline" size="sm">Volver a clientes</Button></Link>
       </div>
     )
-  }
-
-  const inmueblesPropios = Object.values(INMUEBLES_MOCK).filter(
-    i => i.propietarioId === clienteId
-  )
-  const contratos = CONTRATOS_POR_CLIENTE[clienteId] ?? []
-
-  const [interacciones, setInteracciones] = React.useState<Interaccion[]>(
-    () => [...(INTERACCIONES_MOCK[clienteId] ?? [])].sort((a, b) => b.fecha.localeCompare(a.fecha))
-  )
-
-  function handleRegistrar(nueva: Interaccion) {
-    setInteracciones(prev => [nueva, ...prev])
   }
 
   const esPropietario = cliente.tipos.includes("propietario")
@@ -169,9 +253,9 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
           <TabsList className="h-auto bg-transparent p-0 gap-0 rounded-none">
             {[
               { value: "datos",      label: "Datos" },
-              { value: "inmuebles",  label: `Inmuebles${esPropietario ? ` (${inmueblesPropios.length})` : ""}` },
-              { value: "contratos",  label: `Contratos${contratos.length ? ` (${contratos.length})` : ""}` },
-              { value: "historial",  label: `Historial${interacciones.length ? ` (${interacciones.length})` : ""}` },
+              { value: "inmuebles",  label: `Inmuebles${esPropietario && inmuebles.length > 0 ? ` (${inmuebles.length})` : ""}` },
+              { value: "contratos",  label: `Contratos${contratos.length > 0 ? ` (${contratos.length})` : ""}` },
+              { value: "historial",  label: `Historial${interacciones.length > 0 ? ` (${interacciones.length})` : ""}` },
             ].map(tab => (
               <TabsTrigger
                 key={tab.value}
@@ -256,7 +340,7 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
                 mensaje="Este cliente no tiene el rol de propietario."
                 sub="Los inmuebles se asocian al cliente al registrarlos."
               />
-            ) : inmueblesPropios.length === 0 ? (
+            ) : inmuebles.length === 0 ? (
               <EmptyState
                 icon={Home01Icon}
                 mensaje="No hay inmuebles registrados para este propietario."
@@ -274,8 +358,8 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {inmueblesPropios.map(inmueble => {
-                      const estadoCfg = ESTADO_INMUEBLE_CONFIG[inmueble.estado]
+                    {inmuebles.map(inmueble => {
+                      const estadoCfg = ESTADO_INMUEBLE_CONFIG[inmueble.estado] ?? { label: inmueble.estado, className: "bg-gray-100 text-gray-500 border-gray-200" }
                       return (
                         <tr key={inmueble.id} className="hover:bg-muted/30 transition-colors">
                           <td className="px-4 py-3">
@@ -334,14 +418,16 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
                   </thead>
                   <tbody className="divide-y">
                     {contratos.map(contrato => {
-                      const estadoCfg = ESTADO_CONTRATO_CONFIG[contrato.estado]
-                      const rolCfg    = TIPO_CLIENTE_CONFIG[contrato.rol]
+                      const estadoCfg = ESTADO_CONTRATO_CONFIG[contrato.estado as EstadoContrato]
+                        ?? { label: contrato.estado, className: "badge-gray" }
+                      const rolCfg    = TIPO_CLIENTE_CONFIG[contrato.rol as TipoCliente]
+                        ?? { label: contrato.rol, className: "" }
                       return (
                         <tr key={`${contrato.id}-${contrato.rol}`} className="hover:bg-muted/30 transition-colors">
                           <td className="px-4 py-3">
                             <p className="font-medium tabular-nums">{contrato.referencia}</p>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              {LABELS_POR_TIPO[contrato.tipo].propietario.replace("or", "o")} de {contrato.tipo === "arriendo" ? "arriendo" : "compraventa"}
+                              {LABELS_POR_TIPO[contrato.tipo]?.propietario?.replace("or", "o") ?? contrato.tipo} de {contrato.tipo === "arriendo" ? "arriendo" : "compraventa"}
                             </p>
                           </td>
                           <td className="px-4 py-3">
@@ -382,6 +468,7 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
                     : `${interacciones.length} interaccione${interacciones.length !== 1 ? "s" : ""} registrada${interacciones.length !== 1 ? "s" : ""}.`}
                 </p>
                 <RegistrarVisitaSheet
+                  clienteId={clienteId}
                   clienteNombre={cliente.nombre}
                   onRegistrar={handleRegistrar}
                 >
