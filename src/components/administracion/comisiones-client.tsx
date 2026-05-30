@@ -1,12 +1,12 @@
 "use client"
 
 import * as React from "react"
+import { toast } from "sonner"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
   PencilEdit01Icon,
   Delete02Icon,
-  CheckmarkCircle02Icon,
   Cancel01Icon,
   UserIcon,
   PercentCircleIcon,
@@ -15,6 +15,7 @@ import {
   Building04Icon,
   FileManagementIcon,
   Home01Icon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -48,36 +49,23 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
-
-// ---------------------------------------------------------------------------
-// Tipos
-// ---------------------------------------------------------------------------
-
-type TipoComision = "administracion" | "colocacion" | "venta"
-
-interface EsquemaComision {
-  id: string
-  nombre: string
-  tipo: TipoComision
-  // Lo que la inmobiliaria cobra al cliente
-  porcentajeInmobiliaria: number
-  // Lo que el asesor recibe de ese cobro
-  porcentajeAsesor: number
-  condiciones: string
-  estado: "activo" | "inactivo"
-}
-
-interface AsesorComision {
-  usuarioId: string
-  esquemaId: string
-  fechaAsignacion: string
-}
-
-interface Asesor {
-  id: string
-  nombre: string
-  correo: string
-}
+import {
+  listarEsquemas,
+  obtenerEsquema,
+  crearEsquema,
+  editarEsquema,
+  eliminarEsquema,
+  asignarAsesor,
+  desasignarAsesor,
+  listarUsuarios,
+} from "@/lib/api/administracion"
+import type {
+  EsquemaComision,
+  EsquemaComisionDetalle,
+  AsesorAsignado,
+  TipoComision,
+  Usuario,
+} from "@/types/administracion.types"
 
 // ---------------------------------------------------------------------------
 // Config por tipo
@@ -108,63 +96,6 @@ const TIPO_CONFIG: Record<TipoComision, {
     className: "badge-amber",
   },
 }
-
-// ---------------------------------------------------------------------------
-// Mock
-// ---------------------------------------------------------------------------
-
-const ESQUEMAS_MOCK: EsquemaComision[] = [
-  {
-    id: "ec-1",
-    nombre: "Administración estándar",
-    tipo: "administracion",
-    porcentajeInmobiliaria: 8,
-    porcentajeAsesor: 40,
-    condiciones: "Aplica a contratos de arriendo con servicio de administración.",
-    estado: "activo",
-  },
-  {
-    id: "ec-2",
-    nombre: "Colocación estándar",
-    tipo: "colocacion",
-    porcentajeInmobiliaria: 50,
-    porcentajeAsesor: 60,
-    condiciones: "Para arriendos sin administración. Pago único al activar el contrato.",
-    estado: "activo",
-  },
-  {
-    id: "ec-3",
-    nombre: "Venta inmueble",
-    tipo: "venta",
-    porcentajeInmobiliaria: 3,
-    porcentajeAsesor: 50,
-    condiciones: "Aplica sobre el precio total de venta al escriturar.",
-    estado: "activo",
-  },
-  {
-    id: "ec-4",
-    nombre: "Administración promocional",
-    tipo: "administracion",
-    porcentajeInmobiliaria: 6,
-    porcentajeAsesor: 35,
-    condiciones: "Tarifa reducida para captación de nuevos propietarios.",
-    estado: "inactivo",
-  },
-]
-
-const ASESORES_MOCK: Asesor[] = [
-  { id: "u-2", nombre: "Ana Rodríguez",  correo: "ana@inmobiliaria.co" },
-  { id: "u-3", nombre: "Carlos Mejía",   correo: "carlos@inmobiliaria.co" },
-  { id: "u-4", nombre: "Lucía Torres",   correo: "lucia@inmobiliaria.co" },
-  { id: "u-5", nombre: "Marcos Salinas", correo: "marcos@inmobiliaria.co" },
-]
-
-const ASIGNACIONES_MOCK: AsesorComision[] = [
-  { usuarioId: "u-2", esquemaId: "ec-1", fechaAsignacion: "2025-02-01" },
-  { usuarioId: "u-3", esquemaId: "ec-1", fechaAsignacion: "2025-02-15" },
-  { usuarioId: "u-2", esquemaId: "ec-2", fechaAsignacion: "2025-02-01" },
-  { usuarioId: "u-5", esquemaId: "ec-3", fechaAsignacion: "2025-03-20" },
-]
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -215,10 +146,11 @@ interface EsquemaDialogProps {
   open: boolean
   onOpenChange: (v: boolean) => void
   esquema: EsquemaComision | null
-  onGuardar: (data: Omit<EsquemaComision, "id">) => void
+  onGuardar: (data: Omit<EsquemaComision, "id">) => Promise<void>
+  isSubmitting?: boolean
 }
 
-function EsquemaDialog({ open, onOpenChange, esquema, onGuardar }: EsquemaDialogProps) {
+function EsquemaDialog({ open, onOpenChange, esquema, onGuardar, isSubmitting }: EsquemaDialogProps) {
   const [nombre, setNombre] = React.useState("")
   const [tipo, setTipo] = React.useState<TipoComision>("administracion")
   const [pctInmobiliaria, setPctInmobiliaria] = React.useState("")
@@ -244,7 +176,6 @@ function EsquemaDialog({ open, onOpenChange, esquema, onGuardar }: EsquemaDialog
     !isNaN(pI) && pI > 0 && pI <= 100 &&
     !isNaN(pA) && pA > 0 && pA <= 100
 
-  // Ejemplo de cálculo para mostrar en tiempo real
   const ejemploBase = tipo === "venta" ? 200_000_000 : 1_000_000
   const ejemploLabel = tipo === "venta" ? "$200.000.000 (precio venta)" : "$1.000.000 (canon mensual)"
   const cobro = !isNaN(pI) ? Math.round(ejemploBase * pI / 100) : null
@@ -284,9 +215,7 @@ function EsquemaDialog({ open, onOpenChange, esquema, onGuardar }: EsquemaDialog
           <div className="grid gap-1.5">
             <Label>Tipo de comisión</Label>
             <Select value={tipo} onValueChange={v => setTipo(v as TipoComision)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="administracion">Administración — mensual sobre el canon</SelectItem>
                 <SelectItem value="colocacion">Colocación — pago único al activar arriendo</SelectItem>
@@ -313,7 +242,6 @@ function EsquemaDialog({ open, onOpenChange, esquema, onGuardar }: EsquemaDialog
             />
           </div>
 
-          {/* Simulador en tiempo real */}
           {cobro !== null && asesorGana !== null && (
             <div className="rounded-lg bg-muted/40 border px-4 py-3 text-xs space-y-1.5">
               <p className="font-semibold text-muted-foreground uppercase tracking-wide text-[10px]">
@@ -360,9 +288,11 @@ function EsquemaDialog({ open, onOpenChange, esquema, onGuardar }: EsquemaDialog
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleGuardar} disabled={!puedeGuardar}>
-            {esquema ? "Guardar cambios" : "Crear esquema"}
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+            Cancelar
+          </Button>
+          <Button onClick={handleGuardar} disabled={!puedeGuardar || isSubmitting}>
+            {isSubmitting ? "Guardando…" : esquema ? "Guardar cambios" : "Crear esquema"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -376,18 +306,16 @@ function EsquemaDialog({ open, onOpenChange, esquema, onGuardar }: EsquemaDialog
 
 interface PanelAsesoresProps {
   esquema: EsquemaComision
-  asignaciones: AsesorComision[]
-  onAsignar: (usuarioId: string) => void
-  onDesasignar: (usuarioId: string) => void
+  asesoresAsignados: AsesorAsignado[]
+  todosAsesores: Usuario[]
+  onAsignar: (usuarioId: string) => Promise<void>
+  onDesasignar: (usuarioId: string) => Promise<void>
 }
 
-function PanelAsesores({ esquema, asignaciones, onAsignar, onDesasignar }: PanelAsesoresProps) {
+function PanelAsesores({ esquema, asesoresAsignados, todosAsesores, onAsignar, onDesasignar }: PanelAsesoresProps) {
   const cfg = TIPO_CONFIG[esquema.tipo]
-  const asignadosIds = asignaciones
-    .filter(a => a.esquemaId === esquema.id)
-    .map(a => a.usuarioId)
-  const asignados  = ASESORES_MOCK.filter(a =>  asignadosIds.includes(a.id))
-  const disponibles = ASESORES_MOCK.filter(a => !asignadosIds.includes(a.id))
+  const asignadosIds = asesoresAsignados.map(a => a.usuarioId)
+  const disponibles = todosAsesores.filter(a => !asignadosIds.includes(a.id))
 
   const fmt = (n: number) => n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })
   const ejemploBase = esquema.tipo === "venta" ? 200_000_000 : 1_000_000
@@ -417,7 +345,6 @@ function PanelAsesores({ esquema, asignaciones, onAsignar, onDesasignar }: Panel
           </Badge>
         </div>
 
-        {/* Desglose de tasas */}
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-md bg-muted/40 px-3 py-2">
             <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Al cliente</p>
@@ -443,42 +370,35 @@ function PanelAsesores({ esquema, asignaciones, onAsignar, onDesasignar }: Panel
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Asesores con este esquema ({asignados.length})
+            Asesores con este esquema ({asesoresAsignados.length})
           </p>
-          {asignados.length === 0 ? (
+          {asesoresAsignados.length === 0 ? (
             <p className="text-xs text-muted-foreground italic">Ningún asesor asignado aún.</p>
           ) : (
             <div className="space-y-1">
-              {asignados.map(asesor => {
-                const asig = asignaciones.find(
-                  a => a.esquemaId === esquema.id && a.usuarioId === asesor.id
-                )
-                return (
-                  <div
-                    key={asesor.id}
-                    className="flex items-center gap-3 rounded-md border px-3 py-2 bg-background"
-                  >
-                    <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <HugeiconsIcon icon={UserIcon} strokeWidth={2} className="size-3.5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{asesor.nombre}</p>
-                      {asig && (
-                        <p className="text-xs text-muted-foreground">Desde {formatFecha(asig.fechaAsignacion)}</p>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-7 text-muted-foreground hover:text-red-600 shrink-0"
-                      onClick={() => onDesasignar(asesor.id)}
-                      title="Quitar asignación"
-                    >
-                      <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3.5" />
-                    </Button>
+              {asesoresAsignados.map(asesor => (
+                <div
+                  key={asesor.usuarioId}
+                  className="flex items-center gap-3 rounded-md border px-3 py-2 bg-background"
+                >
+                  <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <HugeiconsIcon icon={UserIcon} strokeWidth={2} className="size-3.5 text-primary" />
                   </div>
-                )
-              })}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{asesor.nombre}</p>
+                    <p className="text-xs text-muted-foreground">Desde {formatFecha(asesor.fechaAsignacion)}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 text-muted-foreground hover:text-red-600 shrink-0"
+                    onClick={() => onDesasignar(asesor.usuarioId)}
+                    title="Quitar asignación"
+                  >
+                    <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3.5" />
+                  </Button>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -522,48 +442,129 @@ function PanelAsesores({ esquema, asignaciones, onAsignar, onDesasignar }: Panel
 // ---------------------------------------------------------------------------
 
 export function ComisionesClient() {
-  const [esquemas, setEsquemas] = React.useState<EsquemaComision[]>(ESQUEMAS_MOCK)
-  const [asignaciones, setAsignaciones] = React.useState<AsesorComision[]>(ASIGNACIONES_MOCK)
-  const [seleccionado, setSeleccionado] = React.useState<EsquemaComision | null>(null)
+  const [esquemas, setEsquemas] = React.useState<EsquemaComision[]>([])
+  const [todosAsesores, setTodosAsesores] = React.useState<Usuario[]>([])
+  const [seleccionado, setSeleccionado] = React.useState<EsquemaComisionDetalle | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [isLoadingDetalle, setIsLoadingDetalle] = React.useState(false)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [retryKey, setRetryKey] = React.useState(0)
+
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editando, setEditando] = React.useState<EsquemaComision | null>(null)
   const [confirmEliminar, setConfirmEliminar] = React.useState<EsquemaComision | null>(null)
 
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    Promise.all([
+      listarEsquemas({ limit: 100 }),
+      listarUsuarios({ rol: "asesor", estado: "activo", limit: 100 }),
+    ])
+      .then(([esquemaRes, asesorRes]) => {
+        if (cancelado) return
+        setEsquemas(esquemaRes.data ?? [])
+        setTodosAsesores(asesorRes.data ?? [])
+      })
+      .catch(() => { if (!cancelado) setError("No se pudo cargar la información.") })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [retryKey])
+
+  async function seleccionarEsquema(esquema: EsquemaComision) {
+    setIsLoadingDetalle(true)
+    try {
+      const res = await obtenerEsquema(esquema.id)
+      setSeleccionado(res.data)
+    } catch {
+      toast.error("No se pudo cargar el detalle del esquema.")
+    } finally {
+      setIsLoadingDetalle(false)
+    }
+  }
+
   function handleNuevo() { setEditando(null); setDialogOpen(true) }
   function handleEditar(e: EsquemaComision) { setEditando(e); setDialogOpen(true) }
 
-  function handleGuardar(data: Omit<EsquemaComision, "id">) {
-    if (editando) {
-      const actualizado = { ...editando, ...data }
-      setEsquemas(prev => prev.map(e => e.id === editando.id ? actualizado : e))
-      if (seleccionado?.id === editando.id) setSeleccionado(actualizado)
-    } else {
-      setEsquemas(prev => [...prev, { ...data, id: `ec-${Date.now()}` }])
+  async function handleGuardar(data: Omit<EsquemaComision, "id">) {
+    setIsSubmitting(true)
+    try {
+      if (editando) {
+        await editarEsquema(editando.id, data)
+        toast.success("Esquema actualizado")
+      } else {
+        await crearEsquema(data)
+        toast.success("Esquema creado")
+      }
+      setDialogOpen(false)
+      setRetryKey(k => k + 1)
+      if (seleccionado && editando?.id === seleccionado.id) {
+        const res = await obtenerEsquema(editando.id)
+        setSeleccionado(res.data)
+      }
+    } catch {
+      toast.error(editando ? "No se pudo actualizar el esquema." : "No se pudo crear el esquema.")
+    } finally {
+      setIsSubmitting(false)
     }
-    setDialogOpen(false)
   }
 
-  function confirmarEliminar() {
+  async function confirmarEliminar() {
     if (!confirmEliminar) return
-    setEsquemas(prev => prev.filter(e => e.id !== confirmEliminar.id))
-    setAsignaciones(prev => prev.filter(a => a.esquemaId !== confirmEliminar.id))
-    if (seleccionado?.id === confirmEliminar.id) setSeleccionado(null)
-    setConfirmEliminar(null)
+    try {
+      await eliminarEsquema(confirmEliminar.id)
+      toast.success("Esquema eliminado")
+      if (seleccionado?.id === confirmEliminar.id) setSeleccionado(null)
+      setConfirmEliminar(null)
+      setRetryKey(k => k + 1)
+    } catch {
+      toast.error("No se pudo eliminar el esquema. Puede estar referenciado en contratos activos.")
+      setConfirmEliminar(null)
+    }
   }
 
-  function handleAsignar(usuarioId: string) {
+  async function handleAsignar(usuarioId: string) {
     if (!seleccionado) return
-    setAsignaciones(prev => [...prev, {
-      usuarioId,
-      esquemaId: seleccionado.id,
-      fechaAsignacion: new Date().toISOString().split("T")[0],
-    }])
+    try {
+      await asignarAsesor(seleccionado.id, usuarioId)
+      const res = await obtenerEsquema(seleccionado.id)
+      setSeleccionado(res.data)
+    } catch {
+      toast.error("No se pudo asignar el asesor.")
+    }
   }
 
-  function handleDesasignar(usuarioId: string) {
+  async function handleDesasignar(usuarioId: string) {
     if (!seleccionado) return
-    setAsignaciones(prev =>
-      prev.filter(a => !(a.esquemaId === seleccionado.id && a.usuarioId === usuarioId))
+    try {
+      await desasignarAsesor(seleccionado.id, usuarioId)
+      const res = await obtenerEsquema(seleccionado.id)
+      setSeleccionado(res.data)
+    } catch {
+      toast.error("No se pudo desasignar el asesor.")
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full overflow-hidden animate-pulse">
+        <div className="w-[420px] border-r bg-muted/10" />
+        <div className="flex-1 bg-muted/5" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4">
+        <p className="text-sm text-muted-foreground">{error}</p>
+        <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+          <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+          Reintentar
+        </Button>
+      </div>
     )
   }
 
@@ -589,13 +590,12 @@ export function ComisionesClient() {
         <div className="flex-1 overflow-y-auto py-2">
           {esquemas.map(esquema => {
             const cfg = TIPO_CONFIG[esquema.tipo]
-            const asignadosCount = asignaciones.filter(a => a.esquemaId === esquema.id).length
             const isSelected = seleccionado?.id === esquema.id
 
             return (
               <button
                 key={esquema.id}
-                onClick={() => setSeleccionado(esquema)}
+                onClick={() => seleccionarEsquema(esquema)}
                 className={cn(
                   "w-full text-left px-5 py-3 flex gap-3 hover:bg-muted/40 transition-colors",
                   isSelected && "bg-muted/60 border-l-2 border-primary"
@@ -629,15 +629,14 @@ export function ComisionesClient() {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground/60 mt-0.5">
-                    {asignadosCount} asesor{asignadosCount !== 1 ? "es" : ""}
-                    {esquema.estado === "inactivo" && " · Inactivo"}
+                    {esquema.estado === "inactivo" && "Inactivo"}
                   </p>
                 </div>
 
                 <div
                   className={cn(
                     "flex items-center gap-0.5 shrink-0 self-center transition-opacity",
-                    isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                    isSelected ? "opacity-100" : "opacity-0"
                   )}
                   onClick={e => e.stopPropagation()}
                 >
@@ -658,10 +657,15 @@ export function ComisionesClient() {
 
       {/* ── Panel derecho ── */}
       <div className="flex-1 h-full overflow-hidden">
-        {seleccionado ? (
+        {isLoadingDetalle ? (
+          <div className="flex items-center justify-center h-full text-sm text-muted-foreground animate-pulse">
+            Cargando detalle…
+          </div>
+        ) : seleccionado ? (
           <PanelAsesores
             esquema={seleccionado}
-            asignaciones={asignaciones}
+            asesoresAsignados={seleccionado.asesores}
+            todosAsesores={todosAsesores}
             onAsignar={handleAsignar}
             onDesasignar={handleDesasignar}
           />
@@ -678,6 +682,7 @@ export function ComisionesClient() {
         onOpenChange={setDialogOpen}
         esquema={editando}
         onGuardar={handleGuardar}
+        isSubmitting={isSubmitting}
       />
 
       <AlertDialog open={!!confirmEliminar} onOpenChange={open => !open && setConfirmEliminar(null)}>

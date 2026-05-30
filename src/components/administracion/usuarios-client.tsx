@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { toast } from "sonner"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
@@ -12,6 +13,7 @@ import {
   MoreVerticalCircle01Icon,
   ShieldUserIcon,
   Mail01Icon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -33,45 +35,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { UsuarioDialog } from "@/components/administracion/usuario-dialog"
-
-// ---------------------------------------------------------------------------
-// Mock
-// ---------------------------------------------------------------------------
-
-type EstadoUsuario = "activo" | "inactivo"
-type RolUsuario = "administrador" | "asesor"
-
-interface Usuario {
-  id: string
-  nombre: string
-  correo: string
-  roles: RolUsuario[]
-  estado: EstadoUsuario
-  fechaCreacion: string
-}
-
-const USUARIOS_MOCK: Usuario[] = [
-  {
-    id: "u-1", nombre: "Emily Perea Córdoba", correo: "emily@inmobiliaria.co",
-    roles: ["administrador", "asesor"], estado: "activo", fechaCreacion: "2025-01-10",
-  },
-  {
-    id: "u-2", nombre: "Ana Rodríguez", correo: "ana@inmobiliaria.co",
-    roles: ["asesor"], estado: "activo", fechaCreacion: "2025-02-01",
-  },
-  {
-    id: "u-3", nombre: "Carlos Mejía", correo: "carlos@inmobiliaria.co",
-    roles: ["asesor"], estado: "activo", fechaCreacion: "2025-02-15",
-  },
-  {
-    id: "u-4", nombre: "Lucía Torres", correo: "lucia@inmobiliaria.co",
-    roles: ["asesor"], estado: "inactivo", fechaCreacion: "2025-03-01",
-  },
-  {
-    id: "u-5", nombre: "Marcos Salinas", correo: "marcos@inmobiliaria.co",
-    roles: ["administrador"], estado: "activo", fechaCreacion: "2025-03-20",
-  },
-]
+import {
+  listarUsuarios,
+  crearUsuario,
+  editarUsuario,
+  cambiarEstadoUsuario,
+} from "@/lib/api/administracion"
+import type { Usuario, RolUsuario, EstadoUsuario } from "@/types/administracion.types"
+import type { GuardarUsuarioData } from "@/components/administracion/usuario-dialog"
 
 // ---------------------------------------------------------------------------
 // Config visual
@@ -89,16 +60,49 @@ function formatFecha(iso: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function UsuariosSkeleton() {
+  return (
+    <div className="flex flex-col h-full overflow-y-auto animate-pulse">
+      <div className="px-6 py-4 border-b h-14 bg-muted/20" />
+      <div className="flex-1 px-6 py-4 space-y-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-12 bg-muted/30 rounded" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Componente
 // ---------------------------------------------------------------------------
 
 export function UsuariosClient() {
-  const [usuarios, setUsuarios] = React.useState<Usuario[]>(USUARIOS_MOCK)
+  const [usuarios, setUsuarios] = React.useState<Usuario[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+  const [retryKey, setRetryKey] = React.useState(0)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+
   const [busqueda, setBusqueda] = React.useState("")
   const [filtroRol, setFiltroRol] = React.useState<RolUsuario | "todos">("todos")
   const [filtroEstado, setFiltroEstado] = React.useState<EstadoUsuario | "todos">("todos")
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [usuarioEditando, setUsuarioEditando] = React.useState<Usuario | null>(null)
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    listarUsuarios({ limit: 100 })
+      .then(res => { if (!cancelado) setUsuarios(res.data ?? []) })
+      .catch(() => { if (!cancelado) setError("No se pudieron cargar los usuarios.") })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [retryKey])
 
   const filtrados = usuarios.filter((u) => {
     const matchBusqueda =
@@ -119,30 +123,58 @@ export function UsuariosClient() {
     setDialogOpen(true)
   }
 
-  function handleToggleEstado(id: string) {
-    setUsuarios(prev =>
-      prev.map(u =>
-        u.id === id
-          ? { ...u, estado: u.estado === "activo" ? "inactivo" : "activo" }
-          : u
-      )
-    )
+  async function handleToggleEstado(id: string, estadoActual: EstadoUsuario) {
+    const nuevoEstado: EstadoUsuario = estadoActual === "activo" ? "inactivo" : "activo"
+    try {
+      await cambiarEstadoUsuario(id, nuevoEstado)
+      setRetryKey(k => k + 1)
+      toast.success(`Usuario ${nuevoEstado === "activo" ? "activado" : "desactivado"}`)
+    } catch {
+      toast.error("No se pudo cambiar el estado del usuario.")
+    }
   }
 
-  function handleGuardar(data: Omit<Usuario, "id" | "fechaCreacion">) {
-    if (usuarioEditando) {
-      setUsuarios(prev =>
-        prev.map(u => u.id === usuarioEditando.id ? { ...u, ...data } : u)
-      )
-    } else {
-      const nuevo: Usuario = {
-        ...data,
-        id: `u-${Date.now()}`,
-        fechaCreacion: new Date().toISOString().split("T")[0],
+  async function handleGuardar(data: GuardarUsuarioData) {
+    setIsSubmitting(true)
+    try {
+      if (usuarioEditando) {
+        await editarUsuario(usuarioEditando.id, {
+          nombre: data.nombre,
+          correo: data.correo,
+          roles: data.roles,
+        })
+        toast.success("Usuario actualizado")
+      } else {
+        await crearUsuario({
+          nombre: data.nombre,
+          correo: data.correo,
+          contrasena: data.contrasena!,
+          roles: data.roles,
+          estado: data.estado,
+        })
+        toast.success("Usuario creado correctamente")
       }
-      setUsuarios(prev => [...prev, nuevo])
+      setDialogOpen(false)
+      setRetryKey(k => k + 1)
+    } catch {
+      toast.error(usuarioEditando ? "No se pudo actualizar el usuario." : "No se pudo crear el usuario.")
+    } finally {
+      setIsSubmitting(false)
     }
-    setDialogOpen(false)
+  }
+
+  if (isLoading) return <UsuariosSkeleton />
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4">
+        <p className="text-sm text-muted-foreground">{error}</p>
+        <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+          <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+          Reintentar
+        </Button>
+      </div>
+    )
   }
 
   const activos = usuarios.filter(u => u.estado === "activo").length
@@ -151,7 +183,6 @@ export function UsuariosClient() {
     <div className="flex flex-col h-full overflow-y-auto">
       {/* Toolbar */}
       <div className="px-6 py-4 flex items-center gap-3 border-b shrink-0">
-        {/* Buscador */}
         <div className="relative flex-1 max-w-xs">
           <HugeiconsIcon
             icon={Search01Icon}
@@ -166,7 +197,6 @@ export function UsuariosClient() {
           />
         </div>
 
-        {/* Filtro rol */}
         <Select value={filtroRol} onValueChange={v => setFiltroRol(v as typeof filtroRol)}>
           <SelectTrigger className="h-8 w-36 text-sm">
             <SelectValue placeholder="Rol" />
@@ -178,7 +208,6 @@ export function UsuariosClient() {
           </SelectContent>
         </Select>
 
-        {/* Filtro estado */}
         <Select value={filtroEstado} onValueChange={v => setFiltroEstado(v as typeof filtroEstado)}>
           <SelectTrigger className="h-8 w-32 text-sm">
             <SelectValue placeholder="Estado" />
@@ -224,7 +253,6 @@ export function UsuariosClient() {
             ) : (
               filtrados.map((usuario) => (
                 <tr key={usuario.id} className="hover:bg-muted/30 transition-colors group">
-                  {/* Nombre + avatar */}
                   <td className="py-3 pr-4">
                     <div className="flex items-center gap-3">
                       <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -233,16 +261,12 @@ export function UsuariosClient() {
                       <span className="font-medium truncate">{usuario.nombre}</span>
                     </div>
                   </td>
-
-                  {/* Correo */}
                   <td className="py-3 pr-4">
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <HugeiconsIcon icon={Mail01Icon} strokeWidth={2} className="size-3.5 shrink-0" />
                       <span className="truncate">{usuario.correo}</span>
                     </div>
                   </td>
-
-                  {/* Roles */}
                   <td className="py-3 pr-4">
                     <div className="flex gap-1.5 flex-wrap">
                       {usuario.roles.map(rol => (
@@ -257,8 +281,6 @@ export function UsuariosClient() {
                       ))}
                     </div>
                   </td>
-
-                  {/* Estado */}
                   <td className="py-3 pr-4">
                     <Badge
                       variant="outline"
@@ -275,13 +297,9 @@ export function UsuariosClient() {
                       {usuario.estado === "activo" ? "Activo" : "Inactivo"}
                     </Badge>
                   </td>
-
-                  {/* Fecha */}
                   <td className="py-3 pr-4 text-muted-foreground">
                     {formatFecha(usuario.fechaCreacion)}
                   </td>
-
-                  {/* Acciones */}
                   <td className="py-3">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -300,7 +318,7 @@ export function UsuariosClient() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          onClick={() => handleToggleEstado(usuario.id)}
+                          onClick={() => handleToggleEstado(usuario.id, usuario.estado)}
                           className={usuario.estado === "activo" ? "text-red-600 focus:text-red-600" : "text-green-700 focus:text-green-700"}
                         >
                           <HugeiconsIcon
@@ -320,12 +338,12 @@ export function UsuariosClient() {
         </table>
       </div>
 
-      {/* Dialog crear/editar */}
       <UsuarioDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         usuario={usuarioEditando}
         onGuardar={handleGuardar}
+        isSubmitting={isSubmitting}
       />
     </div>
   )

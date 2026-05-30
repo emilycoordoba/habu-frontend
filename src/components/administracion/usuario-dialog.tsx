@@ -16,24 +16,22 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import type { Usuario, RolUsuario, EstadoUsuario } from "@/types/administracion.types"
 
-type RolUsuario = "administrador" | "asesor"
-type EstadoUsuario = "activo" | "inactivo"
-
-interface Usuario {
-  id: string
+export interface GuardarUsuarioData {
   nombre: string
   correo: string
   roles: RolUsuario[]
   estado: EstadoUsuario
-  fechaCreacion: string
+  contrasena?: string
 }
 
 interface UsuarioDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   usuario: Usuario | null
-  onGuardar: (data: Omit<Usuario, "id" | "fechaCreacion">) => void
+  onGuardar: (data: GuardarUsuarioData) => Promise<void>
+  isSubmitting?: boolean
 }
 
 const ROLES: { value: RolUsuario; label: string; descripcion: string }[] = [
@@ -49,7 +47,7 @@ const ROLES: { value: RolUsuario; label: string; descripcion: string }[] = [
   },
 ]
 
-export function UsuarioDialog({ open, onOpenChange, usuario, onGuardar }: UsuarioDialogProps) {
+export function UsuarioDialog({ open, onOpenChange, usuario, onGuardar, isSubmitting }: UsuarioDialogProps) {
   const esEdicion = !!usuario
 
   const [nombre, setNombre] = React.useState("")
@@ -59,7 +57,6 @@ export function UsuarioDialog({ open, onOpenChange, usuario, onGuardar }: Usuari
   const [roles, setRoles] = React.useState<RolUsuario[]>([])
   const [estado, setEstado] = React.useState<EstadoUsuario>("activo")
 
-  // Carga datos al abrir en modo edición
   React.useEffect(() => {
     if (open) {
       if (usuario) {
@@ -92,7 +89,13 @@ export function UsuarioDialog({ open, onOpenChange, usuario, onGuardar }: Usuari
 
   function handleGuardar() {
     if (!puedeGuardar) return
-    onGuardar({ nombre: nombre.trim(), correo: correo.trim(), roles, estado })
+    onGuardar({
+      nombre: nombre.trim(),
+      correo: correo.trim(),
+      roles,
+      estado,
+      contrasena: !esEdicion ? contrasena : undefined,
+    })
   }
 
   return (
@@ -236,9 +239,11 @@ export function UsuarioDialog({ open, onOpenChange, usuario, onGuardar }: Usuari
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleGuardar} disabled={!puedeGuardar}>
-            {esEdicion ? "Guardar cambios" : "Crear usuario"}
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+            Cancelar
+          </Button>
+          <Button onClick={handleGuardar} disabled={!puedeGuardar || isSubmitting}>
+            {isSubmitting ? "Guardando…" : esEdicion ? "Guardar cambios" : "Crear usuario"}
           </Button>
         </DialogFooter>
       </DialogContent>

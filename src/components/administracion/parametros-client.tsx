@@ -1,48 +1,23 @@
 "use client"
 
 import * as React from "react"
+import { toast } from "sonner"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   CheckmarkCircle02Icon,
-  InformationCircleIcon,
   Alert01Icon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import { obtenerParametros, actualizarParametros } from "@/lib/api/administracion"
+import type { Parametros } from "@/types/administracion.types"
 
 // ---------------------------------------------------------------------------
-// Tipos
-// ---------------------------------------------------------------------------
-
-interface Parametros {
-  // Mora
-  moraGraciaDiasHabiles: number
-  moraTasaResidencial: number        // % (generalmente 0 — ley 820)
-  moraTasaComercial: number          // %
-  moraAplicaResidencial: boolean
-
-  // Contratos
-  alertaVencimientoDias: number
-  alertaRenovacionDias: number
-
-}
-
-const DEFAULTS: Parametros = {
-  moraGraciaDiasHabiles: 5,
-  moraTasaResidencial: 0,
-  moraTasaComercial: 1.5,
-  moraAplicaResidencial: false,
-
-  alertaVencimientoDias: 30,
-  alertaRenovacionDias: 60,
-
-}
-
-// ---------------------------------------------------------------------------
-// Subcomponentes
+// Subcomponentes UI (sin cambios)
 // ---------------------------------------------------------------------------
 
 function Seccion({ titulo, descripcion, children }: {
@@ -87,6 +62,7 @@ function NumericInput({
   step = 1,
   suffix,
   className,
+  disabled,
 }: {
   value: number
   onChange: (v: number) => void
@@ -95,6 +71,7 @@ function NumericInput({
   step?: number
   suffix?: string
   className?: string
+  disabled?: boolean
 }) {
   return (
     <div className="relative flex items-center">
@@ -104,6 +81,7 @@ function NumericInput({
         min={min}
         max={max}
         step={step}
+        disabled={disabled}
         onChange={e => onChange(parseFloat(e.target.value) || 0)}
         className={cn("h-8 text-sm text-right pr-10 w-28", className)}
       />
@@ -117,22 +95,75 @@ function NumericInput({
 }
 
 // ---------------------------------------------------------------------------
+// Defaults mientras carga
+// ---------------------------------------------------------------------------
+
+const DEFAULTS: Parametros = {
+  moraGraciaDiasHabiles: 5,
+  moraTasaResidencial:   0,
+  moraTasaComercial:     1.5,
+  moraAplicaResidencial: false,
+  alertaVencimientoDias: 30,
+  alertaRenovacionDias:  60,
+}
+
+// ---------------------------------------------------------------------------
 // Componente principal
 // ---------------------------------------------------------------------------
 
 export function ParametrosClient() {
-  const [params, setParams] = React.useState<Parametros>(DEFAULTS)
-  const [guardado, setGuardado] = React.useState(false)
+  const [params, setParams]       = React.useState<Parametros>(DEFAULTS)
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [isSaving, setIsSaving]   = React.useState(false)
+  const [error, setError]         = React.useState<string | null>(null)
+  const [retryKey, setRetryKey]   = React.useState(0)
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    obtenerParametros()
+      .then(res => { if (!cancelado) setParams(res.data ?? DEFAULTS) })
+      .catch(() => { if (!cancelado) setError("No se pudieron cargar los parámetros.") })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [retryKey])
 
   function set<K extends keyof Parametros>(key: K, value: Parametros[K]) {
     setParams(prev => ({ ...prev, [key]: value }))
-    setGuardado(false)
   }
 
-  function handleGuardar() {
-    // TODO: llamar API al integrar backend
-    setGuardado(true)
-    setTimeout(() => setGuardado(false), 3000)
+  async function handleGuardar() {
+    setIsSaving(true)
+    try {
+      const res = await actualizarParametros(params)
+      setParams(res.data)
+      toast.success("Parámetros guardados correctamente")
+    } catch {
+      toast.error("No se pudieron guardar los parámetros.")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full text-sm text-muted-foreground animate-pulse">
+        Cargando parámetros…
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4">
+        <p className="text-sm text-muted-foreground">{error}</p>
+        <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+          <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+          Reintentar
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -189,6 +220,7 @@ export function ParametrosClient() {
               max={5}
               step={0.01}
               suffix="%"
+              disabled={!params.moraAplicaResidencial}
               className={cn(!params.moraAplicaResidencial && "opacity-40 pointer-events-none")}
             />
           </Campo>
@@ -242,14 +274,15 @@ export function ParametrosClient() {
 
         {/* Botón guardar */}
         <div className="flex items-center justify-end gap-3 pb-6">
-          {guardado && (
-            <span className="flex items-center gap-1.5 text-xs text-green-700">
-              <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-3.5" />
-              Cambios guardados
-            </span>
-          )}
-          <Button onClick={handleGuardar}>
-            Guardar parámetros
+          <Button onClick={handleGuardar} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4 animate-spin" />
+                Guardando…
+              </>
+            ) : (
+              "Guardar parámetros"
+            )}
           </Button>
         </div>
       </div>

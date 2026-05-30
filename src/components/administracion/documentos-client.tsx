@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { toast } from "sonner"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
@@ -9,6 +10,7 @@ import {
   CheckmarkCircle02Icon,
   Cancel01Icon,
   FileValidationIcon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -41,38 +43,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
+import {
+  listarTiposDocumento,
+  crearTipoDocumento,
+  editarTipoDocumento,
+  eliminarTipoDocumento,
+} from "@/lib/api/administracion"
+import type { TipoDocumentoReq, TipoPersona, TipoInmueble } from "@/types/administracion.types"
 
 // ---------------------------------------------------------------------------
-// Tipos y mock
-// ---------------------------------------------------------------------------
-
-type TipoPersona   = "natural" | "juridica" | "ambos"
-type TipoInmueble  = "residencial" | "comercial" | "ambos"
-
-interface TipoDocumento {
-  id: string
-  nombre: string
-  tipoPersona: TipoPersona
-  tipoInmueble: TipoInmueble
-  requiereCodeudor: boolean
-  obligatorio: boolean
-}
-
-const TIPOS_MOCK: TipoDocumento[] = [
-  { id: "td-1",  nombre: "Cédula de ciudadanía",          tipoPersona: "natural",   tipoInmueble: "ambos",        requiereCodeudor: false, obligatorio: true  },
-  { id: "td-2",  nombre: "RUT persona natural",           tipoPersona: "natural",   tipoInmueble: "ambos",        requiereCodeudor: false, obligatorio: true  },
-  { id: "td-3",  nombre: "Certificado de ingresos",       tipoPersona: "natural",   tipoInmueble: "ambos",        requiereCodeudor: false, obligatorio: true  },
-  { id: "td-4",  nombre: "Desprendible de nómina",        tipoPersona: "natural",   tipoInmueble: "ambos",        requiereCodeudor: false, obligatorio: false },
-  { id: "td-5",  nombre: "Cédula del codeudor",           tipoPersona: "natural",   tipoInmueble: "residencial",  requiereCodeudor: true,  obligatorio: true  },
-  { id: "td-6",  nombre: "Certificado de ingresos codeudor", tipoPersona: "natural", tipoInmueble: "residencial", requiereCodeudor: true,  obligatorio: true  },
-  { id: "td-7",  nombre: "NIT empresa",                   tipoPersona: "juridica",  tipoInmueble: "ambos",        requiereCodeudor: false, obligatorio: true  },
-  { id: "td-8",  nombre: "Cámara de comercio",            tipoPersona: "juridica",  tipoInmueble: "ambos",        requiereCodeudor: false, obligatorio: true  },
-  { id: "td-9",  nombre: "Estados financieros",           tipoPersona: "juridica",  tipoInmueble: "comercial",    requiereCodeudor: false, obligatorio: true  },
-  { id: "td-10", nombre: "Paz y salvo predial",           tipoPersona: "ambos",     tipoInmueble: "ambos",        requiereCodeudor: false, obligatorio: true  },
-]
-
-// ---------------------------------------------------------------------------
-// Helpers de etiquetas
+// Helpers
 // ---------------------------------------------------------------------------
 
 const PERSONA_LABEL: Record<TipoPersona, string> = {
@@ -94,11 +74,12 @@ const INMUEBLE_LABEL: Record<TipoInmueble, string> = {
 interface TipoDocumentoDialogProps {
   open: boolean
   onOpenChange: (v: boolean) => void
-  tipo: TipoDocumento | null
-  onGuardar: (data: Omit<TipoDocumento, "id">) => void
+  tipo: TipoDocumentoReq | null
+  onGuardar: (data: Omit<TipoDocumentoReq, "id">) => Promise<void>
+  isSubmitting?: boolean
 }
 
-function TipoDocumentoDialog({ open, onOpenChange, tipo, onGuardar }: TipoDocumentoDialogProps) {
+function TipoDocumentoDialog({ open, onOpenChange, tipo, onGuardar, isSubmitting }: TipoDocumentoDialogProps) {
   const [nombre, setNombre] = React.useState("")
   const [tipoPersona, setTipoPersona] = React.useState<TipoPersona>("natural")
   const [tipoInmueble, setTipoInmueble] = React.useState<TipoInmueble>("ambos")
@@ -144,9 +125,7 @@ function TipoDocumentoDialog({ open, onOpenChange, tipo, onGuardar }: TipoDocume
             <div className="grid gap-1.5">
               <Label>Tipo de persona</Label>
               <Select value={tipoPersona} onValueChange={v => setTipoPersona(v as TipoPersona)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="natural">Natural</SelectItem>
                   <SelectItem value="juridica">Jurídica</SelectItem>
@@ -158,9 +137,7 @@ function TipoDocumentoDialog({ open, onOpenChange, tipo, onGuardar }: TipoDocume
             <div className="grid gap-1.5">
               <Label>Tipo de inmueble</Label>
               <Select value={tipoInmueble} onValueChange={v => setTipoInmueble(v as TipoInmueble)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="residencial">Residencial</SelectItem>
                   <SelectItem value="comercial">Comercial</SelectItem>
@@ -190,9 +167,11 @@ function TipoDocumentoDialog({ open, onOpenChange, tipo, onGuardar }: TipoDocume
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleGuardar} disabled={!puedeGuardar}>
-            {tipo ? "Guardar cambios" : "Agregar documento"}
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+            Cancelar
+          </Button>
+          <Button onClick={handleGuardar} disabled={!puedeGuardar || isSubmitting}>
+            {isSubmitting ? "Guardando…" : tipo ? "Guardar cambios" : "Agregar documento"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -205,11 +184,27 @@ function TipoDocumentoDialog({ open, onOpenChange, tipo, onGuardar }: TipoDocume
 // ---------------------------------------------------------------------------
 
 export function DocumentosClient() {
-  const [tipos, setTipos] = React.useState<TipoDocumento[]>(TIPOS_MOCK)
+  const [tipos, setTipos] = React.useState<TipoDocumentoReq[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [retryKey, setRetryKey] = React.useState(0)
+
   const [busqueda, setBusqueda] = React.useState("")
   const [dialogOpen, setDialogOpen] = React.useState(false)
-  const [editando, setEditando] = React.useState<TipoDocumento | null>(null)
-  const [confirmEliminar, setConfirmEliminar] = React.useState<TipoDocumento | null>(null)
+  const [editando, setEditando] = React.useState<TipoDocumentoReq | null>(null)
+  const [confirmEliminar, setConfirmEliminar] = React.useState<TipoDocumentoReq | null>(null)
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    listarTiposDocumento()
+      .then(res => { if (!cancelado) setTipos(res.data ?? []) })
+      .catch(() => { if (!cancelado) setError("No se pudieron cargar los tipos de documento.") })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [retryKey])
 
   const filtrados = tipos.filter(t =>
     t.nombre.toLowerCase().includes(busqueda.toLowerCase())
@@ -220,18 +215,72 @@ export function DocumentosClient() {
     setDialogOpen(true)
   }
 
-  function handleGuardar(data: Omit<TipoDocumento, "id">) {
-    if (editando) {
-      setTipos(prev => prev.map(t => t.id === editando.id ? { ...t, ...data } : t))
-    } else {
-      setTipos(prev => [...prev, { ...data, id: `td-${Date.now()}` }])
+  async function handleGuardar(data: Omit<TipoDocumentoReq, "id">) {
+    setIsSubmitting(true)
+    try {
+      if (editando) {
+        await editarTipoDocumento(editando.id, data)
+        toast.success("Tipo de documento actualizado")
+      } else {
+        await crearTipoDocumento(data)
+        toast.success("Tipo de documento creado")
+      }
+      setDialogOpen(false)
+      setRetryKey(k => k + 1)
+    } catch {
+      toast.error(editando ? "No se pudo actualizar el tipo." : "No se pudo crear el tipo.")
+    } finally {
+      setIsSubmitting(false)
     }
-    setDialogOpen(false)
   }
 
-  function handleToggleObligatorio(id: string) {
-    setTipos(prev =>
-      prev.map(t => t.id === id ? { ...t, obligatorio: !t.obligatorio } : t)
+  async function handleToggleObligatorio(tipo: TipoDocumentoReq) {
+    // Optimista: actualiza UI de inmediato, luego confirma con API
+    setTipos(prev => prev.map(t => t.id === tipo.id ? { ...t, obligatorio: !t.obligatorio } : t))
+    try {
+      await editarTipoDocumento(tipo.id, { obligatorio: !tipo.obligatorio })
+    } catch {
+      // Revierte si falla
+      setTipos(prev => prev.map(t => t.id === tipo.id ? { ...t, obligatorio: tipo.obligatorio } : t))
+      toast.error("No se pudo actualizar el campo.")
+    }
+  }
+
+  async function handleEliminar() {
+    if (!confirmEliminar) return
+    try {
+      await eliminarTipoDocumento(confirmEliminar.id)
+      toast.success("Tipo de documento eliminado")
+      setConfirmEliminar(null)
+      setRetryKey(k => k + 1)
+    } catch {
+      toast.error("No se pudo eliminar el tipo de documento.")
+      setConfirmEliminar(null)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full overflow-y-auto animate-pulse">
+        <div className="px-6 py-4 border-b h-14 bg-muted/20" />
+        <div className="flex-1 px-6 py-4 space-y-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-10 bg-muted/30 rounded" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4">
+        <p className="text-sm text-muted-foreground">{error}</p>
+        <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+          <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+          Reintentar
+        </Button>
+      </div>
     )
   }
 
@@ -249,7 +298,6 @@ export function DocumentosClient() {
             className="h-8 text-sm"
           />
         </div>
-
         <div className="ml-auto flex items-center gap-3">
           <span className="text-xs text-muted-foreground">
             {obligatorios} obligatorio{obligatorios !== 1 ? "s" : ""} · {tipos.length} tipos
@@ -289,7 +337,6 @@ export function DocumentosClient() {
             ) : (
               filtrados.map(tipo => (
                 <tr key={tipo.id} className="hover:bg-muted/30 transition-colors group">
-                  {/* Nombre */}
                   <td className="py-3 pr-4">
                     <div className="flex items-center gap-2.5">
                       <div className="size-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
@@ -298,22 +345,16 @@ export function DocumentosClient() {
                       <span className="font-medium">{tipo.nombre}</span>
                     </div>
                   </td>
-
-                  {/* Tipo persona */}
                   <td className="py-3 pr-4">
                     <Badge variant="outline" className="text-xs font-medium">
                       {PERSONA_LABEL[tipo.tipoPersona]}
                     </Badge>
                   </td>
-
-                  {/* Tipo inmueble */}
                   <td className="py-3 pr-4">
                     <Badge variant="outline" className="text-xs font-medium">
                       {INMUEBLE_LABEL[tipo.tipoInmueble]}
                     </Badge>
                   </td>
-
-                  {/* Requiere codeudor */}
                   <td className="py-3 pr-4 text-center">
                     <div className="flex justify-center">
                       <HugeiconsIcon
@@ -326,19 +367,15 @@ export function DocumentosClient() {
                       />
                     </div>
                   </td>
-
-                  {/* Obligatorio — toggle directo */}
                   <td className="py-3 pr-4 text-center">
                     <div className="flex justify-center">
                       <Switch
                         checked={tipo.obligatorio}
-                        onCheckedChange={() => handleToggleObligatorio(tipo.id)}
+                        onCheckedChange={() => handleToggleObligatorio(tipo)}
                         className="scale-90"
                       />
                     </div>
                   </td>
-
-                  {/* Acciones */}
                   <td className="py-3">
                     <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
@@ -373,6 +410,7 @@ export function DocumentosClient() {
         onOpenChange={setDialogOpen}
         tipo={editando}
         onGuardar={handleGuardar}
+        isSubmitting={isSubmitting}
       />
 
       <AlertDialog open={!!confirmEliminar} onOpenChange={open => !open && setConfirmEliminar(null)}>
@@ -387,11 +425,7 @@ export function DocumentosClient() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                if (!confirmEliminar) return
-                setTipos(prev => prev.filter(t => t.id !== confirmEliminar.id))
-                setConfirmEliminar(null)
-              }}
+              onClick={handleEliminar}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
               Eliminar

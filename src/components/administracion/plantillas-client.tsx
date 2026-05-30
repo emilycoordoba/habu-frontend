@@ -5,6 +5,7 @@ import DOMPurify from "dompurify"
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
+import { toast } from "sonner"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
@@ -20,6 +21,7 @@ import {
   TextAlignLeftIcon,
   InformationCircleIcon,
   PrinterIcon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -36,20 +38,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
+import {
+  listarPlantillas,
+  obtenerPlantilla,
+  crearPlantilla,
+  guardarPlantilla,
+  eliminarPlantilla,
+} from "@/lib/api/administracion"
+import type { Plantilla, PlantillaResumen, TipoPlantilla } from "@/types/administracion.types"
 
 // ---------------------------------------------------------------------------
-// Variables disponibles por grupo
+// Variables del editor (datos estáticos — no necesitan API)
 // ---------------------------------------------------------------------------
 
-interface Variable {
-  key: string
-  label: string
-}
-
-interface GrupoVariables {
-  grupo: string
-  variables: Variable[]
-}
+interface Variable { key: string; label: string }
+interface GrupoVariables { grupo: string; variables: Variable[] }
 
 const VARIABLES: GrupoVariables[] = [
   {
@@ -111,13 +114,12 @@ const VARIABLES: GrupoVariables[] = [
   {
     grupo: "Asesor",
     variables: [
-      { key: "asesor.nombre",  label: "Nombre del asesor" },
-      { key: "asesor.correo",  label: "Correo del asesor" },
+      { key: "asesor.nombre", label: "Nombre del asesor" },
+      { key: "asesor.correo", label: "Correo del asesor" },
     ],
   },
 ]
 
-// Datos de ejemplo para el preview
 const PREVIEW_DATA: Record<string, string> = {
   "contrato.referencia":     "CTR-2025-001",
   "contrato.fecha_creacion": "01 de abril de 2025",
@@ -150,64 +152,18 @@ const PREVIEW_DATA: Record<string, string> = {
 }
 
 // ---------------------------------------------------------------------------
-// Tipos y mock
+// Tipos visuales
 // ---------------------------------------------------------------------------
-
-type TipoPlantilla = "arriendo" | "promesa_compraventa" | "administracion"
-
-interface Plantilla {
-  id: string
-  nombre: string
-  tipo: TipoPlantilla
-  contenido: string
-  ultimaEdicion: string
-}
 
 const TIPO_CONFIG: Record<TipoPlantilla, {
   label: string
   icon: typeof FileManagementIcon
   className: string
 }> = {
-  arriendo: {
-    label: "Arriendo",
-    icon: Building04Icon,
-    className: "badge-blue",
-  },
-  promesa_compraventa: {
-    label: "Promesa de compraventa",
-    icon: Home01Icon,
-    className: "badge-amber",
-  },
-  administracion: {
-    label: "Administración",
-    icon: FileManagementIcon,
-    className: "badge-violet",
-  },
+  arriendo:            { label: "Arriendo",               icon: Building04Icon,   className: "badge-blue" },
+  promesa_compraventa: { label: "Promesa de compraventa", icon: Home01Icon,        className: "badge-amber" },
+  administracion:      { label: "Administración",         icon: FileManagementIcon, className: "badge-violet" },
 }
-
-const PLANTILLAS_MOCK: Plantilla[] = [
-  {
-    id: "p-1",
-    nombre: "Contrato de arriendo residencial",
-    tipo: "arriendo",
-    ultimaEdicion: "2025-04-10",
-    contenido: `<p>CONTRATO DE ARRENDAMIENTO DE INMUEBLE RESIDENCIAL</p><p>Entre los suscritos, <strong>{{propietario.nombre}}</strong>, identificado con cédula de ciudadanía No. {{propietario.documento}}, quien en adelante se denominará EL ARRENDADOR, y <strong>{{contraparte.nombre}}</strong>, identificado con cédula de ciudadanía No. {{contraparte.documento}}, quien en adelante se denominará EL ARRENDATARIO, se celebra el presente contrato de arrendamiento que se regirá por las siguientes cláusulas:</p><p><strong>PRIMERA – OBJETO:</strong> El ARRENDADOR entrega al ARRENDATARIO el inmueble ubicado en {{inmueble.direccion}}, {{inmueble.ubicacion}}, de tipo {{inmueble.tipo}} con área de {{inmueble.area}} m².</p><p><strong>SEGUNDA – VIGENCIA:</strong> El presente contrato tendrá una vigencia de doce (12) meses, con inicio el {{contrato.fecha_inicio}} y vencimiento el {{contrato.fecha_fin}}.</p><p><strong>TERCERA – CANON:</strong> El valor mensual del arriendo es de {{contrato.canon}}, pagadero dentro de los primeros cinco días hábiles de cada mes.</p><p><strong>CUARTA – DEPÓSITO:</strong> El ARRENDATARIO entrega en calidad de depósito la suma de {{contrato.deposito}}.</p>`,
-  },
-  {
-    id: "p-2",
-    nombre: "Promesa de compraventa",
-    tipo: "promesa_compraventa",
-    ultimaEdicion: "2025-03-22",
-    contenido: `<p>PROMESA DE COMPRAVENTA</p><p>Entre <strong>{{propietario.nombre}}</strong>, cédula {{propietario.documento}}, como PROMITENTE VENDEDOR, y <strong>{{contraparte.nombre}}</strong>, cédula {{contraparte.documento}}, como PROMITENTE COMPRADOR, se celebra la presente promesa de compraventa:</p><p><strong>PRIMERA – OBJETO:</strong> El PROMITENTE VENDEDOR se obliga a vender y el PROMITENTE COMPRADOR a comprar el inmueble ubicado en {{inmueble.direccion}}.</p><p><strong>SEGUNDA – PRECIO:</strong> El precio acordado es de {{contrato.precio}}, del cual se entregan como arras la suma de {{contrato.arras}} a la firma del presente documento.</p><p><strong>TERCERA – ESCRITURACIÓN:</strong> Las partes se comprometen a suscribir la escritura pública de compraventa a más tardar el {{contrato.fecha_fin}}.</p>`,
-  },
-  {
-    id: "p-3",
-    nombre: "Contrato de administración",
-    tipo: "administracion",
-    ultimaEdicion: "2025-04-10",
-    contenido: `<p>CONTRATO DE ADMINISTRACIÓN DE INMUEBLE</p><p>Entre los suscritos, <strong>{{propietario.nombre}}</strong>, identificado con cédula de ciudadanía No. {{propietario.documento}}, domiciliado en {{propietario.direccion}}, quien en adelante se denominará EL PROPIETARIO, y la inmobiliaria, representada por el asesor <strong>{{asesor.nombre}}</strong>, quien en adelante se denominará LA ADMINISTRADORA, se celebra el presente contrato de administración que se regirá por las siguientes cláusulas:</p><p><strong>PRIMERA – OBJETO:</strong> EL PROPIETARIO encarga a LA ADMINISTRADORA la gestión integral del inmueble ubicado en {{inmueble.direccion}}, {{inmueble.ubicacion}}, de tipo {{inmueble.tipo}} con área de {{inmueble.area}} m², incluyendo la búsqueda de arrendatarios, cobro de cánones, atención de requerimientos y rendición de cuentas.</p><p><strong>SEGUNDA – VIGENCIA:</strong> El presente contrato tendrá una vigencia a partir del {{contrato.fecha_inicio}}, renovable automáticamente por periodos iguales salvo comunicación escrita de alguna de las partes con treinta (30) días de anticipación.</p><p><strong>TERCERA – COMISIÓN DE ADMINISTRACIÓN:</strong> EL PROPIETARIO reconocerá a LA ADMINISTRADORA una comisión mensual equivalente a {{contrato.comision}} sobre el valor del canon cobrado, la cual será descontada antes de efectuar el giro correspondiente.</p><p><strong>CUARTA – OBLIGACIONES DE LA ADMINISTRADORA:</strong> LA ADMINISTRADORA se compromete a verificar el estado del inmueble, gestionar el cobro oportuno del canon, informar al PROPIETARIO sobre novedades relevantes y realizar los pagos de administración y servicios cuando así se acuerde.</p><p><strong>QUINTA – OBLIGACIONES DEL PROPIETARIO:</strong> EL PROPIETARIO se compromete a mantener el inmueble en condiciones habitables, sufragar las reparaciones locativas a su cargo y autorizar expresamente cualquier modificación estructural.</p><p>Para constancia se firma en la ciudad de {{inmueble.ubicacion}} el día {{contrato.fecha_creacion}}.</p><p>____________________________<br>EL PROPIETARIO<br>{{propietario.nombre}}<br>C.C. {{propietario.documento}}</p><p>____________________________<br>LA ADMINISTRADORA<br>{{asesor.nombre}}</p>`,
-  },
-]
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -241,48 +197,35 @@ function imprimirPlantilla(nombre: string, contenidoHtml: string) {
   const previewHtml = buildPreviewHtml(contenidoHtml)
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${nombre}</title><style>
     body { font-family: Georgia, serif; font-size: 13pt; line-height: 1.8; margin: 2.5cm 3cm; color: #111; }
-    p { margin: 0 0 0.8em; }
-    strong { font-weight: 700; }
-    em { font-style: italic; }
-    ul, ol { margin: 0 0 0.8em 1.5em; }
-    mark { background: none !important; color: inherit !important; }
+    p { margin: 0 0 0.8em; } strong { font-weight: 700; } em { font-style: italic; }
+    ul, ol { margin: 0 0 0.8em 1.5em; } mark { background: none !important; color: inherit !important; }
     @media print { body { margin: 2cm 2.5cm; } }
   </style></head><body>${previewHtml}</body></html>`
-
   const blob = new Blob([html], { type: "text/html;charset=utf-8" })
   const url = URL.createObjectURL(blob)
   const ventana = window.open(url, "_blank")
   if (ventana) {
-    ventana.addEventListener("load", () => {
-      ventana.focus()
-      ventana.print()
-      URL.revokeObjectURL(url)
-    })
+    ventana.addEventListener("load", () => { ventana.focus(); ventana.print(); URL.revokeObjectURL(url) })
   } else {
     URL.revokeObjectURL(url)
   }
 }
 
 // ---------------------------------------------------------------------------
-// Barra de herramientas
+// Toolbar del editor
 // ---------------------------------------------------------------------------
 
 function ToolbarEditor({ editor }: { editor: ReturnType<typeof useEditor> }) {
   if (!editor) return null
-
   const btn = (active: boolean, onClick: () => void, title: string, icon: typeof TextBoldIcon) => (
     <Button
-      variant="ghost"
-      size="icon"
-      type="button"
-      title={title}
+      variant="ghost" size="icon" type="button" title={title}
       className={cn("size-7", active && "bg-muted")}
       onClick={onClick}
     >
       <HugeiconsIcon icon={icon} strokeWidth={2} className="size-3.5" />
     </Button>
   )
-
   return (
     <div className="flex items-center gap-0.5 px-3 py-1.5 border-b bg-muted/20">
       {btn(editor.isActive("bold"),       () => editor.chain().focus().toggleBold().run(),       "Negrita", TextBoldIcon)}
@@ -298,13 +241,16 @@ function ToolbarEditor({ editor }: { editor: ReturnType<typeof useEditor> }) {
 // Panel de edición
 // ---------------------------------------------------------------------------
 
+const DRAFT_PREFIX = "draft-"
+
 interface PanelEditorProps {
   plantilla: Plantilla
-  onGuardar: (contenido: string, nombre: string) => void
+  onGuardar: (contenido: string, nombre: string) => Promise<void>
   onCancelar: () => void
+  isSubmitting?: boolean
 }
 
-function PanelEditor({ plantilla, onGuardar, onCancelar }: PanelEditorProps) {
+function PanelEditor({ plantilla, onGuardar, onCancelar, isSubmitting }: PanelEditorProps) {
   const [nombre, setNombre] = React.useState(plantilla.nombre)
   const [modo, setModo] = React.useState<"editar" | "preview">("editar")
 
@@ -339,9 +285,7 @@ function PanelEditor({ plantilla, onGuardar, onCancelar }: PanelEditorProps) {
 
   return (
     <div className="flex h-full overflow-hidden">
-      {/* Editor */}
       <div className="flex flex-col flex-1 min-w-0 border-r overflow-hidden">
-        {/* Nombre + toggle modo */}
         <div className="px-4 py-3 border-b flex items-center gap-3 shrink-0">
           <Input
             value={nombre}
@@ -352,8 +296,7 @@ function PanelEditor({ plantilla, onGuardar, onCancelar }: PanelEditorProps) {
           <div className="flex items-center gap-1 shrink-0">
             <Button
               variant={modo === "editar" ? "secondary" : "ghost"}
-              size="sm" type="button"
-              className="h-7 text-xs gap-1"
+              size="sm" type="button" className="h-7 text-xs gap-1"
               onClick={() => setModo("editar")}
             >
               <HugeiconsIcon icon={PencilEdit01Icon} strokeWidth={2} className="size-3.5" />
@@ -361,8 +304,7 @@ function PanelEditor({ plantilla, onGuardar, onCancelar }: PanelEditorProps) {
             </Button>
             <Button
               variant={modo === "preview" ? "secondary" : "ghost"}
-              size="sm" type="button"
-              className="h-7 text-xs gap-1"
+              size="sm" type="button" className="h-7 text-xs gap-1"
               onClick={() => setModo("preview")}
             >
               <HugeiconsIcon icon={EyeIcon} strokeWidth={2} className="size-3.5" />
@@ -384,7 +326,6 @@ function PanelEditor({ plantilla, onGuardar, onCancelar }: PanelEditorProps) {
               <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} className="size-3.5 shrink-0" />
               Vista previa con datos de ejemplo — las variables resaltadas se reemplazarán con datos reales al generar el contrato.
             </div>
-            {/* Sanitizado con DOMPurify antes de renderizar */}
             <div
               className="prose prose-sm max-w-none text-sm leading-relaxed"
               dangerouslySetInnerHTML={{ __html: previewHtml }}
@@ -393,9 +334,9 @@ function PanelEditor({ plantilla, onGuardar, onCancelar }: PanelEditorProps) {
         )}
 
         <div className="px-4 py-3 border-t flex justify-end gap-2 shrink-0">
-          <Button variant="outline" size="sm" onClick={onCancelar}>Cancelar</Button>
-          <Button size="sm" onClick={handleGuardar} disabled={!nombre.trim()}>
-            Guardar plantilla
+          <Button variant="outline" size="sm" onClick={onCancelar} disabled={isSubmitting}>Cancelar</Button>
+          <Button size="sm" onClick={handleGuardar} disabled={!nombre.trim() || isSubmitting}>
+            {isSubmitting ? "Guardando…" : "Guardar plantilla"}
           </Button>
         </div>
       </div>
@@ -432,15 +373,12 @@ function PanelEditor({ plantilla, onGuardar, onCancelar }: PanelEditorProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Vista de solo lectura (preview de la plantilla seleccionada)
+// Vista de solo lectura
 // ---------------------------------------------------------------------------
 
 function PanelPreview({ plantilla, onEditar }: { plantilla: Plantilla; onEditar: () => void }) {
   const cfg = TIPO_CONFIG[plantilla.tipo]
-  const previewHtml = React.useMemo(
-    () => buildPreviewHtml(plantilla.contenido),
-    [plantilla.contenido]
-  )
+  const previewHtml = React.useMemo(() => buildPreviewHtml(plantilla.contenido), [plantilla.contenido])
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -457,7 +395,6 @@ function PanelPreview({ plantilla, onEditar }: { plantilla: Plantilla; onEditar:
             size="sm" variant="ghost"
             onClick={() => imprimirPlantilla(plantilla.nombre, plantilla.contenido)}
             className="gap-1.5 text-muted-foreground hover:text-foreground"
-            title="Ver en PDF / Imprimir"
           >
             <HugeiconsIcon icon={PrinterIcon} strokeWidth={2} className="size-3.5" />
             Imprimir
@@ -473,7 +410,6 @@ function PanelPreview({ plantilla, onEditar }: { plantilla: Plantilla; onEditar:
           <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} className="size-3.5 shrink-0" />
           Vista previa con datos de ejemplo
         </div>
-        {/* Sanitizado con DOMPurify antes de renderizar */}
         <div
           className="prose prose-sm max-w-none text-sm leading-relaxed"
           dangerouslySetInnerHTML={{ __html: previewHtml }}
@@ -488,42 +424,90 @@ function PanelPreview({ plantilla, onEditar }: { plantilla: Plantilla; onEditar:
 // ---------------------------------------------------------------------------
 
 export function PlantillasClient() {
-  const [plantillas, setPlantillas] = React.useState<Plantilla[]>(PLANTILLAS_MOCK)
+  const [plantillas, setPlantillas] = React.useState<PlantillaResumen[]>([])
   const [seleccionada, setSeleccionada] = React.useState<Plantilla | null>(null)
   const [editando, setEditando] = React.useState(false)
-  const [confirmEliminar, setConfirmEliminar] = React.useState<Plantilla | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [isLoadingDetalle, setIsLoadingDetalle] = React.useState(false)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [retryKey, setRetryKey] = React.useState(0)
+  const [confirmEliminar, setConfirmEliminar] = React.useState<PlantillaResumen | null>(null)
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    listarPlantillas()
+      .then(res => { if (!cancelado) setPlantillas(res.data ?? []) })
+      .catch(() => { if (!cancelado) setError("No se pudieron cargar las plantillas.") })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [retryKey])
+
+  async function seleccionarPlantilla(resumen: PlantillaResumen) {
+    setIsLoadingDetalle(true)
+    setEditando(false)
+    try {
+      const res = await obtenerPlantilla(resumen.id)
+      setSeleccionada(res.data)
+    } catch {
+      toast.error("No se pudo cargar la plantilla.")
+    } finally {
+      setIsLoadingDetalle(false)
+    }
+  }
 
   function handleNueva() {
-    const nueva: Plantilla = {
-      id: `p-${Date.now()}`,
+    // Draft local — se crea en la API solo al guardar
+    const draft: Plantilla = {
+      id: `${DRAFT_PREFIX}${Date.now()}`,
       nombre: "Nueva plantilla",
       tipo: "arriendo",
       contenido: "",
       ultimaEdicion: new Date().toISOString().split("T")[0],
     }
-    setPlantillas(prev => [...prev, nueva])
-    setSeleccionada(nueva)
+    setSeleccionada(draft)
     setEditando(true)
   }
 
-  function handleGuardar(contenido: string, nombre: string) {
+  async function handleGuardar(contenido: string, nombre: string) {
     if (!seleccionada) return
-    const actualizada: Plantilla = {
-      ...seleccionada,
-      nombre,
-      contenido,
-      ultimaEdicion: new Date().toISOString().split("T")[0],
+    setIsSubmitting(true)
+    const esNueva = seleccionada.id.startsWith(DRAFT_PREFIX)
+    try {
+      const res = esNueva
+        ? await crearPlantilla({ nombre, tipo: seleccionada.tipo, contenido })
+        : await guardarPlantilla(seleccionada.id, { nombre, contenido })
+      toast.success(esNueva ? "Plantilla creada" : "Plantilla guardada")
+      setSeleccionada(res.data)
+      setEditando(false)
+      setRetryKey(k => k + 1)
+    } catch {
+      toast.error(esNueva ? "No se pudo crear la plantilla." : "No se pudo guardar la plantilla.")
+    } finally {
+      setIsSubmitting(false)
     }
-    setPlantillas(prev => prev.map(p => p.id === seleccionada.id ? actualizada : p))
-    setSeleccionada(actualizada)
+  }
+
+  function handleCancelar() {
+    // Si era un draft que nunca se guardó, vuelve a vacío
+    if (seleccionada?.id.startsWith(DRAFT_PREFIX)) setSeleccionada(null)
     setEditando(false)
   }
 
-  function handleEliminar() {
+  async function handleEliminar() {
     if (!confirmEliminar) return
-    setPlantillas(prev => prev.filter(p => p.id !== confirmEliminar.id))
-    if (seleccionada?.id === confirmEliminar.id) setSeleccionada(null)
-    setConfirmEliminar(null)
+    try {
+      await eliminarPlantilla(confirmEliminar.id)
+      toast.success("Plantilla eliminada")
+      if (seleccionada?.id === confirmEliminar.id) setSeleccionada(null)
+      setConfirmEliminar(null)
+      setRetryKey(k => k + 1)
+    } catch {
+      toast.error("No se pudo eliminar la plantilla.")
+      setConfirmEliminar(null)
+    }
   }
 
   return (
@@ -544,61 +528,80 @@ export function PlantillasClient() {
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">
-          {plantillas.map(p => {
-            const cfg = TIPO_CONFIG[p.tipo]
-            const isSelected = seleccionada?.id === p.id
+          {isLoading ? (
+            <div className="space-y-2 p-4 animate-pulse">
+              {[0, 1, 2].map(i => <div key={i} className="h-16 bg-muted/40 rounded" />)}
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center gap-3 p-4 text-center">
+              <p className="text-xs text-muted-foreground">{error}</p>
+              <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-1.5">
+                <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-3.5" />
+                Reintentar
+              </Button>
+            </div>
+          ) : (
+            plantillas.map(p => {
+              const cfg = TIPO_CONFIG[p.tipo]
+              const isSelected = seleccionada?.id === p.id
 
-            return (
-              <div
-                key={p.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => { setSeleccionada(p); setEditando(false) }}
-                onKeyDown={e => e.key === "Enter" && (setSeleccionada(p), setEditando(false))}
-                className={cn(
-                  "w-full text-left px-4 py-3 flex flex-col gap-1 hover:bg-muted/40 transition-colors cursor-pointer",
-                  isSelected && "bg-muted/60 border-l-2 border-primary"
-                )}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-sm font-medium leading-tight line-clamp-2">{p.nombre}</span>
-                  {isSelected && (
-                    <div className="flex items-center gap-0.5 shrink-0" onClick={e => e.stopPropagation()}>
-                      <Button
-                        variant="ghost" size="icon" className="size-6"
-                        onClick={() => setEditando(true)} title="Editar"
-                      >
-                        <HugeiconsIcon icon={PencilEdit01Icon} strokeWidth={2} className="size-3" />
-                      </Button>
-                      <Button
-                        variant="ghost" size="icon" className="size-6 hover:text-red-600"
-                        onClick={() => setConfirmEliminar(p)} title="Eliminar"
-                      >
-                        <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="size-3" />
-                      </Button>
-                    </div>
+              return (
+                <div
+                  key={p.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => seleccionarPlantilla(p)}
+                  onKeyDown={e => e.key === "Enter" && seleccionarPlantilla(p)}
+                  className={cn(
+                    "w-full text-left px-4 py-3 flex flex-col gap-1 hover:bg-muted/40 transition-colors cursor-pointer",
+                    isSelected && "bg-muted/60 border-l-2 border-primary"
                   )}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-medium leading-tight line-clamp-2">{p.nombre}</span>
+                    {isSelected && (
+                      <div className="flex items-center gap-0.5 shrink-0" onClick={e => e.stopPropagation()}>
+                        <Button
+                          variant="ghost" size="icon" className="size-6"
+                          onClick={() => setEditando(true)} title="Editar"
+                        >
+                          <HugeiconsIcon icon={PencilEdit01Icon} strokeWidth={2} className="size-3" />
+                        </Button>
+                        <Button
+                          variant="ghost" size="icon" className="size-6 hover:text-red-600"
+                          onClick={() => setConfirmEliminar(p)} title="Eliminar"
+                        >
+                          <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="size-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <Badge variant="outline" className={cn("text-[10px] w-fit font-medium", cfg.className)}>
+                    <HugeiconsIcon icon={cfg.icon} strokeWidth={2} className="size-2.5 mr-1" />
+                    {cfg.label}
+                  </Badge>
+                  <p className="text-[10px] text-muted-foreground/60">
+                    Editado {formatFecha(p.ultimaEdicion)}
+                  </p>
                 </div>
-                <Badge variant="outline" className={cn("text-[10px] w-fit font-medium", cfg.className)}>
-                  <HugeiconsIcon icon={cfg.icon} strokeWidth={2} className="size-2.5 mr-1" />
-                  {cfg.label}
-                </Badge>
-                <p className="text-[10px] text-muted-foreground/60">
-                  Editado {formatFecha(p.ultimaEdicion)}
-                </p>
-              </div>
-            )
-          })}
+              )
+            })
+          )}
         </div>
       </div>
 
       {/* Panel derecho */}
       <div className="flex-1 h-full overflow-hidden">
-        {seleccionada && editando ? (
+        {isLoadingDetalle ? (
+          <div className="flex items-center justify-center h-full text-sm text-muted-foreground animate-pulse">
+            Cargando plantilla…
+          </div>
+        ) : seleccionada && editando ? (
           <PanelEditor
             plantilla={seleccionada}
             onGuardar={handleGuardar}
-            onCancelar={() => setEditando(false)}
+            onCancelar={handleCancelar}
+            isSubmitting={isSubmitting}
           />
         ) : seleccionada ? (
           <PanelPreview plantilla={seleccionada} onEditar={() => setEditando(true)} />
