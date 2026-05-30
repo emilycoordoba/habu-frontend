@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowLeft01Icon,
@@ -11,7 +12,7 @@ import {
   PdfIcon,
   Alert02Icon,
   Tick02Icon,
-  Cancel01Icon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -20,41 +21,13 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import { obtenerCobro, registrarPago } from "@/lib/api/pagos"
+import type { CobroDetalle } from "@/types/pago.types"
 import type { TipoCobro } from "@/types/contrato.types"
 
 // ---------------------------------------------------------------------------
-// Mock — se reemplaza con la API
+// Helpers
 // ---------------------------------------------------------------------------
-
-type EstadoCobro = "pendiente" | "en_mora"
-
-interface CobroDetalle {
-  id: string
-  contratoId: string
-  contratoReferencia: string
-  tipo: TipoCobro
-  periodo?: string
-  fechaLimite: string
-  valor: number
-  estado: EstadoCobro
-  diasMora?: number
-  esComercial: boolean
-}
-
-const COBROS_MOCK: Record<string, CobroDetalle> = {
-  "c-07": {
-    id: "c-07", contratoId: "1", contratoReferencia: "CTR-2025-001",
-    tipo: "canon", periodo: "Abril 2025",
-    fechaLimite: "2025-04-05", valor: 2800000,
-    estado: "en_mora", diasMora: 10, esComercial: false,
-  },
-  "c-09": {
-    id: "c-09", contratoId: "1", contratoReferencia: "CTR-2025-001",
-    tipo: "canon", periodo: "Mayo 2025",
-    fechaLimite: "2025-05-05", valor: 2800000,
-    estado: "pendiente", esComercial: false,
-  },
-}
 
 const TIPO_LABELS: Record<TipoCobro, string> = {
   canon:                   "Canon mensual",
@@ -70,6 +43,31 @@ function formatCOP(value: number) {
   return `$${new Intl.NumberFormat("es-CO").format(value)}`
 }
 
+interface ArchivoSubido {
+  nombre: string
+  objectUrl: string
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function RegistrarPagoSkeleton() {
+  return (
+    <div className="flex flex-col h-full overflow-y-auto animate-pulse">
+      <div className="border-b px-6 py-4 h-16 bg-muted/30" />
+      <div className="flex flex-1">
+        <div className="flex-1 px-6 py-6 space-y-6 max-w-lg mx-auto w-full">
+          {[80, 60, 80, 100].map((h, i) => (
+            <div key={i} className={`h-${h > 80 ? 24 : h === 80 ? 16 : 12} bg-muted/40 rounded`} />
+          ))}
+        </div>
+        <div className="w-64 border-l bg-muted/10 hidden lg:block" />
+      </div>
+    </div>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Componente
 // ---------------------------------------------------------------------------
@@ -79,20 +77,31 @@ interface RegistrarPagoClientProps {
   cobroId: string
 }
 
-interface ArchivoSubido {
-  nombre: string
-  objectUrl: string
-}
-
 export function RegistrarPagoClient({ contratoId, cobroId }: RegistrarPagoClientProps) {
   const router = useRouter()
-  const cobro = COBROS_MOCK[cobroId] ?? COBROS_MOCK["c-07"]
+
+  const [cobro, setCobro] = React.useState<CobroDetalle | null>(null)
+  const [isLoadingData, setIsLoadingData] = React.useState(true)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
 
   const [fechaPago, setFechaPago] = React.useState(new Date().toISOString().split("T")[0])
+  const [archivoFile, setArchivoFile] = React.useState<File | null>(null)
   const [comprobante, setComprobante] = React.useState<ArchivoSubido | null>(null)
   const [notas, setNotas] = React.useState("")
 
   const inputRef = React.useRef<HTMLInputElement>(null)
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoadingData(true)
+    setError(null)
+    obtenerCobro(cobroId)
+      .then(res => { if (!cancelado) setCobro(res.data) })
+      .catch(() => { if (!cancelado) setError("No se pudo cargar el cobro.") })
+      .finally(() => { if (!cancelado) setIsLoadingData(false) })
+    return () => { cancelado = true }
+  }, [cobroId])
 
   // Cleanup objectUrl al desmontar
   React.useEffect(() => {
@@ -105,10 +114,40 @@ export function RegistrarPagoClient({ contratoId, cobroId }: RegistrarPagoClient
     const file = e.target.files?.[0]
     if (!file) return
     if (comprobante) URL.revokeObjectURL(comprobante.objectUrl)
+    setArchivoFile(file)
     setComprobante({ nombre: file.name, objectUrl: URL.createObjectURL(file) })
   }
 
-  const todoCorrecto = !!fechaPago && !!comprobante
+  async function handleConfirmar() {
+    if (!archivoFile || !fechaPago || !cobro) return
+    setIsSubmitting(true)
+    try {
+      await registrarPago(cobroId, fechaPago, archivoFile, notas || undefined)
+      toast.success("Pago registrado correctamente")
+      router.push(`/contratos/${contratoId}/cobros`)
+    } catch {
+      toast.error("No se pudo registrar el pago. Intente de nuevo.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (isLoadingData) return <RegistrarPagoSkeleton />
+
+  if (error || !cobro) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-6">
+        <p className="text-sm text-muted-foreground">{error ?? "Cobro no encontrado."}</p>
+        <Link href={`/contratos/${contratoId}/cobros`}>
+          <Button variant="outline" size="sm">Volver a cobros</Button>
+        </Link>
+      </div>
+    )
+  }
+
+  const esComercial = !cobro.esInmuebleResidencial
+  const todoCorrecto = !!fechaPago && !!archivoFile
+  const subtitulo = `${cobro.contrato.referencia} · ${TIPO_LABELS[cobro.tipo]}${cobro.periodo ? ` — ${cobro.periodo}` : ""}`
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -122,9 +161,7 @@ export function RegistrarPagoClient({ contratoId, cobroId }: RegistrarPagoClient
         </Link>
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-semibold">Registrar pago</h1>
-          <p className="text-sm text-muted-foreground truncate">
-            {cobro.contratoReferencia} · {TIPO_LABELS[cobro.tipo]}{cobro.periodo ? ` — ${cobro.periodo}` : ""}
-          </p>
+          <p className="text-sm text-muted-foreground truncate">{subtitulo}</p>
         </div>
       </div>
 
@@ -138,14 +175,14 @@ export function RegistrarPagoClient({ contratoId, cobroId }: RegistrarPagoClient
             {cobro.estado === "en_mora" && (
               <div className={cn(
                 "flex items-start gap-2.5 rounded-md border px-3 py-3 text-sm",
-                cobro.esComercial
+                esComercial
                   ? "alert-red text-red-700 dark:text-red-300"
                   : "alert-amber text-amber-700 dark:text-amber-300"
               )}>
                 <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium">Cobro con {cobro.diasMora} días de mora</p>
-                  {cobro.esComercial
+                  {esComercial
                     ? <p className="text-xs mt-0.5">Inmueble comercial — pueden aplicar intereses de mora calculados por el sistema.</p>
                     : <p className="text-xs mt-0.5">Inmueble residencial — no aplican intereses de mora (Ley 820 de 2003).</p>
                   }
@@ -247,14 +284,17 @@ export function RegistrarPagoClient({ contratoId, cobroId }: RegistrarPagoClient
             {/* CTA */}
             <div className="flex justify-end gap-3 pt-2 pb-8">
               <Link href={`/contratos/${contratoId}/cobros`}>
-                <Button variant="outline">Cancelar</Button>
+                <Button variant="outline" disabled={isSubmitting}>Cancelar</Button>
               </Link>
               <Button
-                disabled={!todoCorrecto}
-                onClick={() => router.push(`/contratos/${contratoId}/cobros`)}
+                disabled={!todoCorrecto || isSubmitting}
+                onClick={handleConfirmar}
               >
-                <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} className="size-4" />
-                Confirmar pago
+                {isSubmitting
+                  ? <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4 animate-spin" />
+                  : <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} className="size-4" />
+                }
+                {isSubmitting ? "Registrando…" : "Confirmar pago"}
               </Button>
             </div>
 
@@ -280,6 +320,10 @@ export function RegistrarPagoClient({ contratoId, cobroId }: RegistrarPagoClient
               <p className="text-xs text-muted-foreground">Fecha límite</p>
               <p className="font-medium">{cobro.fechaLimite}</p>
             </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Cliente</p>
+              <p className="font-medium">{cobro.cliente.nombre}</p>
+            </div>
           </div>
 
           <Separator className="my-4" />
@@ -292,10 +336,10 @@ export function RegistrarPagoClient({ contratoId, cobroId }: RegistrarPagoClient
               <Separator className="my-4" />
               <div className={cn(
                 "rounded-md px-3 py-2.5 text-xs",
-                cobro.esComercial ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
+                esComercial ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
               )}>
                 <p className="font-semibold mb-0.5">{cobro.diasMora} días en mora</p>
-                <p>{cobro.esComercial ? "Pueden aplicar intereses." : "Sin intereses (residencial)."}</p>
+                <p>{esComercial ? "Pueden aplicar intereses." : "Sin intereses (residencial)."}</p>
               </div>
             </>
           )}
@@ -306,7 +350,7 @@ export function RegistrarPagoClient({ contratoId, cobroId }: RegistrarPagoClient
           <div className="space-y-2">
             {[
               { label: "Fecha de pago", ok: !!fechaPago },
-              { label: "Comprobante adjunto", ok: !!comprobante },
+              { label: "Comprobante adjunto", ok: !!archivoFile },
             ].map(({ label, ok }) => (
               <div key={label} className="flex items-center gap-2 text-sm">
                 <div className={cn(

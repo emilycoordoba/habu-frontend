@@ -8,6 +8,7 @@ import {
   MoneyReceive02Icon,
   Building04Icon,
   UserIcon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -21,37 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
+import { listarReportePagos } from "@/lib/api/pagos"
+import type { PagoReporte } from "@/types/pago.types"
 import type { TipoCobro } from "@/types/contrato.types"
 
 // ---------------------------------------------------------------------------
-// Mock
+// Helpers
 // ---------------------------------------------------------------------------
-
-interface PagoReporte {
-  id: string
-  fecha: string
-  contratoReferencia: string
-  contratoId: string
-  inmueble: string
-  cliente: string
-  tipo: TipoCobro
-  periodo?: string
-  valor: number
-}
-
-const PAGOS_MOCK: PagoReporte[] = [
-  { id: "p-01", fecha: "2025-02-01", contratoId: "1", contratoReferencia: "CTR-2025-001", inmueble: "Apto 301 Torre A", cliente: "Carlos Mendoza", tipo: "deposito",             valor: 5600000 },
-  { id: "p-02", fecha: "2025-02-01", contratoId: "1", contratoReferencia: "CTR-2025-001", inmueble: "Apto 301 Torre A", cliente: "Carlos Mendoza", tipo: "comision_colocacion",  valor: 2800000 },
-  { id: "p-03", fecha: "2025-02-07", contratoId: "1", contratoReferencia: "CTR-2025-001", inmueble: "Apto 301 Torre A", cliente: "Carlos Mendoza", tipo: "canon", periodo: "Febrero 2025", valor: 2800000 },
-  { id: "p-04", fecha: "2025-02-07", contratoId: "1", contratoReferencia: "CTR-2025-001", inmueble: "Apto 301 Torre A", cliente: "Carlos Mendoza", tipo: "comision_administracion", periodo: "Febrero 2025", valor: 320000 },
-  { id: "p-05", fecha: "2025-03-17", contratoId: "1", contratoReferencia: "CTR-2025-001", inmueble: "Apto 301 Torre A", cliente: "Carlos Mendoza", tipo: "canon", periodo: "Marzo 2025", valor: 2800000 },
-  { id: "p-06", fecha: "2025-03-17", contratoId: "1", contratoReferencia: "CTR-2025-001", inmueble: "Apto 301 Torre A", cliente: "Carlos Mendoza", tipo: "comision_administracion", periodo: "Marzo 2025", valor: 320000 },
-  { id: "p-07", fecha: "2025-02-10", contratoId: "2", contratoReferencia: "CTR-2025-002", inmueble: "Local 3 CC Plaza",  cliente: "Tienda Éxito", tipo: "deposito",              valor: 9600000 },
-  { id: "p-08", fecha: "2025-02-10", contratoId: "2", contratoReferencia: "CTR-2025-002", inmueble: "Local 3 CC Plaza",  cliente: "Tienda Éxito", tipo: "canon", periodo: "Febrero 2025", valor: 4800000 },
-  { id: "p-09", fecha: "2025-03-05", contratoId: "2", contratoReferencia: "CTR-2025-002", inmueble: "Local 3 CC Plaza",  cliente: "Tienda Éxito", tipo: "canon", periodo: "Marzo 2025", valor: 4800000 },
-  { id: "p-10", fecha: "2025-04-05", contratoId: "2", contratoReferencia: "CTR-2025-002", inmueble: "Local 3 CC Plaza",  cliente: "Tienda Éxito", tipo: "canon", periodo: "Abril 2025", valor: 4800000 },
-]
 
 const TIPO_LABELS: Record<TipoCobro, string> = {
   canon:                   "Canon mensual",
@@ -81,39 +58,66 @@ const TIPOS_FILTRO: { value: TipoCobro | "todos"; label: string }[] = [
 // ---------------------------------------------------------------------------
 
 export function ReportesClient() {
-  const [desde, setDesde]         = React.useState("2025-02-01")
-  const [hasta, setHasta]         = React.useState("2025-04-30")
-  const [cliente, setCliente]     = React.useState("")
-  const [inmueble, setInmueble]   = React.useState("")
+  const [pagos, setPagos]             = React.useState<PagoReporte[]>([])
+  const [totalRecibido, setTotalRecibido] = React.useState(0)
+  const [isLoading, setIsLoading]     = React.useState(false)
+  const [error, setError]             = React.useState<string | null>(null)
+  const [retryKey, setRetryKey]       = React.useState(0)
+
+  // Filtros enviados a la API
+  const [desde, setDesde]         = React.useState("")
+  const [hasta, setHasta]         = React.useState("")
   const [tipoCobro, setTipoCobro] = React.useState<TipoCobro | "todos">("todos")
 
-  // Filtrado reactivo
-  const pagosFiltrados = PAGOS_MOCK.filter(p => {
-    if (desde && p.fecha < desde) return false
-    if (hasta && p.fecha > hasta) return false
-    if (cliente  && !p.cliente.toLowerCase().includes(cliente.toLowerCase()))   return false
-    if (inmueble && !p.inmueble.toLowerCase().includes(inmueble.toLowerCase())) return false
-    if (tipoCobro !== "todos" && p.tipo !== tipoCobro) return false
+  // Filtros de texto — aplicados en cliente sobre los resultados
+  const [clienteTexto, setClienteTexto]   = React.useState("")
+  const [inmuebleTexto, setInmuebleTexto] = React.useState("")
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    listarReportePagos({
+      desde:  desde    || undefined,
+      hasta:  hasta    || undefined,
+      tipo:   tipoCobro !== "todos" ? tipoCobro : undefined,
+      limit:  200,
+    })
+      .then(res => {
+        if (cancelado) return
+        setPagos(res.data)
+        setTotalRecibido(res.resumen.totalRecibido)
+      })
+      .catch(() => {
+        if (!cancelado) setError("No se pudo cargar el reporte de pagos.")
+      })
+      .finally(() => {
+        if (!cancelado) setIsLoading(false)
+      })
+    return () => { cancelado = true }
+  }, [desde, hasta, tipoCobro, retryKey])
+
+  // Filtrado de texto en cliente
+  const pagosFiltrados = pagos.filter(p => {
+    if (clienteTexto  && !p.cliente.nombre.toLowerCase().includes(clienteTexto.toLowerCase())) return false
+    if (inmuebleTexto && !p.inmueble.nombre.toLowerCase().includes(inmuebleTexto.toLowerCase())) return false
     return true
   })
 
-  const totalRecibido = pagosFiltrados.reduce((s, p) => s + p.valor, 0)
+  const totalFiltrado = pagosFiltrados.reduce((s, p) => s + p.valor, 0)
+  const contratosUnicos = new Set(pagosFiltrados.map(p => p.contrato.id)).size
 
-  // Desglose por tipo
   const desglose = pagosFiltrados.reduce<Record<string, number>>((acc, p) => {
-    const label = TIPO_LABELS[p.tipo]
+    const label = TIPO_LABELS[p.tipoCobro]
     acc[label] = (acc[label] ?? 0) + p.valor
     return acc
   }, {})
 
-  // Pendientes del período (mock fijo)
-  const pendientesPeriodo = 5600000
-
   function limpiarFiltros() {
-    setDesde("2025-02-01")
-    setHasta("2025-04-30")
-    setCliente("")
-    setInmueble("")
+    setDesde("")
+    setHasta("")
+    setClienteTexto("")
+    setInmuebleTexto("")
     setTipoCobro("todos")
   }
 
@@ -186,8 +190,8 @@ export function ReportesClient() {
                 <HugeiconsIcon icon={UserIcon} strokeWidth={1.5} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
                 <Input
                   placeholder="Buscar cliente…"
-                  value={cliente}
-                  onChange={e => setCliente(e.target.value)}
+                  value={clienteTexto}
+                  onChange={e => setClienteTexto(e.target.value)}
                   className="pl-8 h-8 text-sm"
                 />
               </div>
@@ -200,8 +204,8 @@ export function ReportesClient() {
                 <HugeiconsIcon icon={Building04Icon} strokeWidth={1.5} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
                 <Input
                   placeholder="Buscar inmueble…"
-                  value={inmueble}
-                  onChange={e => setInmueble(e.target.value)}
+                  value={inmuebleTexto}
+                  onChange={e => setInmuebleTexto(e.target.value)}
                   className="pl-8 h-8 text-sm"
                 />
               </div>
@@ -220,17 +224,21 @@ export function ReportesClient() {
           <div className="px-6 py-5 border-b grid grid-cols-3 gap-4">
             <div className="border rounded-lg px-4 py-3 alert-green">
               <p className="text-xs text-muted-foreground mb-1">Total recibido</p>
-              <p className="text-xl font-semibold tabular-nums text-green-700 dark:text-green-300">{formatCOP(totalRecibido)}</p>
-              <p className="text-xs text-muted-foreground mt-1">{pagosFiltrados.length} pago{pagosFiltrados.length !== 1 ? "s" : ""}</p>
+              <p className="text-xl font-semibold tabular-nums text-green-700 dark:text-green-300">
+                {formatCOP(totalFiltrado)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {pagosFiltrados.length} pago{pagosFiltrados.length !== 1 ? "s" : ""}
+              </p>
             </div>
             <div className="border rounded-lg px-4 py-3">
-              <p className="text-xs text-muted-foreground mb-1">Pendiente del período</p>
-              <p className="text-xl font-semibold tabular-nums text-amber-600">{formatCOP(pendientesPeriodo)}</p>
-              <p className="text-xs text-muted-foreground mt-1">No incluido en el reporte</p>
+              <p className="text-xs text-muted-foreground mb-1">Total en período</p>
+              <p className="text-xl font-semibold tabular-nums">{formatCOP(totalRecibido)}</p>
+              <p className="text-xs text-muted-foreground mt-1">Antes de filtros de texto</p>
             </div>
             <div className="border rounded-lg px-4 py-3">
-              <p className="text-xs text-muted-foreground mb-1">Contratos activos</p>
-              <p className="text-xl font-semibold tabular-nums">{new Set(pagosFiltrados.map(p => p.contratoId)).size}</p>
+              <p className="text-xs text-muted-foreground mb-1">Contratos únicos</p>
+              <p className="text-xl font-semibold tabular-nums">{contratosUnicos}</p>
               <p className="text-xs text-muted-foreground mt-1">En el período filtrado</p>
             </div>
           </div>
@@ -247,57 +255,80 @@ export function ReportesClient() {
             </div>
           )}
 
-          {/* Tabla */}
-          <div className="px-6 py-5">
-            {pagosFiltrados.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground">
-                <HugeiconsIcon icon={MoneyReceive02Icon} strokeWidth={1.5} className="size-10 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">No hay pagos que coincidan con los filtros.</p>
-              </div>
-            ) : (
-              <div className="border rounded-lg overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50 border-b">
-                    <tr>
-                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">Fecha</th>
-                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">Contrato</th>
-                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">Inmueble</th>
-                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
-                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">Concepto</th>
-                      <th className="text-right px-4 py-3 font-medium text-muted-foreground">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {pagosFiltrados.map(pago => (
-                      <tr key={pago.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-3 text-muted-foreground tabular-nums">{pago.fecha}</td>
-                        <td className="px-4 py-3">
-                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                            {pago.contratoReferencia}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground max-w-[160px] truncate">{pago.inmueble}</td>
-                        <td className="px-4 py-3 text-muted-foreground max-w-[140px] truncate">{pago.cliente}</td>
-                        <td className="px-4 py-3">
-                          {TIPO_LABELS[pago.tipo]}
-                          {pago.periodo && (
-                            <span className="text-xs text-muted-foreground ml-1">— {pago.periodo}</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right font-semibold tabular-nums">{formatCOP(pago.valor)}</td>
+          {/* Estado de carga / error */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground animate-pulse">
+              <p className="text-sm">Cargando reporte…</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+              <p className="text-sm text-muted-foreground">{error}</p>
+              <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+                <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+                Reintentar
+              </Button>
+            </div>
+          ) : (
+            /* Tabla */
+            <div className="px-6 py-5">
+              {pagosFiltrados.length === 0 ? (
+                <div className="text-center py-16 text-muted-foreground">
+                  <HugeiconsIcon icon={MoneyReceive02Icon} strokeWidth={1.5} className="size-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No hay pagos que coincidan con los filtros.</p>
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 border-b">
+                      <tr>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Fecha</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Contrato</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Inmueble</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Concepto</th>
+                        <th className="text-right px-4 py-3 font-medium text-muted-foreground">Valor</th>
                       </tr>
-                    ))}
-                  </tbody>
-                  <tfoot className="border-t bg-muted/30">
-                    <tr>
-                      <td colSpan={5} className="px-4 py-3 text-sm font-semibold text-right">Total</td>
-                      <td className="px-4 py-3 text-right font-bold tabular-nums text-green-700">{formatCOP(totalRecibido)}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
-          </div>
+                    </thead>
+                    <tbody className="divide-y">
+                      {pagosFiltrados.map(pago => (
+                        <tr key={pago.pagoId} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-4 py-3 text-muted-foreground tabular-nums">{pago.fecha}</td>
+                          <td className="px-4 py-3">
+                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                              {pago.contrato.referencia}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground max-w-[160px] truncate">
+                            {pago.inmueble.nombre}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground max-w-[140px] truncate">
+                            {pago.cliente.nombre}
+                          </td>
+                          <td className="px-4 py-3">
+                            {TIPO_LABELS[pago.tipoCobro]}
+                            {pago.periodo && (
+                              <span className="text-xs text-muted-foreground ml-1">— {pago.periodo}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold tabular-nums">
+                            {formatCOP(pago.valor)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="border-t bg-muted/30">
+                      <tr>
+                        <td colSpan={5} className="px-4 py-3 text-sm font-semibold text-right">Total</td>
+                        <td className="px-4 py-3 text-right font-bold tabular-nums text-green-700">
+                          {formatCOP(totalFiltrado)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

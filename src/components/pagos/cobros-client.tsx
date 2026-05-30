@@ -10,63 +10,16 @@ import {
   Alert02Icon,
   MoneyReceive02Icon,
   EyeIcon,
-  FileAttachmentIcon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { listarCobros, obtenerContrato } from "@/lib/api/contratos"
+import type { Cobro, EstadoCobro } from "@/types/pago.types"
 import type { TipoCobro } from "@/types/contrato.types"
 import type { IconSvgElement } from "@hugeicons/react"
-
-// ---------------------------------------------------------------------------
-// Tipos y mocks
-// ---------------------------------------------------------------------------
-
-type EstadoCobro = "pendiente" | "pagado" | "en_mora"
-
-interface Cobro {
-  id: string
-  tipo: TipoCobro
-  periodo?: string        // e.g. "Mayo 2025" — solo para cobros mensuales
-  fechaLimite: string
-  valor: number
-  estado: EstadoCobro
-  diasMora?: number       // solo si en_mora
-  tieneComprobante?: boolean
-  pagadoConMora?: number  // días de mora al momento del pago — solo si estado === "pagado"
-}
-
-interface ContratoResumen {
-  id: string
-  referencia: string
-  inmueble: string
-  tipo: "arriendo" | "promesa_compraventa"
-  esComercial: boolean    // determina si aplican intereses de mora
-}
-
-const CONTRATO_MOCK: ContratoResumen = {
-  id: "1",
-  referencia: "CTR-2025-001",
-  inmueble: "Apto 301 Torre A — Cra 15 #93-47, Bogotá",
-  tipo: "arriendo",
-  esComercial: false,
-}
-
-const COBROS_MOCK: Cobro[] = [
-  { id: "c-01", tipo: "deposito",             fechaLimite: "2025-02-01", valor: 5600000,  estado: "pagado",    tieneComprobante: true },
-  { id: "c-02", tipo: "comision_colocacion",  fechaLimite: "2025-02-01", valor: 2800000,  estado: "pagado",    tieneComprobante: true },
-  { id: "c-03", tipo: "canon",  periodo: "Febrero 2025",  fechaLimite: "2025-02-05", valor: 2800000,  estado: "pagado",    tieneComprobante: true },
-  { id: "c-04", tipo: "comision_administracion", periodo: "Febrero 2025", fechaLimite: "2025-02-05", valor: 320000, estado: "pagado", tieneComprobante: true },
-  { id: "c-05", tipo: "canon",  periodo: "Marzo 2025",    fechaLimite: "2025-03-05", valor: 2800000,  estado: "pagado",    tieneComprobante: true, pagadoConMora: 12 },
-  { id: "c-06", tipo: "comision_administracion", periodo: "Marzo 2025",  fechaLimite: "2025-03-05", valor: 320000, estado: "pagado", tieneComprobante: true, pagadoConMora: 12 },
-  { id: "c-07", tipo: "canon",  periodo: "Abril 2025",    fechaLimite: "2025-04-05", valor: 2800000,  estado: "en_mora",   diasMora: 10 },
-  { id: "c-08", tipo: "comision_administracion", periodo: "Abril 2025",  fechaLimite: "2025-04-05", valor: 320000, estado: "en_mora", diasMora: 10 },
-  { id: "c-09", tipo: "canon",  periodo: "Mayo 2025",     fechaLimite: "2025-05-05", valor: 2800000,  estado: "pendiente" },
-  { id: "c-10", tipo: "comision_administracion", periodo: "Mayo 2025",   fechaLimite: "2025-05-05", valor: 320000, estado: "pendiente" },
-  { id: "c-11", tipo: "canon",  periodo: "Junio 2025",    fechaLimite: "2025-06-05", valor: 2800000,  estado: "pendiente" },
-  { id: "c-12", tipo: "comision_administracion", periodo: "Junio 2025",  fechaLimite: "2025-06-05", valor: 320000, estado: "pendiente" },
-]
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -95,6 +48,31 @@ const ESTADO_CONFIG: Record<EstadoCobro, { label: string; className: string; ico
 type FiltroEstado = "todos" | EstadoCobro
 
 // ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function CobrosClientSkeleton() {
+  return (
+    <div className="flex flex-col h-full overflow-y-auto animate-pulse">
+      <div className="border-b px-6 py-4 h-16 bg-muted/30" />
+      <div className="px-6 py-6 max-w-5xl mx-auto w-full space-y-6">
+        <div className="grid grid-cols-3 gap-4">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="border rounded-lg h-20 bg-muted/40" />
+          ))}
+        </div>
+        <div className="h-8 bg-muted/40 rounded" />
+        <div className="border rounded-lg overflow-hidden">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="h-12 border-b bg-muted/20" />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Componente
 // ---------------------------------------------------------------------------
 
@@ -103,17 +81,59 @@ interface CobrosClientProps {
 }
 
 export function CobrosClient({ contratoId }: CobrosClientProps) {
-  const contrato = { ...CONTRATO_MOCK, id: contratoId }
+  const [cobros, setCobros] = React.useState<Cobro[]>([])
+  const [resumen, setResumen] = React.useState({ totalPendiente: 0, totalEnMora: 0, totalPagado: 0 })
+  const [contratoInfo, setContratoInfo] = React.useState({ referencia: "", inmueble: "" })
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+  const [retryKey, setRetryKey] = React.useState(0)
   const [filtro, setFiltro] = React.useState<FiltroEstado>("todos")
 
-  const cobros = COBROS_MOCK
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
 
-  // Totales para las cards de resumen
-  const totalPendiente = cobros.filter(c => c.estado === "pendiente").reduce((s, c) => s + c.valor, 0)
-  const totalPagado    = cobros.filter(c => c.estado === "pagado").reduce((s, c) => s + c.valor, 0)
-  const totalMora      = cobros.filter(c => c.estado === "en_mora").reduce((s, c) => s + c.valor, 0)
-  const countMora      = cobros.filter(c => c.estado === "en_mora").length
+    Promise.all([
+      listarCobros(contratoId, { limit: 100 }),
+      obtenerContrato(contratoId),
+    ])
+      .then(([cobrosRes, contratoRes]) => {
+        if (cancelado) return
+        setCobros(cobrosRes.data)
+        setResumen(cobrosRes.resumen)
+        const c = contratoRes.data
+        setContratoInfo({
+          referencia: c.referencia,
+          inmueble: `${c.inmueble.nombre} — ${c.inmueble.direccion}`,
+        })
+      })
+      .catch(() => {
+        if (!cancelado) setError("No se pudieron cargar los cobros del contrato.")
+      })
+      .finally(() => {
+        if (!cancelado) setIsLoading(false)
+      })
 
+    return () => { cancelado = true }
+  }, [contratoId, retryKey])
+
+  if (isLoading) return <CobrosClientSkeleton />
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-6">
+        <p className="text-sm text-muted-foreground">{error}</p>
+        <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+          <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+          Reintentar
+        </Button>
+      </div>
+    )
+  }
+
+  const esResidencial = cobros.length > 0 ? cobros[0].esInmuebleResidencial : true
+  const countMora = cobros.filter(c => c.estado === "en_mora").length
   const cobrosFiltrados = filtro === "todos" ? cobros : cobros.filter(c => c.estado === filtro)
 
   const FILTROS: { value: FiltroEstado; label: string; count: number }[] = [
@@ -128,16 +148,18 @@ export function CobrosClient({ contratoId }: CobrosClientProps) {
 
       {/* Header */}
       <div className="border-b px-6 py-4 flex items-center gap-4">
-        <Link href={`/contratos/${contrato.id}`}>
+        <Link href={`/contratos/${contratoId}`}>
           <Button variant="ghost" size="icon" className="size-8">
             <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
           </Button>
         </Link>
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-semibold">Cobros del contrato</h1>
-          <p className="text-sm text-muted-foreground truncate">{contrato.referencia} · {contrato.inmueble}</p>
+          <p className="text-sm text-muted-foreground truncate">
+            {contratoInfo.referencia} · {contratoInfo.inmueble}
+          </p>
         </div>
-        <Link href={`/contratos/${contrato.id}/estado-cuenta`}>
+        <Link href={`/contratos/${contratoId}/estado-cuenta`}>
           <Button variant="outline" size="sm">Estado de cuenta</Button>
         </Link>
       </div>
@@ -148,26 +170,26 @@ export function CobrosClient({ contratoId }: CobrosClientProps) {
         <div className="grid grid-cols-3 gap-4">
           <SummaryCard
             label="Pendiente de pago"
-            value={formatCOP(totalPendiente)}
+            value={formatCOP(resumen.totalPendiente)}
             className="border-gray-200"
             valueClassName="text-gray-800"
           />
           <SummaryCard
             label={`En mora${countMora > 0 ? ` (${countMora} cobro${countMora > 1 ? "s" : ""})` : ""}`}
-            value={formatCOP(totalMora)}
+            value={formatCOP(resumen.totalEnMora)}
             className={countMora > 0 ? "alert-red" : "border-gray-200"}
             valueClassName={countMora > 0 ? "text-red-700 dark:text-red-300" : "text-gray-800 dark:text-gray-200"}
           />
           <SummaryCard
             label="Total pagado"
-            value={formatCOP(totalPagado)}
+            value={formatCOP(resumen.totalPagado)}
             className="alert-green"
             valueClassName="text-green-700 dark:text-green-300"
           />
         </div>
 
         {/* Aviso inmueble residencial */}
-        {!contrato.esComercial && countMora > 0 && (
+        {esResidencial && countMora > 0 && (
           <div className="flex items-start gap-2 text-sm alert-blue border rounded-md px-3 py-2.5">
             <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4 shrink-0 mt-0.5" />
             <span>Inmueble residencial — los cobros en mora <strong>no generan intereses</strong> según la Ley 820 de 2003.</span>
@@ -239,7 +261,6 @@ export function CobrosClient({ contratoId }: CobrosClientProps) {
                         {formatCOP(cobro.valor)}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <div className="flex flex-col items-center gap-1">
                         <Badge
                           variant="outline"
                           className={cn("gap-1 text-xs", estadoCfg.className)}
@@ -247,24 +268,19 @@ export function CobrosClient({ contratoId }: CobrosClientProps) {
                           <HugeiconsIcon icon={estadoCfg.icon} strokeWidth={2} className="size-3" />
                           {estadoCfg.label}
                         </Badge>
-                        {cobro.pagadoConMora != null && cobro.pagadoConMora > 0 && (
-                          <span className="text-xs text-amber-600 flex items-center gap-1">
-                            <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-3" />
-                            {cobro.pagadoConMora} días de mora
-                          </span>
-                        )}
-                        </div>
                       </td>
                       <td className="px-4 py-3 text-right">
                         {cobro.estado === "pagado" ? (
-                          cobro.tieneComprobante && (
-                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5">
-                              <HugeiconsIcon icon={EyeIcon} strokeWidth={2} className="size-3.5" />
-                              Ver comprobante
-                            </Button>
+                          cobro.comprobante && (
+                            <a href={cobro.comprobante.url} target="_blank" rel="noopener noreferrer">
+                              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5">
+                                <HugeiconsIcon icon={EyeIcon} strokeWidth={2} className="size-3.5" />
+                                Ver comprobante
+                              </Button>
+                            </a>
                           )
                         ) : (
-                          <Link href={`/contratos/${contrato.id}/cobros/${cobro.id}/pagar`}>
+                          <Link href={`/contratos/${contratoId}/cobros/${cobro.id}/pagar`}>
                             <Button size="sm" className="h-7 text-xs gap-1.5">
                               <HugeiconsIcon icon={MoneyReceive02Icon} strokeWidth={2} className="size-3.5" />
                               Registrar pago
