@@ -13,6 +13,7 @@ import {
   Upload01Icon,
   Delete02Icon,
   Alert01Icon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -20,8 +21,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { MANTENIMIENTO_MOCK } from "@/lib/mock/mantenimiento"
-import type { EstadoMantenimiento } from "@/types/mantenimiento.types"
+import { obtenerMantenimiento, actualizarEstado } from "@/lib/api/mantenimiento"
+import type { SolicitudMantenimiento, EstadoMantenimiento } from "@/types/mantenimiento.types"
 
 // Solo las transiciones posibles desde "en_proceso"
 const TRANSICIONES: { valor: EstadoMantenimiento; label: string; desc: string; className: string; icon: React.ReactNode }[] = [
@@ -46,26 +47,65 @@ interface ArchivoPreview {
   url: string
 }
 
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function ActualizarSkeleton() {
+  return (
+    <div className="flex flex-col h-full overflow-y-auto animate-pulse">
+      <div className="border-b px-6 py-4 h-16 bg-muted/20" />
+      <div className="px-6 py-6 max-w-2xl mx-auto w-full space-y-6">
+        <div className="h-20 bg-muted/20 rounded-lg" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="h-20 bg-muted/20 rounded-lg" />
+          <div className="h-20 bg-muted/20 rounded-lg" />
+        </div>
+        <div className="h-24 bg-muted/20 rounded" />
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Componente
+// ---------------------------------------------------------------------------
+
 export function ActualizarEstadoClient({ solicitudId }: { solicitudId: string }) {
   const router = useRouter()
-  const solicitud = MANTENIMIENTO_MOCK[solicitudId] ?? MANTENIMIENTO_MOCK["1"]
 
-  const [nuevoEstado, setNuevoEstado] = React.useState<EstadoMantenimiento | "">("")
-  const [nota, setNota]               = React.useState("")
-  const [archivos, setArchivos]       = React.useState<ArchivoPreview[]>([])
-  const [errors, setErrors]           = React.useState<{ estado?: string; nota?: string }>({})
-  const [guardando, setGuardando]     = React.useState(false)
+  const [solicitud,    setSolicitud]    = React.useState<SolicitudMantenimiento | null>(null)
+  const [isLoading,    setIsLoading]    = React.useState(true)
+  const [error,        setError]        = React.useState<string | null>(null)
+  const [retryKey,     setRetryKey]     = React.useState(0)
+
+  const [nuevoEstado,  setNuevoEstado]  = React.useState<"finalizado" | "cancelado" | "">("")
+  const [nota,         setNota]         = React.useState("")
+  const [archivos,     setArchivos]     = React.useState<ArchivoPreview[]>([])
+  const [formErrors,   setFormErrors]   = React.useState<{ estado?: string; nota?: string }>({})
+  const [guardando,    setGuardando]    = React.useState(false)
   const inputRef = React.useRef<HTMLInputElement>(null)
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    obtenerMantenimiento(solicitudId)
+      .then(res => { if (!cancelado) setSolicitud(res.data) })
+      .catch(() => { if (!cancelado) setError("No se pudo cargar la solicitud.") })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [solicitudId, retryKey])
 
   React.useEffect(() => {
     return () => archivos.forEach(a => URL.revokeObjectURL(a.url))
   }, [archivos])
 
   function validate() {
-    const e: typeof errors = {}
+    const e: typeof formErrors = {}
     if (!nuevoEstado) e.estado = "Selecciona el nuevo estado."
     if (!nota.trim()) e.nota   = "Añade una nota de avance."
-    setErrors(e)
+    setFormErrors(e)
     return Object.keys(e).length === 0
   }
 
@@ -85,17 +125,43 @@ export function ActualizarEstadoClient({ solicitudId }: { solicitudId: string })
     })
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!validate()) return
+    if (!validate() || !nuevoEstado) return
     setGuardando(true)
-    // TODO: PATCH /mantenimiento/:id/estado con { estado: nuevoEstado, nota, archivos }
-    setTimeout(() => {
-      setGuardando(false)
+    try {
+      await actualizarEstado(
+        solicitudId,
+        nuevoEstado,
+        nota,
+        archivos.map(a => a.file),
+      )
       const label = nuevoEstado === "finalizado" ? "finalizada" : "cancelada"
       toast.success(`Solicitud marcada como ${label}`)
       router.push(`/mantenimiento/${solicitudId}`)
-    }, 600)
+    } catch {
+      toast.error("No se pudo actualizar el estado. Intenta de nuevo.")
+      setGuardando(false)
+    }
+  }
+
+  if (isLoading) return <ActualizarSkeleton />
+
+  if (error || !solicitud) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+        <p className="text-sm">{error ?? "Solicitud no encontrada."}</p>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+            <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+            Reintentar
+          </Button>
+          <Link href={`/mantenimiento/${solicitudId}`}>
+            <Button variant="outline" size="sm">Volver</Button>
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -139,8 +205,8 @@ export function ActualizarEstadoClient({ solicitudId }: { solicitudId: string })
                   key={t.valor}
                   type="button"
                   onClick={() => {
-                    setNuevoEstado(t.valor)
-                    setErrors(e => ({ ...e, estado: undefined }))
+                    setNuevoEstado(t.valor as "finalizado" | "cancelado")
+                    setFormErrors(e => ({ ...e, estado: undefined }))
                   }}
                   className={cn(
                     "border rounded-lg px-4 py-3 text-left transition-all",
@@ -160,7 +226,7 @@ export function ActualizarEstadoClient({ solicitudId }: { solicitudId: string })
               )
             })}
           </div>
-          {errors.estado && <p className="text-xs text-destructive">{errors.estado}</p>}
+          {formErrors.estado && <p className="text-xs text-destructive">{formErrors.estado}</p>}
         </section>
 
         <hr className="border-border" />
@@ -178,11 +244,11 @@ export function ActualizarEstadoClient({ solicitudId }: { solicitudId: string })
               value={nota}
               onChange={e => {
                 setNota(e.target.value)
-                setErrors(ev => ({ ...ev, nota: undefined }))
+                setFormErrors(ev => ({ ...ev, nota: undefined }))
               }}
-              className={cn("resize-none", errors.nota && "border-destructive")}
+              className={cn("resize-none", formErrors.nota && "border-destructive")}
             />
-            {errors.nota && <p className="text-xs text-destructive">{errors.nota}</p>}
+            {formErrors.nota && <p className="text-xs text-destructive">{formErrors.nota}</p>}
           </div>
         </section>
 

@@ -12,28 +12,66 @@ import {
   Delete02Icon,
   Alert01Icon,
   CheckmarkCircle01Icon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
-import { MANTENIMIENTO_MOCK } from "@/lib/mock/mantenimiento"
+import { obtenerMantenimiento, registrarCosto } from "@/lib/api/mantenimiento"
+import type { SolicitudMantenimiento } from "@/types/mantenimiento.types"
 
 interface ArchivoPreview {
   file: File
   url: string
 }
 
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function CostoSkeleton() {
+  return (
+    <div className="flex flex-col h-full overflow-y-auto animate-pulse">
+      <div className="border-b px-6 py-4 h-16 bg-muted/20" />
+      <div className="px-6 py-6 max-w-2xl mx-auto w-full space-y-6">
+        <div className="h-20 bg-muted/20 rounded-lg" />
+        <div className="h-12 bg-muted/20 rounded w-1/2" />
+        <div className="h-24 bg-muted/20 rounded" />
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Componente
+// ---------------------------------------------------------------------------
+
 export function RegistrarCostoClient({ solicitudId }: { solicitudId: string }) {
   const router = useRouter()
-  const solicitud = MANTENIMIENTO_MOCK[solicitudId] ?? MANTENIMIENTO_MOCK["5"]
 
-  const [costo, setCosto]         = React.useState("")
-  const [factura, setFactura]     = React.useState<ArchivoPreview | null>(null)
-  const [errorCosto, setErrorCosto] = React.useState<string>()
-  const [guardando, setGuardando] = React.useState(false)
+  const [solicitud,   setSolicitud]   = React.useState<SolicitudMantenimiento | null>(null)
+  const [isLoading,   setIsLoading]   = React.useState(true)
+  const [error,       setError]       = React.useState<string | null>(null)
+  const [retryKey,    setRetryKey]    = React.useState(0)
+
+  const [costo,       setCosto]       = React.useState("")
+  const [factura,     setFactura]     = React.useState<ArchivoPreview | null>(null)
+  const [errorCosto,  setErrorCosto]  = React.useState<string>()
+  const [guardando,   setGuardando]   = React.useState(false)
   const inputRef = React.useRef<HTMLInputElement>(null)
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    obtenerMantenimiento(solicitudId)
+      .then(res => { if (!cancelado) setSolicitud(res.data) })
+      .catch(() => { if (!cancelado) setError("No se pudo cargar la solicitud.") })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [solicitudId, retryKey])
 
   React.useEffect(() => {
     return () => { if (factura) URL.revokeObjectURL(factura.url) }
@@ -46,7 +84,7 @@ export function RegistrarCostoClient({ solicitudId }: { solicitudId: string }) {
     setFactura({ file, url: URL.createObjectURL(file) })
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const valor = parseFloat(costo)
     if (!costo || isNaN(valor) || valor <= 0) {
@@ -54,17 +92,38 @@ export function RegistrarCostoClient({ solicitudId }: { solicitudId: string }) {
       return
     }
     setGuardando(true)
-    // TODO: PATCH /mantenimiento/:id/costo con { costo: valor, factura }
-    setTimeout(() => {
-      setGuardando(false)
+    try {
+      await registrarCosto(solicitudId, valor, factura?.file)
       toast.success("Costo registrado correctamente")
       router.push(`/mantenimiento/${solicitudId}`)
-    }, 600)
+    } catch {
+      toast.error("No se pudo registrar el costo. Intenta de nuevo.")
+      setGuardando(false)
+    }
   }
 
   const costoFormateado = costo && !isNaN(parseFloat(costo))
     ? new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(parseFloat(costo))
     : null
+
+  if (isLoading) return <CostoSkeleton />
+
+  if (error || !solicitud) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+        <p className="text-sm">{error ?? "Solicitud no encontrada."}</p>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+            <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+            Reintentar
+          </Button>
+          <Link href={`/mantenimiento/${solicitudId}`}>
+            <Button variant="outline" size="sm">Volver</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">

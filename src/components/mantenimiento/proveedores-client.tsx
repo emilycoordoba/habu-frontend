@@ -12,6 +12,7 @@ import {
   UserIcon,
   TelephoneIcon,
   Wrench01Icon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -36,8 +37,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
-import { PROVEEDORES_OPCIONES } from "@/lib/mock/mantenimiento"
-import type { ProveedorOpcion } from "@/lib/mock/mantenimiento"
+import {
+  listarProveedores,
+  crearProveedor,
+  editarProveedor,
+  eliminarProveedor,
+} from "@/lib/api/mantenimiento"
+import type { ProveedorOpcion } from "@/types/mantenimiento.types"
 
 // ---------------------------------------------------------------------------
 // Estado del formulario
@@ -66,23 +72,58 @@ function validarForm(f: FormProveedor): Partial<Record<keyof FormProveedor, stri
 }
 
 // ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function ProveedoresSkeleton() {
+  return (
+    <div className="flex flex-col h-full overflow-y-auto animate-pulse">
+      <div className="border-b px-6 py-4 h-16 bg-muted/20" />
+      <div className="px-6 py-6 space-y-4 max-w-4xl mx-auto w-full">
+        <div className="h-9 bg-muted/20 rounded w-64" />
+        <div className="border rounded-lg overflow-hidden">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-14 bg-muted/20 border-b" />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Componente principal
 // ---------------------------------------------------------------------------
 
 export function ProveedoresClient() {
-  const [proveedores, setProveedores] = React.useState<ProveedorOpcion[]>(PROVEEDORES_OPCIONES)
-  const [busqueda, setBusqueda]       = React.useState("")
+  const [proveedores,    setProveedores]    = React.useState<ProveedorOpcion[]>([])
+  const [isLoading,      setIsLoading]      = React.useState(true)
+  const [error,          setError]          = React.useState<string | null>(null)
+  const [retryKey,       setRetryKey]       = React.useState(0)
+  const [busqueda,       setBusqueda]       = React.useState("")
 
   // Dialog add/edit
-  const [dialogAbierto, setDialogAbierto] = React.useState(false)
-  const [modo, setModo]                   = React.useState<"crear" | "editar">("crear")
-  const [editandoId, setEditandoId]       = React.useState<string | null>(null)
-  const [form, setForm]                   = React.useState<FormProveedor>(FORM_VACIO)
-  const [formErrors, setFormErrors]       = React.useState<Partial<Record<keyof FormProveedor, string>>>({})
-  const [guardando, setGuardando]         = React.useState(false)
+  const [dialogAbierto,  setDialogAbierto]  = React.useState(false)
+  const [modo,           setModo]           = React.useState<"crear" | "editar">("crear")
+  const [editandoId,     setEditandoId]     = React.useState<string | null>(null)
+  const [form,           setForm]           = React.useState<FormProveedor>(FORM_VACIO)
+  const [formErrors,     setFormErrors]     = React.useState<Partial<Record<keyof FormProveedor, string>>>({})
+  const [guardando,      setGuardando]      = React.useState(false)
 
   // AlertDialog eliminar
-  const [eliminarId, setEliminarId]       = React.useState<string | null>(null)
+  const [eliminarId,     setEliminarId]     = React.useState<string | null>(null)
+  const [eliminando,     setEliminando]     = React.useState(false)
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    listarProveedores()
+      .then(res => { if (!cancelado) setProveedores(res.data ?? []) })
+      .catch(() => { if (!cancelado) setError("No se pudieron cargar los proveedores.") })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [retryKey])
 
   const filtrados = proveedores.filter(p => {
     if (!busqueda) return true
@@ -111,8 +152,8 @@ export function ProveedoresClient() {
       nombre:       p.nombre,
       especialidad: p.especialidad,
       telefono:     p.telefono,
-      correo:       p.correo,
-      calificacion: p.calificacion !== null ? String(p.calificacion) : "",
+      correo:       p.correo ?? "",
+      calificacion: p.calificacion != null ? String(p.calificacion) : "",
     })
     setFormErrors({})
     setDialogAbierto(true)
@@ -120,45 +161,52 @@ export function ProveedoresClient() {
 
   // ── Guardar ───────────────────────────────────────────────────────────────
 
-  function handleGuardar() {
+  async function handleGuardar() {
     const errors = validarForm(form)
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return }
 
     setGuardando(true)
-    const calificacion = form.calificacion !== "" ? parseFloat(form.calificacion) : null
+    const body = {
+      nombre:       form.nombre.trim(),
+      especialidad: form.especialidad.trim(),
+      telefono:     form.telefono.trim(),
+      correo:       form.correo.trim() || undefined,
+      calificacion: form.calificacion !== "" ? parseFloat(form.calificacion) : undefined,
+    }
 
-    setTimeout(() => {
+    try {
       if (modo === "crear") {
-        const nuevo: ProveedorOpcion = {
-          id:           `p${Date.now()}`,
-          nombre:       form.nombre.trim(),
-          especialidad: form.especialidad.trim(),
-          telefono:     form.telefono.trim(),
-          correo:       form.correo.trim(),
-          calificacion,
-        }
-        setProveedores(prev => [...prev, nuevo])
+        await crearProveedor(body)
         toast.success("Proveedor creado correctamente")
-      } else {
-        setProveedores(prev => prev.map(p =>
-          p.id === editandoId
-            ? { ...p, nombre: form.nombre.trim(), especialidad: form.especialidad.trim(), telefono: form.telefono.trim(), correo: form.correo.trim(), calificacion }
-            : p
-        ))
+      } else if (editandoId) {
+        await editarProveedor(editandoId, body)
         toast.success("Proveedor actualizado correctamente")
       }
-      setGuardando(false)
       setDialogAbierto(false)
-    }, 400)
+      setRetryKey(k => k + 1)
+    } catch {
+      toast.error("No se pudo guardar el proveedor. Intenta de nuevo.")
+    } finally {
+      setGuardando(false)
+    }
   }
 
   // ── Eliminar ──────────────────────────────────────────────────────────────
 
-  function handleEliminar() {
+  async function handleEliminar() {
     if (!eliminarId) return
-    setProveedores(prev => prev.filter(p => p.id !== eliminarId))
-    toast.success("Proveedor eliminado")
-    setEliminarId(null)
+    setEliminando(true)
+    try {
+      await eliminarProveedor(eliminarId)
+      toast.success("Proveedor eliminado")
+      setEliminarId(null)
+      setRetryKey(k => k + 1)
+    } catch {
+      toast.error("No se pudo eliminar el proveedor. Puede tener solicitudes activas.")
+      setEliminarId(null)
+    } finally {
+      setEliminando(false)
+    }
   }
 
   // ── Helpers form ──────────────────────────────────────────────────────────
@@ -169,6 +217,20 @@ export function ProveedoresClient() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+
+  if (isLoading) return <ProveedoresSkeleton />
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+        <p className="text-sm">{error}</p>
+        <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+          <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+          Reintentar
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -248,7 +310,7 @@ export function ProveedoresClient() {
 
                     {/* Calificación */}
                     <td className="px-4 py-3 text-center">
-                      {p.calificacion !== null ? (
+                      {p.calificacion != null ? (
                         <CalificacionBadge valor={p.calificacion} />
                       ) : (
                         <span className="text-xs text-muted-foreground italic">Sin calificar</span>
@@ -373,8 +435,9 @@ export function ProveedoresClient() {
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleEliminar}
+              disabled={eliminando}
             >
-              Eliminar
+              {eliminando ? "Eliminando…" : "Eliminar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

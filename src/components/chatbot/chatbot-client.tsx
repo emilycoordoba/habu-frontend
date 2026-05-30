@@ -24,7 +24,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { enviarSolicitudChatbot } from "@/lib/api/chatbot"
-import { INMUEBLES_MOCK } from "@/lib/mock/inmuebles"
+import { listarInmuebles } from "@/lib/api/inmuebles"
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -75,22 +75,11 @@ interface FormDatos {
 }
 
 // ---------------------------------------------------------------------------
-// Datos de inmuebles para el chatbot
+// Helpers
 // ---------------------------------------------------------------------------
 
-const INMUEBLES_LISTA: InmuebleResumen[] = Object.values(INMUEBLES_MOCK).map(i => ({
-  id: i.id,
-  tipo: i.tipo,
-  direccion: i.direccion,
-  ubicacion: i.ubicacion,
-  precio: i.precio,
-  area: i.area,
-  modalidad: i.modalidad,
-  foto: i.fotos[0]?.url,
-}))
-
-function filtrarInmuebles(tipo: string, ciudad: string): InmuebleResumen[] {
-  return INMUEBLES_LISTA.filter(i => {
+function filtrarInmuebles(lista: InmuebleResumen[], tipo: string, ciudad: string): InmuebleResumen[] {
+  return lista.filter(i => {
     const coincideTipo = tipo === "todos" || tipo === "" || i.tipo === tipo
     const ciudadInm = i.ubicacion.split("—")[0].trim().toLowerCase()
     const coincideCiudad = ciudad === "todas" || ciudad === "" || ciudadInm.includes(ciudad.toLowerCase())
@@ -111,9 +100,28 @@ export function ChatbotClient() {
   const [ctx, setCtx] = React.useState<Contexto>({ tipoBuscado: "", ciudadBuscada: "", inmuebleId: "", inmuebleDireccion: "" })
   const [form, setForm] = React.useState<FormDatos>({ nombre: "", telefono: "", correo: "", mensaje: "", fecha: "", hora: "" })
   const [formErrors, setFormErrors] = React.useState<Partial<FormDatos>>({})
+  const [inmueblesList, setInmueblesList] = React.useState<InmuebleResumen[]>([])
   // Preserva fecha/hora de visita tras limpiar el form en submitFecha
   const visitaRef = React.useRef<{ fecha: string; hora: string }>({ fecha: "", hora: "" })
   const bottomRef = React.useRef<HTMLDivElement>(null)
+
+  // Carga inmuebles desde la API al montar — silencioso si falla
+  React.useEffect(() => {
+    listarInmuebles({ limit: 100 })
+      .then(res => setInmueblesList(
+        (res.data ?? []).map(i => ({
+          id: i.id,
+          tipo: i.tipo,
+          direccion: i.direccion,
+          ubicacion: i.ubicacion,
+          precio: i.precio,
+          area: i.area,
+          modalidad: i.modalidad,
+          foto: i.fotoPrincipal,
+        }))
+      ))
+      .catch(() => { /* chatbot funciona sin resultados de búsqueda si la API no está disponible */ })
+  }, [])
 
   // Auto-scroll
   React.useEffect(() => {
@@ -166,7 +174,7 @@ export function ChatbotClient() {
     // Tarjetas de inmueble: "interesa_[id]"
     if (valor.startsWith("interesa_")) {
       const id = valor.slice("interesa_".length)
-      const inm = INMUEBLES_LISTA.find(i => i.id === id)
+      const inm = inmueblesList.find(i => i.id === id)
       setCtx(c => ({ ...c, inmuebleId: id, inmuebleDireccion: inm?.direccion ?? "" }))
       responder(() => {
         addBot(`¡Excelente elección! ¿Qué deseas hacer con ${inm?.direccion ?? "este inmueble"}?`)
@@ -212,7 +220,7 @@ export function ChatbotClient() {
           ciudad_cali: "Cali", ciudad_todas: "todas",
         }
         const ciudad = ciudadMap[valor]
-        const results = filtrarInmuebles(ctx.tipoBuscado, ciudad)
+        const results = filtrarInmuebles(inmueblesList, ctx.tipoBuscado, ciudad)
         setCtx(c => ({ ...c, ciudadBuscada: ciudad }))
         responder(() => {
           if (results.length === 0) {

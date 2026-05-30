@@ -17,6 +17,7 @@ import {
   PencilEdit01Icon,
   UserAdd01Icon,
   DollarCircleIcon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -24,11 +25,15 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
-import { MANTENIMIENTO_MOCK } from "@/lib/mock/mantenimiento"
-import type { PrioridadMantenimiento, EstadoMantenimiento } from "@/types/mantenimiento.types"
+import { obtenerMantenimiento } from "@/lib/api/mantenimiento"
+import type {
+  SolicitudMantenimiento,
+  PrioridadMantenimiento,
+  EstadoMantenimiento,
+} from "@/types/mantenimiento.types"
 
 // ---------------------------------------------------------------------------
-// Config visual (igual que UI-M01 para consistencia)
+// Config visual
 // ---------------------------------------------------------------------------
 
 const ESTADO_CONFIG: Record<EstadoMantenimiento, { label: string; className: string; icon: IconSvgElement }> = {
@@ -45,14 +50,71 @@ const PRIORIDAD_CONFIG: Record<PrioridadMantenimiento, { label: string; classNam
 }
 
 // ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function DetalleSkeleton() {
+  return (
+    <div className="flex flex-col h-full animate-pulse">
+      <div className="border-b px-6 py-4 h-20 bg-muted/20" />
+      <div className="border-b px-6 h-12 bg-muted/10" />
+      <div className="px-6 py-6 max-w-3xl mx-auto w-full space-y-6">
+        <div className="h-6 bg-muted/20 rounded w-1/3" />
+        <div className="h-16 bg-muted/20 rounded" />
+        <div className="h-24 bg-muted/20 rounded" />
+        <div className="h-16 bg-muted/20 rounded" />
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Componente
 // ---------------------------------------------------------------------------
 
 export function DetalleMantenimientoClient({ solicitudId }: { solicitudId: string }) {
-  const solicitud = MANTENIMIENTO_MOCK[solicitudId] ?? MANTENIMIENTO_MOCK["1"]
-  const estadoCfg   = ESTADO_CONFIG[solicitud.estado]
-  const prioridadCfg = PRIORIDAD_CONFIG[solicitud.prioridad]
+  const [solicitud,    setSolicitud]    = React.useState<SolicitudMantenimiento | null>(null)
+  const [isLoading,    setIsLoading]    = React.useState(true)
+  const [error,        setError]        = React.useState<string | null>(null)
+  const [retryKey,     setRetryKey]     = React.useState(0)
   const [fotoAmpliada, setFotoAmpliada] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    obtenerMantenimiento(solicitudId)
+      .then(res => {
+        if (cancelado) return
+        setSolicitud(res.data)
+      })
+      .catch(() => { if (!cancelado) setError("No se pudo cargar la solicitud.") })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [solicitudId, retryKey])
+
+  if (isLoading) return <DetalleSkeleton />
+
+  if (error || !solicitud) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+        <HugeiconsIcon icon={Alert01Icon} strokeWidth={1.5} className="size-10 opacity-30" />
+        <p className="text-sm">{error ?? "Solicitud no encontrada."}</p>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+            <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+            Reintentar
+          </Button>
+          <Link href="/mantenimiento">
+            <Button variant="outline" size="sm">Volver</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const estadoCfg    = ESTADO_CONFIG[solicitud.estado]
+  const prioridadCfg = PRIORIDAD_CONFIG[solicitud.prioridad]
 
   return (
     <div className="flex flex-col h-full">
@@ -128,7 +190,6 @@ export function DetalleMantenimientoClient({ solicitudId }: { solicitudId: strin
         <TabsContent value="info" className="flex-1 overflow-y-auto mt-0">
           <div className="px-6 py-6 max-w-3xl mx-auto w-full space-y-6">
 
-            {/* Descripción */}
             <section>
               <SectionTitle>Descripción del problema</SectionTitle>
               <p className="text-sm leading-relaxed text-foreground">{solicitud.descripcion}</p>
@@ -136,31 +197,21 @@ export function DetalleMantenimientoClient({ solicitudId }: { solicitudId: strin
 
             <Separator />
 
-            {/* Inmueble */}
             <section>
               <SectionTitle>Inmueble</SectionTitle>
               <div className="space-y-2">
-                <InfoRow
-                  icon={Location01Icon}
-                  label="Dirección"
-                  value={solicitud.inmuebleDireccion}
-                />
-                <InfoRow
-                  icon={Location01Icon}
-                  label="Ubicación"
-                  value={solicitud.inmuebleUbicacion}
-                />
+                <InfoRow icon={Location01Icon} label="Dirección" value={solicitud.inmuebleDireccion} />
+                <InfoRow icon={Location01Icon} label="Ubicación" value={solicitud.inmuebleUbicacion} />
               </div>
             </section>
 
             <Separator />
 
-            {/* Proveedor */}
             <section>
               <SectionTitle>Proveedor asignado</SectionTitle>
               {solicitud.proveedorNombre ? (
                 <div className="space-y-2">
-                  <InfoRow icon={UserIcon} label="Proveedor"    value={solicitud.proveedorNombre} />
+                  <InfoRow icon={UserIcon}    label="Proveedor"    value={solicitud.proveedorNombre} />
                   {solicitud.proveedorEspecialidad && (
                     <InfoRow icon={Wrench01Icon} label="Especialidad" value={solicitud.proveedorEspecialidad} />
                   )}
@@ -175,7 +226,6 @@ export function DetalleMantenimientoClient({ solicitudId }: { solicitudId: strin
 
             <Separator />
 
-            {/* Costo */}
             {solicitud.estado === "finalizado" && (
               <>
                 <section>
@@ -195,7 +245,6 @@ export function DetalleMantenimientoClient({ solicitudId }: { solicitudId: strin
               </>
             )}
 
-            {/* Registro */}
             <section>
               <SectionTitle>Registro</SectionTitle>
               <div className="space-y-2">

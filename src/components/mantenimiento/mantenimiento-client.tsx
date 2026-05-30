@@ -16,6 +16,7 @@ import {
   Location01Icon,
   RepairIcon,
   UserIcon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -29,8 +30,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { MANTENIMIENTO_LIST } from "@/lib/mock/mantenimiento"
-import type { PrioridadMantenimiento, EstadoMantenimiento } from "@/types/mantenimiento.types"
+import { listarMantenimiento } from "@/lib/api/mantenimiento"
+import type { ResumenEstadosMantenimiento } from "@/lib/api/mantenimiento"
+import type {
+  SolicitudMantenimiento,
+  PrioridadMantenimiento,
+  EstadoMantenimiento,
+} from "@/types/mantenimiento.types"
 
 // ---------------------------------------------------------------------------
 // Config
@@ -53,16 +59,63 @@ const PRIORIDAD_CONFIG: Record<PrioridadMantenimiento, { label: string; classNam
   alta:  { label: "Alta",  className: "badge-red" },
 }
 
+const RESUMEN_DEFAULTS: ResumenEstadosMantenimiento = {
+  pendiente: 0, en_proceso: 0, finalizado: 0, cancelado: 0,
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function MantenimientoSkeleton() {
+  return (
+    <div className="flex flex-col h-full overflow-y-auto animate-pulse">
+      <div className="border-b px-6 py-4 h-16 bg-muted/20" />
+      <div className="px-6 py-6 space-y-6 max-w-6xl mx-auto w-full">
+        <div className="grid grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="border rounded-lg px-4 py-4 h-20 bg-muted/20" />
+          ))}
+        </div>
+        <div className="h-9 bg-muted/20 rounded w-1/2" />
+        <div className="border rounded-lg overflow-hidden">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-14 bg-muted/20 border-b" />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Componente
 // ---------------------------------------------------------------------------
 
 export function MantenimientoClient() {
-  const [busqueda,  setBusqueda]  = React.useState("")
-  const [estado,    setEstado]    = React.useState<EstadoMantenimiento | "todos">("todos")
-  const [prioridad, setPrioridad] = React.useState<PrioridadMantenimiento | "todos">("todos")
+  const [solicitudes,    setSolicitudes]    = React.useState<SolicitudMantenimiento[]>([])
+  const [resumen,        setResumen]        = React.useState<ResumenEstadosMantenimiento>(RESUMEN_DEFAULTS)
+  const [isLoading,      setIsLoading]      = React.useState(true)
+  const [error,          setError]          = React.useState<string | null>(null)
+  const [retryKey,       setRetryKey]       = React.useState(0)
+  const [busqueda,       setBusqueda]       = React.useState("")
+  const [estado,         setEstado]         = React.useState<EstadoMantenimiento | "todos">("todos")
+  const [prioridad,      setPrioridad]      = React.useState<PrioridadMantenimiento | "todos">("todos")
 
-  const solicitudes = MANTENIMIENTO_LIST
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    listarMantenimiento({ limit: 200 })
+      .then(res => {
+        if (cancelado) return
+        setSolicitudes(res.data ?? [])
+        setResumen(res.resumenEstados ?? RESUMEN_DEFAULTS)
+      })
+      .catch(() => { if (!cancelado) setError("No se pudieron cargar las solicitudes.") })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [retryKey])
 
   const filtradas = solicitudes.filter(s => {
     if (estado    !== "todos" && s.estado    !== estado)    return false
@@ -78,10 +131,20 @@ export function MantenimientoClient() {
     return true
   })
 
-  const totalPendientes  = solicitudes.filter(s => s.estado === "pendiente").length
-  const totalEnProceso   = solicitudes.filter(s => s.estado === "en_proceso").length
-  const totalFinalizadas = solicitudes.filter(s => s.estado === "finalizado").length
-  const totalCanceladas  = solicitudes.filter(s => s.estado === "cancelado").length
+  if (isLoading) return <MantenimientoSkeleton />
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+        <HugeiconsIcon icon={LicenseMaintenanceIcon} strokeWidth={1.5} className="size-10 opacity-30" />
+        <p className="text-sm">{error}</p>
+        <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+          <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+          Reintentar
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -112,10 +175,10 @@ export function MantenimientoClient() {
 
         {/* Cards de resumen */}
         <div className="grid grid-cols-4 gap-4">
-          <SummaryCard label="Pendientes"  value={totalPendientes}  className="alert-amber"  valueClassName="text-amber-700  dark:text-amber-300" />
-          <SummaryCard label="En proceso"  value={totalEnProceso}   className="alert-blue"   valueClassName="text-blue-700   dark:text-blue-300" />
-          <SummaryCard label="Finalizadas" value={totalFinalizadas} className="alert-green"  valueClassName="text-green-700  dark:text-green-300" />
-          <SummaryCard label="Canceladas"  value={totalCanceladas}  className="alert-gray"   valueClassName="text-gray-500   dark:text-gray-400" />
+          <SummaryCard label="Pendientes"  value={resumen.pendiente}  className="alert-amber"  valueClassName="text-amber-700  dark:text-amber-300" />
+          <SummaryCard label="En proceso"  value={resumen.en_proceso} className="alert-blue"   valueClassName="text-blue-700   dark:text-blue-300" />
+          <SummaryCard label="Finalizadas" value={resumen.finalizado} className="alert-green"  valueClassName="text-green-700  dark:text-green-300" />
+          <SummaryCard label="Canceladas"  value={resumen.cancelado}  className="alert-gray"   valueClassName="text-gray-500   dark:text-gray-400" />
         </div>
 
         {/* Filtros */}
@@ -182,7 +245,7 @@ export function MantenimientoClient() {
               </thead>
               <tbody className="divide-y">
                 {filtradas.map(s => {
-                  const estadoCfg   = ESTADO_CONFIG[s.estado]
+                  const estadoCfg    = ESTADO_CONFIG[s.estado]
                   const prioridadCfg = PRIORIDAD_CONFIG[s.prioridad]
                   const esAlta = s.prioridad === "alta" && s.estado === "pendiente"
 

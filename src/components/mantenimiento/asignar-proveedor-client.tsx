@@ -12,6 +12,7 @@ import {
   Alert01Icon,
   StarIcon,
   CheckmarkCircle01Icon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -20,9 +21,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { MANTENIMIENTO_MOCK, PROVEEDORES_OPCIONES } from "@/lib/mock/mantenimiento"
-import type { ProveedorOpcion } from "@/lib/mock/mantenimiento"
-import type { PrioridadMantenimiento } from "@/types/mantenimiento.types"
+import { obtenerMantenimiento, asignarProveedor, listarProveedores } from "@/lib/api/mantenimiento"
+import type { SolicitudMantenimiento, ProveedorOpcion, PrioridadMantenimiento } from "@/types/mantenimiento.types"
 
 const PRIORIDAD_CONFIG: Record<PrioridadMantenimiento, { label: string; className: string }> = {
   baja:  { label: "Baja",  className: "bg-gray-100 text-gray-500 border-gray-200" },
@@ -30,39 +30,109 @@ const PRIORIDAD_CONFIG: Record<PrioridadMantenimiento, { label: string; classNam
   alta:  { label: "Alta",  className: "bg-red-100 text-red-700 border-red-200" },
 }
 
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function AsignarSkeleton() {
+  return (
+    <div className="flex flex-col h-full overflow-y-auto animate-pulse">
+      <div className="border-b px-6 py-4 h-16 bg-muted/20" />
+      <div className="px-6 py-6 max-w-2xl mx-auto w-full space-y-6">
+        <div className="h-20 bg-muted/20 rounded-lg" />
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-16 bg-muted/20 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Componente
+// ---------------------------------------------------------------------------
+
 export function AsignarProveedorClient({ solicitudId }: { solicitudId: string }) {
   const router = useRouter()
-  const solicitud = MANTENIMIENTO_MOCK[solicitudId] ?? MANTENIMIENTO_MOCK["1"]
 
-  const [proveedorId, setProveedorId]   = React.useState("")
-  const [fechaVisita, setFechaVisita]   = React.useState("")
-  const [notas, setNotas]               = React.useState("")
-  const [errors, setErrors]             = React.useState<{ proveedor?: string; fecha?: string }>({})
-  const [guardando, setGuardando]       = React.useState(false)
+  const [solicitud,    setSolicitud]    = React.useState<SolicitudMantenimiento | null>(null)
+  const [proveedores,  setProveedores]  = React.useState<ProveedorOpcion[]>([])
+  const [isLoading,    setIsLoading]    = React.useState(true)
+  const [error,        setError]        = React.useState<string | null>(null)
+  const [retryKey,     setRetryKey]     = React.useState(0)
 
-  const prioridadCfg = PRIORIDAD_CONFIG[solicitud.prioridad]
+  const [proveedorId,  setProveedorId]  = React.useState("")
+  const [fechaVisita,  setFechaVisita]  = React.useState("")
+  const [notas,        setNotas]        = React.useState("")
+  const [formErrors,   setFormErrors]   = React.useState<{ proveedor?: string; fecha?: string }>({})
+  const [guardando,    setGuardando]    = React.useState(false)
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    Promise.all([
+      obtenerMantenimiento(solicitudId),
+      listarProveedores(),
+    ])
+      .then(([solRes, provRes]) => {
+        if (cancelado) return
+        setSolicitud(solRes.data)
+        setProveedores(provRes.data ?? [])
+      })
+      .catch(() => { if (!cancelado) setError("No se pudieron cargar los datos.") })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [solicitudId, retryKey])
 
   function validate() {
-    const e: typeof errors = {}
+    const e: typeof formErrors = {}
     if (!proveedorId) e.proveedor = "Selecciona un proveedor."
     if (!fechaVisita) e.fecha     = "Indica una fecha tentativa de visita."
-    setErrors(e)
+    setFormErrors(e)
     return Object.keys(e).length === 0
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
     setGuardando(true)
-    // TODO: PATCH /mantenimiento/:id/asignar con { proveedorId, fechaVisita, notas }
-    setTimeout(() => {
-      setGuardando(false)
+    try {
+      await asignarProveedor(solicitudId, {
+        proveedorId,
+        fechaVisita: fechaVisita || undefined,
+        notas: notas.trim() || undefined,
+      })
       toast.success("Proveedor asignado correctamente")
       router.push(`/mantenimiento/${solicitudId}`)
-    }, 600)
+    } catch {
+      toast.error("No se pudo asignar el proveedor. Intenta de nuevo.")
+      setGuardando(false)
+    }
   }
 
-  const proveedorSeleccionado = PROVEEDORES_OPCIONES.find(p => p.id === proveedorId)
+  if (isLoading) return <AsignarSkeleton />
+
+  if (error || !solicitud) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+        <p className="text-sm">{error ?? "Solicitud no encontrada."}</p>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+            <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+            Reintentar
+          </Button>
+          <Link href={`/mantenimiento/${solicitudId}`}>
+            <Button variant="outline" size="sm">Volver</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const prioridadCfg = PRIORIDAD_CONFIG[solicitud.prioridad]
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -104,19 +174,22 @@ export function AsignarProveedorClient({ solicitudId }: { solicitudId: string })
           <SectionTitle>Seleccionar proveedor</SectionTitle>
 
           <div className="space-y-2">
-            {PROVEEDORES_OPCIONES.map(p => (
+            {proveedores.map(p => (
               <ProveedorCard
                 key={p.id}
                 proveedor={p}
                 selected={proveedorId === p.id}
                 onSelect={() => {
                   setProveedorId(p.id)
-                  setErrors(e => ({ ...e, proveedor: undefined }))
+                  setFormErrors(e => ({ ...e, proveedor: undefined }))
                 }}
               />
             ))}
+            {proveedores.length === 0 && (
+              <p className="text-sm text-muted-foreground py-4 text-center">No hay proveedores disponibles.</p>
+            )}
           </div>
-          {errors.proveedor && <p className="text-xs text-destructive">{errors.proveedor}</p>}
+          {formErrors.proveedor && <p className="text-xs text-destructive">{formErrors.proveedor}</p>}
         </section>
 
         <hr className="border-border" />
@@ -133,12 +206,12 @@ export function AsignarProveedorClient({ solicitudId }: { solicitudId: string })
               value={fechaVisita}
               onChange={e => {
                 setFechaVisita(e.target.value)
-                setErrors(ev => ({ ...ev, fecha: undefined }))
+                setFormErrors(ev => ({ ...ev, fecha: undefined }))
               }}
               min={new Date().toISOString().split("T")[0]}
-              className={cn("h-9 w-48", errors.fecha && "border-destructive")}
+              className={cn("h-9 w-48", formErrors.fecha && "border-destructive")}
             />
-            {errors.fecha && <p className="text-xs text-destructive">{errors.fecha}</p>}
+            {formErrors.fecha && <p className="text-xs text-destructive">{formErrors.fecha}</p>}
           </div>
         </section>
 
@@ -174,7 +247,7 @@ export function AsignarProveedorClient({ solicitudId }: { solicitudId: string })
           <Link href={`/mantenimiento/${solicitudId}`}>
             <Button type="button" variant="outline">Cancelar</Button>
           </Link>
-          <Button type="submit" disabled={guardando || !proveedorSeleccionado}>
+          <Button type="submit" disabled={guardando || !proveedorId}>
             <HugeiconsIcon icon={UserAdd01Icon} strokeWidth={2} className="size-4" />
             {guardando ? "Asignando…" : "Asignar proveedor"}
           </Button>
@@ -212,7 +285,7 @@ function ProveedorCard({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">{proveedor.nombre}</p>
         <p className="text-xs text-muted-foreground mt-0.5">{proveedor.especialidad} · {proveedor.telefono}</p>
-        {proveedor.calificacion !== null && (
+        {proveedor.calificacion != null && (
           <div className="flex items-center gap-1 mt-1">
             <HugeiconsIcon icon={StarIcon} strokeWidth={2} className="size-3 text-amber-400" />
             <span className="text-xs text-muted-foreground">{proveedor.calificacion.toFixed(1)}</span>

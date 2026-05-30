@@ -29,7 +29,9 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
-import { INMUEBLES_OPCIONES } from "@/lib/mock/mantenimiento"
+import { listarInmuebles } from "@/lib/api/inmuebles"
+import { registrarMantenimiento } from "@/lib/api/mantenimiento"
+import type { InmuebleResumen } from "@/types/inmueble.types"
 import type { PrioridadMantenimiento } from "@/types/mantenimiento.types"
 
 // ---------------------------------------------------------------------------
@@ -60,12 +62,19 @@ const PRIORIDAD_INFO: Record<PrioridadMantenimiento, { label: string; desc: stri
 export function RegistrarSolicitudClient() {
   const router = useRouter()
 
-  const [form, setForm]           = React.useState<FormState>({ inmuebleId: "", descripcion: "", prioridad: "" })
-  const [archivos, setArchivos]   = React.useState<ArchivoPreview[]>([])
-  const [errors, setErrors]       = React.useState<Partial<Record<keyof FormState, string>>>({})
-  const [guardando, setGuardando] = React.useState(false)
-  const [comboOpen, setComboOpen] = React.useState(false)
+  const [form, setForm]               = React.useState<FormState>({ inmuebleId: "", descripcion: "", prioridad: "" })
+  const [archivos, setArchivos]       = React.useState<ArchivoPreview[]>([])
+  const [errors, setErrors]           = React.useState<Partial<Record<keyof FormState, string>>>({})
+  const [guardando, setGuardando]     = React.useState(false)
+  const [comboOpen, setComboOpen]     = React.useState(false)
+  const [inmuebles, setInmuebles]     = React.useState<InmuebleResumen[]>([])
   const inputRef = React.useRef<HTMLInputElement>(null)
+
+  React.useEffect(() => {
+    listarInmuebles({ limit: 100 })
+      .then(res => setInmuebles(res.data ?? []))
+      .catch(() => { /* selector vacío si falla — no es bloqueante */ })
+  }, [])
 
   React.useEffect(() => {
     return () => archivos.forEach(a => URL.revokeObjectURL(a.url))
@@ -78,9 +87,9 @@ export function RegistrarSolicitudClient() {
 
   function validate() {
     const e: typeof errors = {}
-    if (!form.inmuebleId)  e.inmuebleId  = "Selecciona un inmueble."
+    if (!form.inmuebleId)       e.inmuebleId  = "Selecciona un inmueble."
     if (!form.descripcion.trim()) e.descripcion = "Describe el problema."
-    if (!form.prioridad)   e.prioridad   = "Selecciona la prioridad."
+    if (!form.prioridad)        e.prioridad   = "Selecciona la prioridad."
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -101,19 +110,26 @@ export function RegistrarSolicitudClient() {
     })
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!validate()) return
+    if (!validate() || !form.prioridad) return
     setGuardando(true)
-    // TODO: POST /mantenimiento con form + archivos
-    setTimeout(() => {
-      setGuardando(false)
+    try {
+      await registrarMantenimiento(
+        form.inmuebleId,
+        form.descripcion,
+        form.prioridad,
+        archivos.map(a => a.file),
+      )
       toast.success("Solicitud registrada correctamente")
       router.push("/mantenimiento")
-    }, 600)
+    } catch {
+      toast.error("No se pudo registrar la solicitud. Intenta de nuevo.")
+      setGuardando(false)
+    }
   }
 
-  const inmueble = INMUEBLES_OPCIONES.find(i => i.id === form.inmuebleId)
+  const inmueble = inmuebles.find(i => i.id === form.inmuebleId)
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -161,7 +177,7 @@ export function RegistrarSolicitudClient() {
                   <CommandList>
                     <CommandEmpty>No se encontraron inmuebles.</CommandEmpty>
                     <CommandGroup>
-                      {INMUEBLES_OPCIONES.map(i => (
+                      {inmuebles.map(i => (
                         <CommandItem
                           key={i.id}
                           value={`${i.direccion} ${i.ubicacion}`}
