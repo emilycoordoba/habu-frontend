@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import { enviarSolicitudChatbot } from "@/lib/api/chatbot"
 import { INMUEBLES_MOCK } from "@/lib/mock/inmuebles"
 
 // ---------------------------------------------------------------------------
@@ -110,6 +111,8 @@ export function ChatbotClient() {
   const [ctx, setCtx] = React.useState<Contexto>({ tipoBuscado: "", ciudadBuscada: "", inmuebleId: "", inmuebleDireccion: "" })
   const [form, setForm] = React.useState<FormDatos>({ nombre: "", telefono: "", correo: "", mensaje: "", fecha: "", hora: "" })
   const [formErrors, setFormErrors] = React.useState<Partial<FormDatos>>({})
+  // Preserva fecha/hora de visita tras limpiar el form en submitFecha
+  const visitaRef = React.useRef<{ fecha: string; hora: string }>({ fecha: "", hora: "" })
   const bottomRef = React.useRef<HTMLDivElement>(null)
 
   // Auto-scroll
@@ -287,6 +290,8 @@ export function ChatbotClient() {
     if (!form.fecha) e.fecha = "Selecciona una fecha."
     if (!form.hora)  e.hora  = "Selecciona una hora."
     if (Object.keys(e).length > 0) { setFormErrors(e); return }
+    // Guarda antes de limpiar el form para usarlos al enviar la solicitud
+    visitaRef.current = { fecha: form.fecha, hora: form.hora }
     addUser(`Fecha: ${formatFechaLocal(form.fecha)} · ${form.hora}`)
     responder(() => { addBot("¡Perfecto! Ya casi terminamos. ¿Cómo podemos contactarte?"); setPaso("agendar_datos") })
     setForm(f => ({ ...f, fecha: "", hora: "" }))
@@ -316,6 +321,35 @@ export function ChatbotClient() {
       contacto_datos: "contacto_ok",
       asesor_datos:   "asesor_ok",
     }
+
+    const tipoMap: Record<typeof tipoPaso, "visita" | "contacto" | "asesor"> = {
+      agendar_datos:  "visita",
+      contacto_datos: "contacto",
+      asesor_datos:   "asesor",
+    }
+
+    // Captura historial y datos antes de limpiar el estado
+    const historialParaApi = mensajes
+      .filter(m => (m.tipo === "bot" || m.tipo === "usuario") && m.texto)
+      .map(m => ({ tipo: m.tipo as "bot" | "usuario", texto: m.texto!, timestamp: new Date().toISOString() }))
+
+    const body = {
+      tipo: tipoMap[tipoPaso],
+      nombre: form.nombre.trim(),
+      telefono: form.telefono.trim(),
+      correo: form.correo.trim() || undefined,
+      inmuebleInteres: ctx.inmuebleDireccion || undefined,
+      mensaje: tipoPaso === "contacto_datos" ? form.mensaje.trim() : undefined,
+      fechaVisita: tipoPaso === "agendar_datos" ? visitaRef.current.fecha || undefined : undefined,
+      horaVisita:  tipoPaso === "agendar_datos" ? visitaRef.current.hora  || undefined : undefined,
+      historial: historialParaApi,
+    }
+
+    // Envía al API en background — el usuario ve la confirmación sin esperar
+    enviarSolicitudChatbot(body).catch(() => {
+      // Silencioso: el flujo conversacional ya avanzó; log en consola para debugging
+      console.error("[chatbot] No se pudo registrar la solicitud en el servidor.")
+    })
 
     responder(() => {
       addBot(confirmaciones[tipoPaso])

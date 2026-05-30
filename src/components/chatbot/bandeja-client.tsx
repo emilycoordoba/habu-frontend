@@ -11,6 +11,7 @@ import {
   ArrowRight01Icon,
   TelephoneIcon,
   Mail01Icon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Input } from "@/components/ui/input"
@@ -24,9 +25,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { SOLICITUDES_CHATBOT_MOCK } from "@/lib/mock/chatbot"
+import { listarSolicitudesChatbot } from "@/lib/api/chatbot"
+import { listarUsuarios } from "@/lib/api/administracion"
 import { ESTADO_CONFIG } from "@/components/chatbot/chatbot-config"
-import { ASESORES_MOCK } from "@/lib/mock/usuarios"
 import type { SolicitudChatbot, EstadoSolicitud, TipoSolicitud } from "@/types/chatbot.types"
 
 const TIPO_CONFIG: Record<TipoSolicitud, { label: string }> = {
@@ -41,15 +42,58 @@ function formatFecha(iso: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function BandejaSkeleton() {
+  return (
+    <div className="flex flex-col h-full overflow-y-auto animate-pulse">
+      <div className="border-b px-6 py-4 h-16 bg-muted/20" />
+      <div className="px-6 py-6 max-w-5xl mx-auto w-full space-y-4">
+        <div className="h-10 bg-muted/30 rounded" />
+        <div className="border rounded-lg overflow-hidden divide-y">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-20 bg-muted/20" />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Componente principal
 // ---------------------------------------------------------------------------
 
 export function BandejaClient() {
-  const [solicitudes] = React.useState<SolicitudChatbot[]>(SOLICITUDES_CHATBOT_MOCK)
+  const [solicitudes, setSolicitudes] = React.useState<SolicitudChatbot[]>([])
+  const [asesores, setAsesores] = React.useState<{ id: string; nombre: string }[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+  const [retryKey, setRetryKey] = React.useState(0)
+
   const [busqueda, setBusqueda]         = React.useState("")
   const [filtroEstado, setFiltroEstado] = React.useState<"todos" | EstadoSolicitud>("todos")
   const [filtroTipo, setFiltroTipo]     = React.useState<"todos" | TipoSolicitud>("todos")
   const [filtroAsesor, setFiltroAsesor] = React.useState<string>("todos")
+
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    Promise.all([
+      listarSolicitudesChatbot({ limit: 200 }),
+      listarUsuarios({ rol: "asesor", estado: "activo", limit: 100 }),
+    ])
+      .then(([solRes, asesorRes]) => {
+        if (cancelado) return
+        setSolicitudes(solRes.data ?? [])
+        setAsesores((asesorRes.data ?? []).map(u => ({ id: u.id, nombre: u.nombre })))
+      })
+      .catch(() => { if (!cancelado) setError("No se pudo cargar la bandeja de solicitudes.") })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [retryKey])
 
   const filtradas = solicitudes.filter(s => {
     if (filtroEstado !== "todos" && s.estado !== filtroEstado) return false
@@ -61,7 +105,7 @@ export function BandejaClient() {
       return (
         s.nombre.toLowerCase().includes(q) ||
         s.telefono.includes(q) ||
-        s.correo.toLowerCase().includes(q) ||
+        (s.correo ?? "").toLowerCase().includes(q) ||
         (s.inmuebleInteres ?? "").toLowerCase().includes(q)
       )
     }
@@ -69,6 +113,20 @@ export function BandejaClient() {
   })
 
   const nuevas = solicitudes.filter(s => s.estado === "nueva").length
+
+  if (isLoading) return <BandejaSkeleton />
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4">
+        <p className="text-sm text-muted-foreground">{error}</p>
+        <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+          <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+          Reintentar
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -128,7 +186,7 @@ export function BandejaClient() {
               <SelectContent>
                 <SelectItem value="todos">Todos los asesores</SelectItem>
                 <SelectItem value="sin_asignar">Sin asignar</SelectItem>
-                {ASESORES_MOCK.map(a => (
+                {asesores.map(a => (
                   <SelectItem key={a.id} value={a.nombre}>{a.nombre}</SelectItem>
                 ))}
               </SelectContent>

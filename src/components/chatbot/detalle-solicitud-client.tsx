@@ -16,6 +16,7 @@ import {
   MessageMultiple01Icon,
   House01Icon,
   Tick01Icon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
@@ -31,10 +32,10 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
-import { SOLICITUDES_CHATBOT_MOCK } from "@/lib/mock/chatbot"
+import { obtenerSolicitudChatbot, asignarAsesorChatbot, marcarAtendidaChatbot } from "@/lib/api/chatbot"
+import { listarUsuarios } from "@/lib/api/administracion"
 import { ESTADO_CONFIG } from "@/components/chatbot/chatbot-config"
-import { ASESORES_MOCK } from "@/lib/mock/usuarios"
-import type { SolicitudChatbot, EstadoSolicitud } from "@/types/chatbot.types"
+import type { SolicitudChatbot } from "@/types/chatbot.types"
 
 const TIPO_LABEL: Record<SolicitudChatbot["tipo"], string> = {
   visita:   "Visita agendada",
@@ -51,46 +52,104 @@ function formatHora(iso: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function DetalleSkeleton() {
+  return (
+    <div className="flex flex-col h-full overflow-y-auto animate-pulse">
+      <div className="border-b px-6 py-4 h-16 bg-muted/20" />
+      <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto w-full">
+        <div className="space-y-4">
+          <div className="border rounded-lg h-48 bg-muted/20" />
+          <div className="border rounded-lg h-24 bg-muted/20" />
+        </div>
+        <div className="lg:col-span-2 border rounded-lg h-80 bg-muted/20" />
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Componente principal
 // ---------------------------------------------------------------------------
 
 export function DetalleSolicitudClient({ id }: { id: string }) {
   const router = useRouter()
-  const solicitudBase = SOLICITUDES_CHATBOT_MOCK.find(s => s.id === id)
 
-  const [solicitud, setSolicitud] = React.useState<SolicitudChatbot | undefined>(solicitudBase)
+  const [solicitud, setSolicitud] = React.useState<SolicitudChatbot | null>(null)
+  const [asesores, setAsesores] = React.useState<{ id: string; nombre: string; correo: string }[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+  const [retryKey, setRetryKey] = React.useState(0)
   const [guardando, setGuardando] = React.useState(false)
   const [asesorComboOpen, setAsesorComboOpen] = React.useState(false)
 
-  if (!solicitud) {
+  React.useEffect(() => {
+    let cancelado = false
+    setIsLoading(true)
+    setError(null)
+    Promise.all([
+      obtenerSolicitudChatbot(id),
+      listarUsuarios({ rol: "asesor", estado: "activo", limit: 100 }),
+    ])
+      .then(([solRes, asesorRes]) => {
+        if (cancelado) return
+        setSolicitud(solRes.data)
+        setAsesores((asesorRes.data ?? []).map(u => ({ id: u.id, nombre: u.nombre, correo: u.correo })))
+      })
+      .catch(() => { if (!cancelado) setError("No se pudo cargar la solicitud.") })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [id, retryKey])
+
+  async function handleAsignarAsesor(asesorNombre: string) {
+    if (!solicitud) return
+    setGuardando(true)
+    try {
+      const res = await asignarAsesorChatbot(solicitud.id, asesorNombre)
+      setSolicitud(s => s ? { ...s, asesorAsignado: res.data.asesorAsignado, estado: res.data.estado } : s)
+      toast.success(`Asesor ${asesorNombre} asignado`)
+    } catch {
+      toast.error("No se pudo asignar el asesor.")
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  async function handleMarcarAtendida() {
+    if (!solicitud) return
+    setGuardando(true)
+    try {
+      await marcarAtendidaChatbot(solicitud.id)
+      setSolicitud(s => s ? { ...s, estado: "atendida" } : s)
+      toast.success("Solicitud marcada como atendida")
+    } catch {
+      toast.error("No se pudo actualizar la solicitud.")
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  if (isLoading) return <DetalleSkeleton />
+
+  if (error || !solicitud) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
         <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={1.5} className="size-10 opacity-30" />
-        <p className="text-sm">Solicitud no encontrada.</p>
-        <Button variant="outline" size="sm" onClick={() => router.back()}>Volver</Button>
+        <p className="text-sm">{error ?? "Solicitud no encontrada."}</p>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setRetryKey(k => k + 1)} className="gap-2">
+            <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+            Reintentar
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => router.back()}>Volver</Button>
+        </div>
       </div>
     )
   }
 
   const estadoConf = ESTADO_CONFIG[solicitud.estado]
-
-  function handleAsignarAsesor(asesor: string) {
-    setGuardando(true)
-    setTimeout(() => {
-      setSolicitud(s => s ? { ...s, asesorAsignado: asesor, estado: s.estado === "nueva" ? "en_gestion" : s.estado } : s)
-      toast.success(`Asesor ${asesor} asignado`)
-      setGuardando(false)
-    }, 400)
-  }
-
-  function handleMarcarAtendida() {
-    setGuardando(true)
-    setTimeout(() => {
-      setSolicitud(s => s ? { ...s, estado: "atendida" } : s)
-      toast.success("Solicitud marcada como atendida")
-      setGuardando(false)
-    }, 400)
-  }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -181,7 +240,7 @@ export function DetalleSolicitudClient({ id }: { id: string }) {
                     <CommandList>
                       <CommandEmpty>No se encontraron asesores.</CommandEmpty>
                       <CommandGroup>
-                        {ASESORES_MOCK.map(asesor => (
+                        {asesores.map(asesor => (
                           <CommandItem
                             key={asesor.id}
                             value={asesor.nombre}
@@ -201,7 +260,7 @@ export function DetalleSolicitudClient({ id }: { id: string }) {
                             />
                             <div>
                               <div className="font-medium text-sm">{asesor.nombre}</div>
-                              <div className="text-xs text-muted-foreground">{asesor.email}</div>
+                              <div className="text-xs text-muted-foreground">{asesor.correo}</div>
                             </div>
                           </CommandItem>
                         ))}
@@ -223,26 +282,30 @@ export function DetalleSolicitudClient({ id }: { id: string }) {
             <span className="text-xs text-muted-foreground ml-auto">{solicitud.historial.length} mensajes</span>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[520px]">
-            {solicitud.historial.map((msg, i) => (
-              <div key={i} className={cn("flex gap-2", msg.tipo === "usuario" && "justify-end")}>
-                {msg.tipo === "bot" && (
-                  <div className="size-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="text-[10px] font-bold text-primary">H</span>
+            {solicitud.historial.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Sin historial de conversación.</p>
+            ) : (
+              solicitud.historial.map((msg, i) => (
+                <div key={i} className={cn("flex gap-2", msg.tipo === "usuario" && "justify-end")}>
+                  {msg.tipo === "bot" && (
+                    <div className="size-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-[10px] font-bold text-primary">H</span>
+                    </div>
+                  )}
+                  <div className={cn(
+                    "max-w-[75%] rounded-2xl px-3 py-2 text-sm",
+                    msg.tipo === "bot"
+                      ? "bg-muted text-foreground rounded-tl-sm"
+                      : "bg-primary text-primary-foreground rounded-tr-sm",
+                  )}>
+                    <p>{msg.texto}</p>
+                    <p className={cn("text-[10px] mt-1 opacity-70", msg.tipo === "usuario" && "text-right")}>
+                      {formatHora(msg.timestamp)}
+                    </p>
                   </div>
-                )}
-                <div className={cn(
-                  "max-w-[75%] rounded-2xl px-3 py-2 text-sm",
-                  msg.tipo === "bot"
-                    ? "bg-muted text-foreground rounded-tl-sm"
-                    : "bg-primary text-primary-foreground rounded-tr-sm",
-                )}>
-                  <p>{msg.texto}</p>
-                  <p className={cn("text-[10px] mt-1 opacity-70", msg.tipo === "usuario" && "text-right")}>
-                    {formatHora(msg.timestamp)}
-                  </p>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
