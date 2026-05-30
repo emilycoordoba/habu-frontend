@@ -1,120 +1,143 @@
 # TODO — Sistema de Gestión Inmobiliaria (Frontend)
 
-## Módulo Contratos — UI
-- [x] UI-C01 — Lista de contratos (vista general con filtros por estado, tipo y asesor)
-- [x] UI-C02 — Iniciar contrato (selección de inmueble, tipo y partes involucradas)
-- [x] UI-C03 — Formulario contrato de arriendo (canon, fechas, depósito, administración)
-- [x] UI-C04 — Formulario promesa de compraventa (precio, arras, forma de pago, fecha escrituración)
-- [x] UI-C05 — Gestión de documentos (lista de chequeo y carga de archivos)
-- [x] UI-C06 — Detalle de contrato (estado actual, partes, documentos y firmas)
-- [x] UI-C07 — Registrar escrituración (fecha, notaría, pagos pendientes, certificado de tradición)
-- [x] UI-C08 — Registrar terminación anticipada (causa, penalizaciones, fecha de entrega)
-- [x] UI-C09 — Gestionar vencimiento y renovación (alerta, decisión de renovar o finalizar)
+## Estado general
 
-### Pendientes de UI-C01 al conectar la API
+Todos los módulos de UI están completos y conectados a la capa de API REST. El backend aún no está desplegado.
+
+---
+
+## Módulo Contratos
+
+- [x] UI-C01 — Lista de contratos
+- [x] UI-C02 — Iniciar contrato
+- [x] UI-C03 — Formulario contrato de arriendo
+- [x] UI-C04 — Formulario promesa de compraventa
+- [x] UI-C05 — Gestión de documentos
+- [x] UI-C06 — Detalle de contrato
+- [x] UI-C07 — Registrar escrituración
+- [x] UI-C08 — Registrar terminación anticipada
+- [x] UI-C09 — Gestionar vencimiento y renovación
+
+### Pendiente al activar el backend
+- [ ] Paginación server-side en UI-C01 (pasar `page` / `pageSize` desde la URL, actualmente `limit: 200`)
+- [ ] Filtro "Asesor" dinámico desde la API (actualmente hardcoded)
 - [ ] Conectar filtros a `searchParams` de Next.js para que sean persistentes en URL
-- [ ] Conectar paginación a datos reales (pasar `page`, `pageSize`, `total` desde la API)
-- [ ] Reemplazar `CONTRATOS_MOCK` con hook `useContratos()`
-- [ ] Poblar filtro "Asesor" dinámicamente desde la API
 
-## Módulo Pagos y Mora — UI
-- [x] UI-P01 — Lista de cobros de un contrato (estado, fecha límite, valor)
-- [x] UI-P02 — Registrar pago (selección de cobro, valor, fecha y comprobante)
-- [x] UI-P03 — Estado de cuenta (historial cronológico de pagos, mora e intereses)
-- [x] UI-P04 — Generar reporte de ingresos (filtros por periodo, cliente o inmueble)
-- [x] UI-P05 — Vista de cobros en mora (listado con intereses acumulados)
+---
 
-## Módulo Inmuebles — UI
-- [x] UI-I01 — Lista de inmuebles (filtros por tipo, estado, modalidad; cards de resumen)
-- [x] UI-I02 — Registrar inmueble (página completa: datos + galería de fotos)
-- [x] UI-I03 — Detalle del inmueble (tabs: Info / Fotos / Historial de cambios)
-- [x] UI-I04 — Editar inmueble (misma página que UI-I02, modo edición)
+## Módulo Pagos y Mora
 
-## Módulo Administración — UI
-- [x] UI-A01 — Lista de usuarios (tabla con filtros, activar/desactivar, crear/editar via dialog)
+- [x] UI-P01 — Lista de cobros de un contrato
+- [x] UI-P02 — Registrar pago
+- [x] UI-P03 — Estado de cuenta
+- [x] UI-P04 — Generar reporte de ingresos
+- [x] UI-P05 — Vista de cobros en mora
+
+---
+
+## Módulo Inmuebles
+
+- [x] UI-I01 — Lista de inmuebles
+- [x] UI-I02 — Registrar inmueble
+- [x] UI-I03 — Detalle del inmueble
+- [x] UI-I04 — Editar inmueble
+
+### Pendiente al activar el backend
+- [ ] Paginación server-side en UI-I01 (actualmente `limit: 200`)
+
+---
+
+## Módulo Administración
+
+- [x] UI-A01 — Lista de usuarios
 - [x] UI-A02 — incluido en UI-A01 (dialog crear/editar usuario)
-- [x] UI-A03 — Roles y permisos (matriz de permisos por módulo, solo lectura)
-- [x] UI-A04 — Esquemas de comisión (CRUD + panel de asignación a asesores)
-- [x] UI-A05 — Documentos requeridos (tabla CRUD con toggle de obligatorio)
-- [x] UI-A06 — Parámetros del sistema (mora, alertas, comisiones por defecto)
-- [x] UI-A07 — Plantillas de documentos (editor TipTap + paleta de variables + preview)
+- [x] UI-A03 — Roles y permisos (solo lectura, hardcoded)
+- [x] UI-A04 — Esquemas de comisión
+- [x] UI-A05 — Documentos requeridos
+- [x] UI-A06 — Parámetros del sistema
+- [x] UI-A07 — Plantillas de documentos
 
-## Módulo Clientes — UI
-- [x] UI-CL01 — Lista de clientes (tabla con filtros por tipo y búsqueda por nombre/documento)
-- [x] UI-CL02 — Registrar / Editar cliente (datos personales, tipo, persona natural o jurídica)
-- [x] UI-CL03 — Detalle del cliente (tabs: datos, inmuebles asociados, contratos, historial de interacciones)
-- [x] UI-CL04 — Registrar visita (cliente, inmueble, fecha/hora, notas) — sheet lateral, tipos: visita/llamada/mensaje/nota
-  - [ ] Pendiente: campo `estado` (pendiente/confirmada/cancelada) para visitas — requiere decisión de diseño (¿se muestra en historial? ¿el asesor lo actualiza después?)
+---
 
-## Módulo Cuenta — UI
-- [x] UI-ACC01 — Mi cuenta (tabs: datos personales, seguridad, notificaciones) — accesible desde el avatar en el footer del sidebar
-  - [ ] Pendiente: flujo de asignación de asesor en contratos (disparará la notificación "Nuevo contrato asignado")
+## Módulo Clientes
 
-## Módulo Mantenimiento — UI
-- [x] UI-M01 — Lista de solicitudes de mantenimiento (tabla con filtros por estado, inmueble, tipo y prioridad)
-- [x] UI-M02 — Registrar solicitud (inmueble, tipo de problema, descripción, prioridad, solicitante)
-- [x] UI-M03 — Detalle de solicitud (estado actual, historial de cambios, proveedor asignado, fotos de evidencia)
-- [x] UI-M04 — Asignar proveedor (seleccionar proveedor del catálogo, fecha tentativa de visita, notas)
-- [x] UI-M05 — Actualizar estado / registrar avance (cambio de estado, nota de avance, foto de evidencia)
-- [x] UI-M06 — Cerrar solicitud (costo final, adjuntar factura opcional) — solo disponible cuando estado = finalizado
-- [x] UI-M07 — Gestión de proveedores (tabla CRUD: nombre, especialidad, contacto, calificación 1–5)
+- [x] UI-CL01 — Lista de clientes
+- [x] UI-CL02 — Registrar / Editar cliente
+- [x] UI-CL03 — Detalle del cliente
+- [x] UI-CL04 — Registrar visita (sheet lateral)
+  - [ ] Pendiente: campo `estado` (pendiente/confirmada/cancelada) — requiere decisión de diseño
 
-## Módulo Chatbot — UI
-- [x] UI-CH01 — Portal de chat (página pública — búsqueda de inmuebles, requisitos, agendar visita, dejar contacto, solicitar asesor humano)
-- [x] UI-CH02 — Bandeja de solicitudes entrantes (tabla para asesores: SolicitudInformacion con filtros por estado y fecha, asignar asesor)
-- [x] UI-CH03 — Detalle de solicitud (datos del prospecto, inmueble de interés, mensaje, historial de conversación, marcar como atendida)
+### Pendiente al activar el backend
+- [ ] Paginación server-side en UI-CL01 (actualmente `limit: 200`)
 
-## Módulos pendientes (UI)
-- [x] Pagos y Mora
-- [x] Inmuebles
-- [x] Mantenimiento
-- [x] Clientes
-- [x] Administración (UI-A01 a UI-A06 completos; UI-A07 prioridad baja)
-- [x] Login / Autenticación
-- [x] Chatbot
+---
 
-<!-- ## Infraestructura pendiente
-- [ ] Configurar `lib/api/axios.ts` con interceptores de JWT
-- [ ] Implementar `lib/hooks/use-contratos.ts` con React Query
-- [ ] Configurar `src/proxy.ts` con validación de JWT real
-- [ ] Variables de entorno (`NEXT_PUBLIC_API_URL`) -->
+## Módulo Cuenta
 
+- [x] UI-ACC01 — Mi cuenta (datos personales, seguridad, notificaciones)
+  - [ ] Pendiente: flujo de notificación "Nuevo contrato asignado" (requiere backend)
+
+---
+
+## Módulo Mantenimiento
+
+- [x] UI-M01 — Lista de solicitudes
+- [x] UI-M02 — Registrar solicitud
+- [x] UI-M03 — Detalle de solicitud
+- [x] UI-M04 — Asignar proveedor
+- [x] UI-M05 — Actualizar estado / registrar avance
+- [x] UI-M06 — Cerrar solicitud (costo + factura)
+- [x] UI-M07 — Gestión de proveedores (CRUD)
+
+---
+
+## Módulo Chatbot
+
+- [x] UI-CH01 — Portal de chat (público)
+- [x] UI-CH02 — Bandeja de solicitudes entrantes
+- [x] UI-CH03 — Detalle de solicitud
+
+---
+
+## Autenticación
+
+- [x] Login (POST /auth/login → setSession → redirect)
+- [x] Recuperar contraseña (POST /auth/recuperar)
+- [x] Restablecer contraseña (POST /auth/restablecer con `?token=`)
+- [x] Logout (clearSession + redirect)
+- [x] Interceptor 401 → clearSession + redirect /login
+- [ ] `src/proxy.ts` → middleware real de Next.js (requiere migrar token a cookie httpOnly)
+- [ ] Cierre automático de sesión por inactividad (RS-09)
+- [ ] Bloqueo temporal tras intentos fallidos (RS-06)
+
+---
+
+## Infraestructura pendiente
+
+- [ ] Variables de entorno de producción (`NEXT_PUBLIC_API_URL`)
+- [ ] Despliegue del backend Python
+- [ ] Middleware de rutas (`src/proxy.ts`) — protección server-side
+
+---
 
 ## Decisiones de diseño pendientes
-- [ ] **Generación de PDF de contratos**: definir estrategia para cuando se conecte la API. Opciones evaluadas en `docs/pdf-generacion-opciones.md`. Recomendación: generación server-side (Puppeteer o PDFLib) para garantizar PDFs idénticos independiente del browser. Alternativa frontend: `@react-pdf/renderer` si no hay backend disponible.
-- [ ] **Contratos firmados manualmente**: definir si el sistema debe soportar cargar un PDF de contrato firmado fuera de DocuSign (no está contemplado en la documentación actual). Implica cambios en el modelo y en UI-C05.
-- [x] **Pagos parciales**: no se soportan en esta versión. El cobro permanece en mora hasta recibir el monto completo. El asesor registra el pago solo cuando tiene el valor total.
-- [ ] **Usuario con roles Administrador + Asesor simultáneos**: el modelo lo permite (UsuarioRol es muchos-a-muchos). Definir si un administrador con rol asesor activo recibe comisiones por contratos gestionados (`AsesorComision`). Considerar si Administrador debe ser superconjunto explícito de Asesor o si la combinación debe restringirse.
 
-## Documentación pendiente (Google Docs)
+- [ ] **Generación de PDF de contratos**: ver `docs/pdf-generacion-opciones.md`. Recomendación: generación server-side (Puppeteer o PDFLib).
+- [ ] **Contratos firmados manualmente**: definir si el sistema debe soportar cargar un PDF de contrato firmado fuera de DocuSign.
+- [x] **Pagos parciales**: no se soportan. El cobro permanece en mora hasta recibir el monto completo.
+- [ ] **Usuario con roles Administrador + Asesor simultáneos**: definir si un administrador con rol asesor activo recibe comisiones.
+- [ ] **Estado de visitas en Clientes** (UI-CL04): ¿el asesor puede actualizar pendiente → confirmada/cancelada desde el historial?
 
-> El archivo `docs/Documento_Proyecto.md` local ya está actualizado. Estos cambios aún deben reflejarse en Google Docs.
+---
 
-### Modelo de datos
-- [ ] Agregar campo `tipo` (propietario / arrendatario / prospecto / **codeudor**) a `Cliente`
-- [ ] Agregar campo `codeudor_id` (FK → Cliente, nullable) a `ContratoArriendo`
-- [ ] Agregar entidad `TerminacionAnticipada`
-- [ ] Agregar campo `notas` (TEXT, opcional) a `Pago`
-- [ ] Agregar campo `modalidad` (arriendo / venta / ambos) a `Inmueble`
-- [ ] Agregar campos `incluye_administracion` y `comision_colocacion` a `ContratoArriendo`
-- [ ] Actualizar ENUM `Cobro.tipo` (comision_administracion, comision_colocacion, precio_venta)
-- [ ] Agregar campo `pagado_con_mora` (INT, nullable) a `Cobro`
-- [ ] Agregar campo `descripcion` (VARCHAR, nullable) a `FotografiaInmueble`
-- [ ] Agregar entidad `ParametroSistema` (mora, alertas)
-- [ ] Actualizar `EsquemaComision`: añadir `tipo`, `porcentaje_inmobiliaria`, `porcentaje_asesor`; eliminar `porcentaje`
+## Mejoras UI pendientes
 
-### Requisitos funcionales
-- [ ] Actualizar RF-08 (modelo de dos tasas en EsquemaComision)
-- [ ] Actualizar RF-12 (especificar parámetros concretos de ParametroSistema)
-- [ ] Actualizar RF-13 para incluir `modalidad` en el registro de inmuebles
-- [ ] Agregar RF nuevo: cobro de comisión de colocación al activar arriendo sin administración
+- [ ] Animaciones y transiciones entre páginas
+- [ ] Full-page sheet — actualmente no funciona correctamente
+- [ ] Mejorar layout del PDF de reportes de ingresos
 
-### Casos de uso
-- [ ] Actualizar CU_05: flujo con tipo + dos porcentajes + simulador
-- [ ] Actualizar CU_06: flujo correcto (seleccionar esquema primero, luego asignar asesores)
+---
 
-## TODO propio
-- [ ] full page sheet no funciona
-- animaciones, transiciones
-- mejorar pdf reportes de ingresos
-- 
+## Documentación pendiente (Google Docs / Documento_Proyecto.md)
+
+Ver respuesta del asistente para el detalle de qué actualizar en `docs/Documento_Proyecto.md`.

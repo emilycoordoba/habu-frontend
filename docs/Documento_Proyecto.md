@@ -272,10 +272,12 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 
 **6.1. Firmas de Aprobación**
 
-|  Nombre Cargo Firma Emily Perea Córdoba Desarrollo Frontend Juan Jose Bautista Muñoz Product Owner Daniel Alejandro Moreno Herrera Scrum Master Isabela Villada Osorio Desarrollo Backend  |  |  |  |
-| ----- | :---- | :---- | :---- |
-|  |  |  |  |
-|  |  |  |  |
+| Nombre | Cargo | Firma |
+| :---- | :---- | :---- |
+| Emily Perea Córdoba | Desarrollo Frontend | |
+| Juan Jose Bautista Muñoz | Product Owner | |
+| Daniel Alejandro Moreno Herrera | Scrum Master | |
+| Isabela Villada Osorio | Desarrollo Backend | |
 
 **7\. ANEXOS**
 
@@ -481,8 +483,24 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | nombre | VARCHAR | Nombre del usuario |
 | correo | VARCHAR | Correo electrónico (único) |
 | contraseña | VARCHAR | Hash de la contraseña |
+| telefono | VARCHAR (nullable) | Teléfono del usuario |
+| ciudad | VARCHAR (nullable) | Ciudad del usuario |
 | estado | ENUM | activo / inactivo |
 | fecha\_creacion | DATE | Fecha de registro |
+
+> **Nota de diseño:** Los endpoints de sesión (`GET /usuarios/me`, `PATCH /usuarios/me`) devuelven el rol resuelto directamente como `rol: "administrador" | "asesor"` en la respuesta, aunque la relación en base de datos se maneja a través de `UsuarioRol`. El frontend no consulta `UsuarioRol` directamente.
+
+**NotificacionesUsuario**
+
+| Atributo | Tipo | Descripción |
+| :---- | :---- | :---- |
+| usuario\_id | INT (FK) | Referencia al usuario (PK — un registro por usuario) |
+| vencimiento\_contrato | BOOLEAN | Alerta cuando un contrato está próximo a vencer. Por defecto true. |
+| cobro\_en\_mora | BOOLEAN | Alerta cuando un cobro supera la fecha límite. Por defecto true. |
+| nuevo\_contrato | BOOLEAN | Aviso cuando se asigna un nuevo contrato al asesor. Por defecto false. |
+| pago\_registrado | BOOLEAN | Confirmación cuando se registra un pago en un contrato. Por defecto false. |
+
+> **Nota de diseño:** Si el usuario no tiene registro en esta tabla, el backend aplica los valores por defecto. El frontend gestiona estas preferencias vía `GET /usuarios/me/notificaciones` y `PATCH /usuarios/me/notificaciones`.
 
 **Rol**
 
@@ -628,13 +646,36 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | :---- | :---- | :---- |
 | id | INT | Identificador único |
 | inmueble\_id | INT (FK) | Referencia al inmueble |
-| descripcion | VARCHAR | Descripción del problema |
+| inmueble\_direccion | VARCHAR | Dirección del inmueble — denormalizada para evitar JOIN en el listado |
+| inmueble\_ubicacion | VARCHAR | Ciudad/zona del inmueble — denormalizada ("Bogotá — Chapinero") |
+| descripcion | VARCHAR | Descripción del problema (máx. 500 caracteres) |
 | prioridad | ENUM | baja / media / alta |
 | estado | ENUM | pendiente / en\_proceso / finalizado / cancelado |
-| proveedor\_id | INT (FK) | Técnico o proveedor asignado (nullable) |
-| costo | DECIMAL | Costo del mantenimiento (nullable) |
-| fecha\_registro | DATE | Fecha de registro |
-| registrado\_por\_id | INT (FK) | Usuario que registró |
+| proveedor\_id | INT (FK, nullable) | Proveedor asignado |
+| proveedor\_nombre | VARCHAR (nullable) | Nombre del proveedor — denormalizado al momento de asignación |
+| proveedor\_especialidad | VARCHAR (nullable) | Especialidad del proveedor — denormalizada al momento de asignación |
+| fecha\_visita | DATE (nullable) | Fecha tentativa de visita del proveedor, registrada al asignar |
+| costo | DECIMAL (nullable) | Costo del mantenimiento — inmutable una vez registrado |
+| factura\_url | VARCHAR (nullable) | URL del archivo de factura adjunto |
+| fecha\_registro | DATE | Fecha de registro de la solicitud |
+| registrado\_por | VARCHAR | Nombre del usuario que registró — extraído del JWT, no FK |
+
+> **Nota de diseño:** `proveedor_nombre` y `proveedor_especialidad` se copian como texto al momento de la asignación. Si el proveedor cambia de nombre posteriormente, las solicitudes históricas conservan el nombre original. El `proveedor_id` permite consultar el estado actual del proveedor si se necesita.
+
+> **Nota de diseño:** `costo` es inmutable una vez registrado. El backend debe rechazar intentos de modificación posteriores con `400`.
+
+**HistorialEstadoMantenimiento**
+
+| Atributo | Tipo | Descripción |
+| :---- | :---- | :---- |
+| id | INT | Identificador único |
+| solicitud\_id | INT (FK) | Referencia a la solicitud de mantenimiento |
+| estado | ENUM | pendiente / en\_proceso / finalizado / cancelado |
+| fecha | DATETIME | Fecha y hora de la transición |
+| nota | TEXT (nullable) | Observación del cambio de estado |
+| usuario | VARCHAR | Nombre del usuario que realizó el cambio — extraído del JWT |
+
+> **Nota de diseño:** El backend genera automáticamente un registro en esta tabla en cada transición de estado. El frontend no lo envía explícitamente — solo envía el nuevo estado y la nota opcional.
 
 **EvidenciaMantenimiento**
 
@@ -642,8 +683,11 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 | :---- | :---- | :---- |
 | id | INT | Identificador único |
 | solicitud\_id | INT (FK) | Referencia a la solicitud |
-| archivo | VARCHAR | Ruta del archivo |
+| nombre | VARCHAR | Nombre original del archivo |
+| archivo | VARCHAR | Ruta o URL del archivo en almacenamiento |
 | fecha\_carga | DATE | Fecha de carga |
+
+> **Nota de diseño:** Las evidencias se acumulan — cada upload en creación (§8) o cierre (§10) agrega archivos al arreglo existente sin reemplazarlos.
 
 **Proveedor**
 
@@ -658,26 +702,82 @@ Representación gráfica de las interacciones de los usuarios con el sistema y c
 
 **Modulo Chatbot**
 
-**SolicitudInformacion**
+**SolicitudChatbot**
 
 | Atributo | Tipo | Descripción |
 | :---- | :---- | :---- |
 | id | INT | Identificador único |
-| nombre\_contacto | VARCHAR | Nombre del interesado |
+| tipo | ENUM | visita / contacto / asesor — tipo de solicitud generada por el chatbot |
+| nombre | VARCHAR | Nombre del prospecto |
 | telefono | VARCHAR | Teléfono de contacto |
-| correo | VARCHAR | Correo de contacto |
-| inmueble\_id | INT (FK) | Inmueble de interés (nullable) |
-| mensaje | VARCHAR | Consulta realizada |
-| fecha | DATETIME | Fecha de la solicitud |
-| atendido\_por\_id | INT (FK) | Asesor asignado (nullable) |
+| correo | VARCHAR (nullable) | Correo de contacto |
+| inmueble\_interes | VARCHAR (nullable) | Dirección del inmueble de interés — texto libre, no FK |
+| mensaje | TEXT (nullable) | Mensaje o consulta (requerido si tipo = contacto) |
+| fecha\_visita | DATE (nullable) | Fecha de visita agendada (requerido si tipo = visita) |
+| hora\_visita | VARCHAR (nullable) | Hora de visita agendada (requerido si tipo = visita) |
+| estado | ENUM | nueva / en\_gestion / atendida |
+| asesor\_asignado | VARCHAR (nullable) | Nombre del asesor asignado — texto, no FK |
+| fecha | DATETIME | Fecha y hora de creación de la solicitud |
 
-**ConversacionChatbot**
+> **Nota de diseño:** `inmueble_interes` y `asesor_asignado` se almacenan como texto, no como FKs. El chatbot es un canal externo — el prospecto escribe el nombre del inmueble en lenguaje natural y no tiene acceso a IDs internos. `asesor_asignado` también se almacena como nombre porque la asignación se hace por nombre desde el combobox del backoffice.
+
+> **Nota de diseño:** Las solicitudes no se eliminan — se mantienen como registro histórico. El flujo termina en estado `atendida`.
+
+**MensajeChatHistorial**
 
 | Atributo | Tipo | Descripción |
 | :---- | :---- | :---- |
 | id | INT | Identificador único |
-| fecha\_inicio | DATETIME | Inicio de la conversación |
-| estado | ENUM | activa / transferida / cerrada |
-| asesor\_id | INT (FK) | Asesor al que se transfirió (nullable) |
-| solicitud\_id | INT (FK) | Solicitud generada si aplica (nullable) |
+| solicitud\_id | INT (FK) | Referencia a la solicitud |
+| tipo | ENUM | bot / usuario |
+| texto | TEXT | Contenido del mensaje |
+| timestamp | DATETIME | Fecha y hora del mensaje |
+
+> **Nota de diseño:** El historial contiene la conversación completa del widget chatbot. El backend lo almacena tal como llega en el POST — no lo procesa, solo lo persiste. Permite a los asesores ver el contexto completo de la conversación antes de atender al prospecto.
+
+---
+
+# Endpoints de Autenticación y Cuenta
+
+## Autenticación
+
+| Método | Ruta | Descripción |
+| :---- | :---- | :---- |
+| POST | `/auth/login` | **Pública** — autentica con correo y contraseña. Devuelve `{ token, usuario: { id, nombre, correo, rol } }`. |
+| POST | `/auth/recuperar` | **Pública** — envía un correo con enlace de recuperación. Responde siempre `200` para no revelar si el correo existe. |
+| POST | `/auth/restablecer` | **Pública** — establece la nueva contraseña usando el token del enlace (`?token=...`). |
+
+**Body de login:**
+```json
+{ "correo": "string", "password": "string" }
+```
+
+**Respuesta de login `200`:**
+```json
+{
+  "token": "string (JWT)",
+  "usuario": {
+    "id": "string",
+    "nombre": "string",
+    "correo": "string",
+    "rol": "administrador | asesor"
+  }
+}
+```
+
+**Errores de login:**
+- `401` — Credenciales incorrectas
+- `403` — Cuenta inactiva
+
+## Perfil del usuario autenticado
+
+Todos los endpoints de esta sección requieren JWT. El segmento `/me` hace referencia al usuario dueño del token — cada usuario solo puede ver y modificar su propia cuenta.
+
+| Método | Ruta | Descripción |
+| :---- | :---- | :---- |
+| GET | `/usuarios/me` | Devuelve el perfil completo del usuario: id, nombre, correo, rol, teléfono, ciudad. |
+| PATCH | `/usuarios/me` | Actualiza nombre, correo, teléfono y/o ciudad. Acepta campos parciales. |
+| PATCH | `/usuarios/me/password` | Cambia la contraseña. Body: `{ actual, nueva }`. Devuelve `400` si la contraseña actual es incorrecta. |
+| GET | `/usuarios/me/notificaciones` | Devuelve las preferencias de notificación del usuario (qué alertas tiene activadas). |
+| PATCH | `/usuarios/me/notificaciones` | Activa o desactiva una o más preferencias de notificación. Acepta campos parciales. |
 
