@@ -19,62 +19,93 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import {
+  obtenerMiPerfil,
+  actualizarMiPerfil,
+  cambiarMiPassword,
+  obtenerNotificaciones,
+  actualizarNotificaciones,
+} from "@/lib/api/cuenta"
+import type { MiPerfil, NotificacionesConfig } from "@/lib/api/cuenta"
 
 // ---------------------------------------------------------------------------
-// Mock — reemplazar con datos del usuario autenticado al conectar la API
+// Helpers
 // ---------------------------------------------------------------------------
-
-const USUARIO_MOCK = {
-  nombre: "Emily Perea",
-  email: "emily@habu.com.co",
-  telefono: "310 456 7890",
-  ciudad: "Bogotá",
-  rol: "Administrador" as const,
-}
 
 function getInitials(name: string) {
   return name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0].toUpperCase()).join("")
 }
 
+const ROL_LABEL: Record<string, string> = {
+  administrador: "Administrador",
+  asesor: "Asesor",
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function CuentaSkeleton() {
+  return (
+    <div className="flex flex-col h-full animate-pulse">
+      <div className="border-b px-6 h-28 bg-muted/20" />
+      <div className="px-6 py-6 max-w-2xl mx-auto w-full space-y-6">
+        <div className="flex items-center gap-4">
+          <div className="size-16 rounded-xl bg-muted/30" />
+          <div className="space-y-2">
+            <div className="h-4 w-36 bg-muted/30 rounded" />
+            <div className="h-3 w-24 bg-muted/20 rounded" />
+          </div>
+        </div>
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-9 bg-muted/20 rounded" />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Tab: Datos personales
 // ---------------------------------------------------------------------------
 
 interface DatosForm {
   nombre: string
-  email: string
+  correo: string
   telefono: string
   ciudad: string
 }
 
-interface SeguridadForm {
-  actual: string
-  nueva: string
-  confirmar: string
-}
-
-interface Notificaciones {
-  vencimientoContrato: boolean
-  cobroEnMora: boolean
-  nuevoContrato: boolean
-  pagoRegistrado: boolean
-}
-
-// ---------------------------------------------------------------------------
-
-function TabDatos() {
+function TabDatos({ perfil }: { perfil: MiPerfil }) {
   const [form, setForm] = React.useState<DatosForm>({
-    nombre: USUARIO_MOCK.nombre,
-    email: USUARIO_MOCK.email,
-    telefono: USUARIO_MOCK.telefono,
-    ciudad: USUARIO_MOCK.ciudad,
+    nombre:   perfil.nombre,
+    correo:   perfil.correo,
+    telefono: perfil.telefono ?? "",
+    ciudad:   perfil.ciudad   ?? "",
   })
-  const [guardado, setGuardado] = React.useState(false)
+  const [guardando, setGuardando] = React.useState(false)
+  const [guardado,  setGuardado]  = React.useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // TODO: llamar PATCH /usuarios/me con form
-    toast.success("Datos actualizados correctamente")
-    setGuardado(true)
-    setTimeout(() => setGuardado(false), 3000)
+    setGuardando(true)
+    try {
+      await actualizarMiPerfil({
+        nombre:   form.nombre.trim(),
+        correo:   form.correo.trim(),
+        telefono: form.telefono.trim() || undefined,
+        ciudad:   form.ciudad.trim()   || undefined,
+      })
+      toast.success("Datos actualizados correctamente")
+      setGuardado(true)
+      setTimeout(() => setGuardado(false), 3000)
+    } catch {
+      toast.error("No se pudieron guardar los cambios.")
+    } finally {
+      setGuardando(false)
+    }
   }
 
   return (
@@ -85,7 +116,7 @@ function TabDatos() {
         </Avatar>
         <div>
           <p className="font-medium">{form.nombre}</p>
-          <p className="text-sm text-muted-foreground">{USUARIO_MOCK.rol}</p>
+          <p className="text-sm text-muted-foreground">{ROL_LABEL[perfil.rol] ?? perfil.rol}</p>
         </div>
       </div>
 
@@ -101,12 +132,12 @@ function TabDatos() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Correo electrónico</Label>
+          <Label htmlFor="correo">Correo electrónico</Label>
           <Input
-            id="email"
+            id="correo"
             type="email"
-            value={form.email}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            value={form.correo}
+            onChange={(e) => setForm((f) => ({ ...f, correo: e.target.value }))}
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -130,10 +161,10 @@ function TabDatos() {
       </div>
 
       <div className="flex justify-end">
-        <Button type="submit" className="gap-2">
+        <Button type="submit" className="gap-2" disabled={guardando}>
           {guardado
             ? <><HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" /> Guardado</>
-            : <><HugeiconsIcon icon={FloppyDiskIcon} strokeWidth={2} className="size-4" /> Guardar cambios</>
+            : <><HugeiconsIcon icon={FloppyDiskIcon} strokeWidth={2} className="size-4" /> {guardando ? "Guardando…" : "Guardar cambios"}</>
           }
         </Button>
       </div>
@@ -141,6 +172,8 @@ function TabDatos() {
   )
 }
 
+// ---------------------------------------------------------------------------
+// Tab: Seguridad
 // ---------------------------------------------------------------------------
 
 function strengthScore(password: string): number {
@@ -160,29 +193,48 @@ const STRENGTH_CONFIG = [
   { label: "Muy fuerte", color: "bg-green-600" },
 ]
 
-function TabSeguridad() {
-  const [form, setForm] = React.useState<SeguridadForm>({ actual: "", nueva: "", confirmar: "" })
-  const [errors, setErrors] = React.useState<Partial<SeguridadForm>>({})
+interface SeguridadForm {
+  actual: string
+  nueva: string
+  confirmar: string
+}
 
-  const score = strengthScore(form.nueva)
+function TabSeguridad() {
+  const [form, setForm]     = React.useState<SeguridadForm>({ actual: "", nueva: "", confirmar: "" })
+  const [errors, setErrors] = React.useState<Partial<SeguridadForm>>({})
+  const [guardando, setGuardando] = React.useState(false)
+
+  const score    = strengthScore(form.nueva)
   const strength = form.nueva ? STRENGTH_CONFIG[score] : null
 
   function validate() {
     const e: Partial<SeguridadForm> = {}
-    if (!form.actual) e.actual = "Ingresa tu contraseña actual."
-    if (form.nueva.length < 8) e.nueva = "Mínimo 8 caracteres."
+    if (!form.actual)           e.actual    = "Ingresa tu contraseña actual."
+    if (form.nueva.length < 8)  e.nueva     = "Mínimo 8 caracteres."
     if (form.nueva !== form.confirmar) e.confirmar = "Las contraseñas no coinciden."
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
-    // TODO: llamar PATCH /usuarios/me/password
-    toast.success("Contraseña actualizada correctamente")
-    setForm({ actual: "", nueva: "", confirmar: "" })
-    setErrors({})
+    setGuardando(true)
+    try {
+      await cambiarMiPassword({ actual: form.actual, nueva: form.nueva })
+      toast.success("Contraseña actualizada correctamente")
+      setForm({ actual: "", nueva: "", confirmar: "" })
+      setErrors({})
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ""
+      if (msg.toLowerCase().includes("actual") || msg.toLowerCase().includes("incorrecta")) {
+        setErrors(e => ({ ...e, actual: "Contraseña actual incorrecta." }))
+      } else {
+        toast.error("No se pudo actualizar la contraseña.")
+      }
+    } finally {
+      setGuardando(false)
+    }
   }
 
   return (
@@ -239,9 +291,9 @@ function TabSeguridad() {
       </div>
 
       <div className="flex justify-end">
-        <Button type="submit">
+        <Button type="submit" disabled={guardando}>
           <HugeiconsIcon icon={LockPasswordIcon} strokeWidth={2} className="size-4" />
-          Actualizar contraseña
+          {guardando ? "Actualizando…" : "Actualizar contraseña"}
         </Button>
       </div>
     </form>
@@ -249,6 +301,15 @@ function TabSeguridad() {
 }
 
 // ---------------------------------------------------------------------------
+// Tab: Notificaciones
+// ---------------------------------------------------------------------------
+
+const NOTIF_DEFAULTS: NotificacionesConfig = {
+  vencimientoContrato: true,
+  cobroEnMora: true,
+  nuevoContrato: false,
+  pagoRegistrado: false,
+}
 
 function FilaNotificacion({
   label,
@@ -272,17 +333,19 @@ function FilaNotificacion({
   )
 }
 
-function TabNotificaciones() {
-  const [notifs, setNotifs] = React.useState<Notificaciones>({
-    vencimientoContrato: true,
-    cobroEnMora: true,
-    nuevoContrato: false,
-    pagoRegistrado: false,
-  })
+function TabNotificaciones({ inicial }: { inicial: NotificacionesConfig }) {
+  const [notifs, setNotifs] = React.useState<NotificacionesConfig>(inicial)
 
-  function toggle(key: keyof Notificaciones) {
-    setNotifs((n) => ({ ...n, [key]: !n[key] }))
-    toast.success("Preferencia actualizada")
+  async function toggle(key: keyof NotificacionesConfig) {
+    const nuevoValor = !notifs[key]
+    setNotifs(n => ({ ...n, [key]: nuevoValor }))
+    try {
+      await actualizarNotificaciones({ [key]: nuevoValor })
+      toast.success("Preferencia actualizada")
+    } catch {
+      setNotifs(n => ({ ...n, [key]: !nuevoValor }))
+      toast.error("No se pudo guardar la preferencia.")
+    }
   }
 
   return (
@@ -323,8 +386,35 @@ function TabNotificaciones() {
 }
 
 // ---------------------------------------------------------------------------
+// Componente raíz
+// ---------------------------------------------------------------------------
 
 export function MiCuentaClient() {
+  const [perfil,   setPerfil]   = React.useState<MiPerfil | null>(null)
+  const [notifs,   setNotifs]   = React.useState<NotificacionesConfig>(NOTIF_DEFAULTS)
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    let cancelado = false
+    Promise.all([obtenerMiPerfil(), obtenerNotificaciones()])
+      .then(([perfilRes, notifsRes]) => {
+        if (cancelado) return
+        setPerfil(perfilRes.data)
+        setNotifs(notifsRes.data ?? NOTIF_DEFAULTS)
+      })
+      .catch(() => {
+        // Sin API todavía: mostramos la UI con campos vacíos — no bloquea
+      })
+      .finally(() => { if (!cancelado) setIsLoading(false) })
+    return () => { cancelado = true }
+  }, [])
+
+  if (isLoading) return <CuentaSkeleton />
+
+  const perfilParaTabs: MiPerfil = perfil ?? {
+    id: "", nombre: "", correo: "", rol: "asesor",
+  }
+
   return (
     <div className="flex flex-col h-full">
       <Tabs defaultValue="datos" className="flex-1 flex flex-col min-h-0">
@@ -336,9 +426,9 @@ export function MiCuentaClient() {
           <div className="max-w-2xl mx-auto">
             <TabsList className="h-auto bg-transparent p-0 gap-0 rounded-none">
               {[
-                { value: "datos", label: "Datos personales", icon: UserCircle02Icon },
-                { value: "seguridad", label: "Seguridad", icon: LockPasswordIcon },
-                { value: "notificaciones", label: "Notificaciones", icon: Notification03Icon },
+                { value: "datos",          label: "Datos personales", icon: UserCircle02Icon },
+                { value: "seguridad",      label: "Seguridad",        icon: LockPasswordIcon },
+                // { value: "notificaciones", label: "Notificaciones",   icon: Notification03Icon },
               ].map((tab) => (
                 <TabsTrigger
                   key={tab.value}
@@ -356,14 +446,14 @@ export function MiCuentaClient() {
         <div className="flex-1 overflow-y-auto px-6 py-6">
           <div className="max-w-2xl mx-auto">
             <TabsContent value="datos" className="mt-0">
-              <TabDatos />
+              <TabDatos perfil={perfilParaTabs} />
             </TabsContent>
             <TabsContent value="seguridad" className="mt-0">
               <TabSeguridad />
             </TabsContent>
-            <TabsContent value="notificaciones" className="mt-0">
-              <TabNotificaciones />
-            </TabsContent>
+            {/* <TabsContent value="notificaciones" className="mt-0">
+              <TabNotificaciones inicial={notifs} />
+            </TabsContent> */}
           </div>
         </div>
       </Tabs>

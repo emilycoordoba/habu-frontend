@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   EyeIcon,
@@ -15,8 +16,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { HabuLogoHouse } from "@/components/habu-logo"
 import { cn } from "@/lib/utils"
+import { restablecerPassword } from "@/lib/api/auth"
 
-type Estado = "idle" | "loading" | "guardado"
+type Estado = "idle" | "loading" | "guardado" | "token_invalido"
 
 interface Regla {
   label: string
@@ -30,21 +32,28 @@ const REGLAS: Regla[] = [
 ]
 
 export function RestablecerPasswordForm() {
-  const [password, setPassword] = React.useState("")
+  const searchParams = useSearchParams()
+  const token = searchParams.get("token") ?? ""
+
+  const [password,  setPassword]  = React.useState("")
   const [confirmar, setConfirmar] = React.useState("")
-  const [mostrar, setMostrar] = React.useState(false)
-  const [estado, setEstado] = React.useState<Estado>("idle")
+  const [mostrar,   setMostrar]   = React.useState(false)
+  const [estado,    setEstado]    = React.useState<Estado>("idle")
 
-  const reglasOk = REGLAS.every(r => r.cumple(password))
-  const coinciden = password === confirmar && confirmar.length > 0
-  const puedeEnviar = reglasOk && coinciden
+  const reglasOk   = REGLAS.every(r => r.cumple(password))
+  const coinciden  = password === confirmar && confirmar.length > 0
+  const puedeEnviar = reglasOk && coinciden && !!token
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!puedeEnviar) return
     setEstado("loading")
-    // TODO: conectar con endpoint de restablecimiento usando el token de la URL
-    setTimeout(() => setEstado("guardado"), 1000)
+    try {
+      await restablecerPassword(token, password)
+      setEstado("guardado")
+    } catch {
+      setEstado("token_invalido")
+    }
   }
 
   return (
@@ -75,8 +84,26 @@ export function RestablecerPasswordForm() {
             <Button className="mt-2">Ir al inicio de sesión</Button>
           </Link>
         </div>
+      ) : estado === "token_invalido" ? (
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div>
+            <p className="text-sm font-medium text-destructive">Enlace inválido o expirado</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Solicita un nuevo enlace de recuperación.
+            </p>
+          </div>
+          <Link href="/recuperar-password">
+            <Button variant="outline">Solicitar nuevo enlace</Button>
+          </Link>
+        </div>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {!token && (
+            <p className="text-sm text-destructive text-center">
+              Enlace de recuperación no válido. Verifica el enlace del correo.
+            </p>
+          )}
+
           {/* Nueva contraseña */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="password">Nueva contraseña</Label>
@@ -88,7 +115,7 @@ export function RestablecerPasswordForm() {
                 placeholder="••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                disabled={estado === "loading"}
+                disabled={estado === "loading" || !token}
                 className="pr-10"
                 required
               />
@@ -137,7 +164,7 @@ export function RestablecerPasswordForm() {
               placeholder="••••••••"
               value={confirmar}
               onChange={e => setConfirmar(e.target.value)}
-              disabled={estado === "loading"}
+              disabled={estado === "loading" || !token}
               className={cn(
                 confirmar.length > 0 && !coinciden && "border-destructive focus-visible:ring-destructive"
               )}

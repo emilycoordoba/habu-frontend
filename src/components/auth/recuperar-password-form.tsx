@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { HabuLogoHouse } from "@/components/habu-logo"
+import { recuperarPassword } from "@/lib/api/auth"
 
 type Estado = "idle" | "loading" | "enviado"
 
@@ -16,11 +17,16 @@ export function RecuperarPasswordForm() {
   const [correo, setCorreo] = React.useState("")
   const [estado, setEstado] = React.useState<Estado>("idle")
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setEstado("loading")
-    // TODO: conectar con endpoint de recuperación
-    setTimeout(() => setEstado("enviado"), 1000)
+    try {
+      await recuperarPassword(correo)
+    } catch {
+      // Siempre mostramos "enviado" para no revelar si el correo existe
+    } finally {
+      setEstado("enviado")
+    }
   }
 
   return (

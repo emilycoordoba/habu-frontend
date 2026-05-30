@@ -20,9 +20,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { MoreVerticalCircle01Icon, UserCircle02Icon, Logout01Icon, Sun01Icon, Moon01Icon } from "@hugeicons/core-free-icons"
+import { clearSession } from "@/lib/session"
 
 function getInitials(name: string) {
   return name
@@ -42,9 +44,15 @@ export function NavUser({
     avatar: string
   }
 }) {
+  const router = useRouter()
   const { isMobile } = useSidebar()
   const { resolvedTheme, setTheme } = useTheme()
   const initials = getInitials(user.name)
+
+  function handleLogout() {
+    clearSession()
+    router.push("/login")
+  }
 
   return (
     <SidebarMenu>
@@ -96,11 +104,9 @@ export function NavUser({
               {resolvedTheme === "dark" ? "Modo claro" : "Modo oscuro"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/login">
-                <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
-                Cerrar sesión
-              </Link>
+            <DropdownMenuItem onClick={handleLogout}>
+              <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
+              Cerrar sesión
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { EyeIcon, ViewOffSlashIcon, AlertCircleIcon } from "@hugeicons/core-free-icons"
@@ -10,6 +11,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { HabuLogoHouse } from "@/components/habu-logo"
 import { cn } from "@/lib/utils"
+import { login } from "@/lib/api/auth"
+import { setSession } from "@/lib/session"
 
 type Estado = "idle" | "loading" | "error_credenciales" | "error_inactivo"
 
@@ -19,16 +22,27 @@ const MENSAJES: Record<string, string> = {
 }
 
 export function LoginForm() {
+  const router = useRouter()
   const [correo, setCorreo] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [mostrarPassword, setMostrarPassword] = React.useState(false)
   const [estado, setEstado] = React.useState<Estado>("idle")
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setEstado("loading")
-    // TODO: conectar con API de autenticación
-    setTimeout(() => setEstado("error_credenciales"), 1200)
+    try {
+      const res = await login({ correo, password })
+      setSession(res.token, res.usuario)
+      router.push("/inmuebles")
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ""
+      if (msg.toLowerCase().includes("inactiv") || msg.toLowerCase().includes("desactiv")) {
+        setEstado("error_inactivo")
+      } else {
+        setEstado("error_credenciales")
+      }
+    }
   }
 
   const error = estado === "error_credenciales" || estado === "error_inactivo"
