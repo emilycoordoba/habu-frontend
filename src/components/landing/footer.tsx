@@ -25,10 +25,8 @@ export function LandingFooter() {
           {/* Marca */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2.5 font-semibold text-foreground mb-3">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
-                <HabuLogoHouse className="size-4 text-primary-foreground" />
-              </div>
-              <span className="text-lg tracking-tight">Habu</span>
+              <HabuLogoHouse className="size-6 text-primary" />
+              <span className="text-xl tracking-tight">Habu</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
               Sistema de gestión inmobiliaria diseñado para simplificar contratos,

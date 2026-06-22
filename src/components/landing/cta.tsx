@@ -1,46 +1,34 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowRight01Icon, SparklesIcon } from "@hugeicons/core-free-icons"
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons"
 
 export function LandingCta() {
   return (
-    <section className="py-24 px-6">
-      <div className="mx-auto max-w-4xl">
-        <div className="relative overflow-hidden rounded-3xl bg-primary px-8 py-16 text-center">
-          {/* Decoración de fondo */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-          >
-            <div className="absolute -top-32 -right-32 size-64 rounded-full bg-white/5 blur-2xl" />
-            <div className="absolute -bottom-20 -left-20 size-48 rounded-full bg-white/5 blur-2xl" />
+    <section className="px-6 py-24">
+      <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-neutral-900 px-8 py-14 shadow-2xl sm:px-14">
+        <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:items-center">
+          {/* Mensaje */}
+          <div>
+            <span className="flex items-center gap-1.5 text-xs font-medium text-white/70">
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-green-400" />
+              </span>
+              Listo para usar
+            </span>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Deja de perseguir pagos en hojas de cálculo.
+            </h2>
+            <p className="mt-4 max-w-lg text-lg leading-relaxed text-white/60">
+              Entra al sistema y empieza a gestionar contratos, cobros e
+              inmuebles desde una sola vista — con todo conectado.
+            </p>
           </div>
 
-          {/* Ícono decorativo */}
-          <div className="relative flex justify-center mb-5">
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-white/10">
-              <HugeiconsIcon icon={SparklesIcon} size={26} strokeWidth={1.5} className="text-white" />
-            </div>
-          </div>
-
-          {/* Texto */}
-          <h2 className="relative text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
-            ¿Listo para ordenar tu inmobiliaria?
-          </h2>
-          <p className="relative mt-4 text-lg text-white/70 max-w-xl mx-auto">
-            Accede al sistema y empieza a gestionar contratos, pagos e inmuebles
-            desde el primer día.
-          </p>
-
-          {/* Botón */}
-          <div className="relative mt-8">
-            <Button
-              asChild
-              size="lg"
-              variant="secondary"
-              className="px-8 gap-2 font-semibold"
-            >
+          {/* Acción */}
+          <div className="flex lg:justify-end">
+            <Button asChild size="lg" className="gap-2 px-7">
               <Link href="/login">
                 Acceder al sistema
                 <HugeiconsIcon icon={ArrowRight01Icon} size={16} strokeWidth={2} />
