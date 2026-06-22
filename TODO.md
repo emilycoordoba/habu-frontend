@@ -135,6 +135,8 @@ Todos los módulos de UI están completos y conectados a la capa de API REST. El
 - [ ] Animaciones y transiciones entre páginas
 - [ ] Full-page sheet — actualmente no funciona correctamente
 - [ ] Mejorar layout del PDF de reportes de ingresos
+- [ ] **Bordes de tarjetas en modo oscuro** — revisar/corregir; se ven mal en dark (detectado al tomar screenshots para el portafolio, 2026-06-22)
+- [ ] **Chatbot — imágenes de fachada generadas por IA**: las fachadas que muestra el chatbot se ven "muy IA". Reemplazar por imágenes reales de inmuebles.
 
 ---
 
