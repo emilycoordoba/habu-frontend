@@ -4,7 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { EyeIcon, ViewOffSlashIcon, AlertCircleIcon } from "@hugeicons/core-free-icons"
+import { EyeIcon, ViewOffSlashIcon, AlertCircleIcon, InformationCircleIcon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +20,12 @@ const MENSAJES: Record<string, string> = {
   error_credenciales: "Correo o contraseña incorrectos.",
   error_inactivo: "Tu cuenta está desactivada. Contacta al administrador.",
 }
+
+/** Usuarios sembrados en el backend para probar la demo sin registrarse. */
+const USUARIOS_DEMO = [
+  { rol: "Administrador", correo: "admin@habu.com.co", password: "admin123" },
+  { rol: "Asesor", correo: "asesor@habu.com.co", password: "asesor123" },
+] as const
 
 export function LoginForm() {
   const router = useRouter()
@@ -43,6 +49,12 @@ export function LoginForm() {
         setEstado("error_credenciales")
       }
     }
+  }
+
+  function usarDemo(u: (typeof USUARIOS_DEMO)[number]) {
+    setCorreo(u.correo)
+    setPassword(u.password)
+    setEstado("idle")
   }
 
   const error = estado === "error_credenciales" || estado === "error_inactivo"
@@ -127,6 +139,37 @@ export function LoginForm() {
           {estado === "loading" ? "Ingresando…" : "Ingresar"}
         </Button>
       </form>
+
+      {/* Acceso de demostración — para reclutadores / evaluadores */}
+      <div className="mt-6 rounded-lg border border-dashed bg-muted/30 p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} className="size-4 text-muted-foreground" />
+          <p className="text-xs font-medium text-muted-foreground">
+            Acceso de demostración · toca un rol para autocompletar
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          {USUARIOS_DEMO.map(u => (
+            <button
+              key={u.correo}
+              type="button"
+              onClick={() => usarDemo(u)}
+              disabled={estado === "loading"}
+              className="group flex items-center justify-between gap-3 rounded-md border bg-background px-3 py-2 text-left transition-colors hover:border-primary/50 disabled:opacity-50"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{u.rol}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {u.correo} · {u.password}
+                </p>
+              </div>
+              <span className="shrink-0 text-xs text-muted-foreground transition-colors group-hover:text-primary">
+                Usar →
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

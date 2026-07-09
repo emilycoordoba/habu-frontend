@@ -1,58 +1,60 @@
-# Sistema de Gestión Inmobiliaria (Habu) — Frontend
+# Real Estate Management System (Habu) — Frontend
 
-Aplicación web para la gestión integral de una empresa inmobiliaria: inmuebles, clientes, contratos de arriendo y compraventa, pagos y mora, mantenimiento y un chatbot de captación. Construida con Next.js 16 App Router, conectada por API REST a un backend propio en Node/Express/TypeScript.
+Web application for managing a real estate company end to end: properties, clients, lease and sale contracts, payments and overdue tracking, maintenance, and a lead-capture chatbot. Built with the Next.js 16 App Router and connected over a REST API to a custom Node/Express/TypeScript backend.
 
-## Demo en vivo
+> The product UI is in Spanish on purpose — Habu models a Colombian real estate agency, so the domain language (prices in COP, terms like *canon*, *arriendo*, *escrituración*) is part of what makes it realistic. This README is in English for reviewers.
+
+## Live demo
 
 | | URL | |
 |---|---|---|
-| **App (Vercel)** | `<PENDIENTE: pegar URL de Vercel>` | Iniciar sesión con los usuarios de prueba de abajo |
-| **API (Render)** | https://habu-app-backend.onrender.com | Verificar en `/health` → `estado: ok` |
+| **App (Vercel)** | https://habu-app.vercel.app | Sign in with the test users below |
+| **API (Render)** | https://habu-app-backend.onrender.com | Check `/health` → `estado: ok` |
 
-**Usuarios de prueba:**
+**Test users:**
 
-| Rol | Correo | Contraseña |
+| Role | Email | Password |
 |---|---|---|
-| Administrador | `admin@habu.com.co` | `admin123` |
-| Asesor | `asesor@habu.com.co` | `asesor123` |
+| Administrator | `admin@habu.com.co` | `admin123` |
+| Advisor | `asesor@habu.com.co` | `asesor123` |
 
-> El backend corre en el plan Free de Render y "duerme" tras ~15 min de inactividad: la primera petición tras dormir tarda ~30–50 s. Si al entrar ves errores, abre primero `https://habu-app-backend.onrender.com/health` para despertarlo y recarga.
+> The backend runs on Render's free tier and sleeps after ~15 min of inactivity, so the first request after it sleeps takes ~30–50 s. If you see errors on load, open https://habu-app-backend.onrender.com/health first to wake it, then reload. The login screen also has a one-click "demo access" card that fills these credentials for you.
 
-## Stack tecnológico
+## Tech stack
 
-| Categoría | Tecnología |
+| Category | Technology |
 |---|---|
 | Framework | Next.js 16 (App Router, Turbopack) |
 | UI base | React 19 + TypeScript 5 |
-| Estilos | Tailwind CSS 4 |
-| Componentes | shadcn/ui + Radix UI |
-| Iconos | @hugeicons/react |
-| Tablas | @tanstack/react-table |
-| Gráficos | Recharts |
-| Editor de texto | TipTap 3 |
-| Mapas | React Leaflet |
-| Validación | Zod |
-| Notificaciones | Sonner |
-| Temas | next-themes |
+| Styling | Tailwind CSS 4 |
+| Components | shadcn/ui + Radix UI |
+| Icons | @hugeicons/react |
+| Tables | @tanstack/react-table |
+| Charts | Recharts |
+| Rich text editor | TipTap 3 |
+| Maps | React Leaflet |
+| Validation | Zod |
+| Notifications | Sonner |
+| Theming | next-themes |
 
-## Estructura del proyecto
+## Project structure
 
 ```
 src/
 ├── app/
-│   ├── (auth)/          # Rutas públicas: login, recuperar/restablecer contraseña
-│   └── (dashboard)/     # Rutas protegidas (sidebar + header)
-│       ├── administracion/   # Usuarios, roles, comisiones, documentos, parámetros, plantillas
-│       ├── chatbot/          # Bandeja de solicitudes y detalle
-│       ├── clientes/         # Lista, detalle, registro de clientes y visitas
-│       ├── contratos/        # Ciclo completo de contratos (arriendo y compraventa)
-│       ├── inmuebles/        # Registro y gestión de inmuebles
-│       ├── mantenimiento/    # Solicitudes, proveedores y seguimiento
-│       ├── mi-cuenta/        # Perfil, seguridad y notificaciones
-│       └── pagos/            # Cobros, mora, reportes de ingresos
+│   ├── (auth)/          # Public routes: login, password recovery/reset
+│   └── (dashboard)/     # Protected routes (sidebar + header)
+│       ├── administracion/   # Users, roles, commissions, documents, params, templates
+│       ├── chatbot/          # Incoming lead inbox and detail
+│       ├── clientes/         # Client list, detail, registration and visits
+│       ├── contratos/        # Full contract lifecycle (lease and sale)
+│       ├── inmuebles/        # Property registration and management
+│       ├── mantenimiento/    # Requests, providers and tracking
+│       ├── mi-cuenta/        # Profile, security and notifications
+│       └── pagos/            # Charges, overdue, income reports
 ├── components/
 │   ├── administracion/
-│   ├── auth/            # Login, recuperar y restablecer contraseña
+│   ├── auth/            # Login, password recovery and reset
 │   ├── chatbot/
 │   ├── clientes/
 │   ├── contratos/
@@ -60,84 +62,84 @@ src/
 │   ├── inmuebles/
 │   ├── mantenimiento/
 │   ├── pagos/
-│   └── ui/              # Componentes base de shadcn
+│   └── ui/              # shadcn base components
 ├── lib/
-│   ├── api/             # Clientes HTTP por módulo (conectados al backend)
-│   ├── mock/            # Datos de prueba (fallback mientras el backend no está activo)
-│   ├── schemas/         # Esquemas Zod
-│   └── session.ts       # Gestión de sesión JWT (localStorage)
-└── types/               # Tipos globales por módulo
+│   ├── api/             # Per-module HTTP clients (wired to the backend)
+│   ├── mock/            # Seed data (dev fallback when the backend is asleep)
+│   ├── schemas/         # Zod schemas
+│   └── session.ts       # JWT session management (localStorage)
+└── types/               # Global types per module
 ```
 
-## Módulos implementados
+## Modules
 
-| Módulo | Interfaces | UI | API conectada |
+| Module | Screens | UI | API wired |
 |---|---|---|---|
-| Autenticación | Login, recuperar, restablecer contraseña | ✅ | ✅ |
-| Inmuebles | UI-I01 a UI-I04 | ✅ | ✅ |
-| Clientes | UI-CL01 a UI-CL04 | ✅ | ✅ |
-| Contratos | UI-C01 a UI-C09 | ✅ | ✅ |
-| Pagos y Mora | UI-P01 a UI-P05 | ✅ | ✅ |
-| Administración | UI-A01 a UI-A07 | ✅ | ✅ |
-| Mantenimiento | UI-M01 a UI-M07 | ✅ | ✅ |
-| Chatbot | UI-CH01 a UI-CH03 | ✅ | ✅ |
-| Mi Cuenta | UI-ACC01 | ✅ | ✅ |
+| Authentication | Login, recover, reset password | ✅ | ✅ |
+| Properties | UI-I01 to UI-I04 | ✅ | ✅ |
+| Clients | UI-CL01 to UI-CL04 | ✅ | ✅ |
+| Contracts | UI-C01 to UI-C09 | ✅ | ✅ |
+| Payments & overdue | UI-P01 to UI-P05 | ✅ | ✅ |
+| Administration | UI-A01 to UI-A07 | ✅ | ✅ |
+| Maintenance | UI-M01 to UI-M07 | ✅ | ✅ |
+| Chatbot | UI-CH01 to UI-CH03 | ✅ | ✅ |
+| My account | UI-ACC01 | ✅ | ✅ |
 
-## Capa de API
+## API layer
 
-Todos los módulos tienen su cliente HTTP en `src/lib/api/`:
+Each module has its HTTP client in `src/lib/api/`:
 
-| Archivo | Módulo |
+| File | Module |
 |---|---|
-| `auth.ts` | Login, recuperar y restablecer contraseña |
-| `cuenta.ts` | Perfil del usuario autenticado, notificaciones |
-| `inmuebles.ts` | Inmuebles, fotos, historial |
-| `clientes.ts` | Clientes, visitas, interacciones |
-| `contratos.ts` | Contratos, documentos, firmas |
-| `pagos.ts` | Cobros, pagos, mora, reportes |
-| `administracion.ts` | Usuarios, esquemas, parámetros, documentos, plantillas |
-| `mantenimiento.ts` | Solicitudes de mantenimiento, proveedores |
-| `chatbot.ts` | Solicitudes del chatbot público y bandeja interna |
+| `auth.ts` | Login, password recovery and reset |
+| `cuenta.ts` | Authenticated user profile, notifications |
+| `inmuebles.ts` | Properties, photos, history |
+| `clientes.ts` | Clients, visits, interactions |
+| `contratos.ts` | Contracts, documents, signatures |
+| `pagos.ts` | Charges, payments, overdue, reports |
+| `administracion.ts` | Users, schemes, params, documents, templates |
+| `mantenimiento.ts` | Maintenance requests, providers |
+| `chatbot.ts` | Public chatbot requests and internal inbox |
 
-El interceptor en `axios.ts` adjunta el JWT en cada request y redirige a `/login` ante un `401`.
+The interceptor in `axios.ts` attaches the JWT to every request and redirects to `/login` on a `401`.
 
-## Comandos
+## Commands
 
 ```bash
-# Desarrollo (con Turbopack)
+# Development (with Turbopack)
 npm run dev
 
-# Build de producción
+# Production build
 npm run build
 
-# Verificar tipos
+# Type check
 npm run typecheck
 
 # Lint
 npm run lint
 ```
 
-## Variables de entorno
+## Environment variables
 
 ```env
-# URL base del backend (sin barra final, sin /api)
-# Producción: la URL de Render. Local: http://localhost:4000
+# Backend base URL (no trailing slash, no /api)
+# Production: the Render URL. Local: http://localhost:4000
 NEXT_PUBLIC_API_URL=https://habu-app-backend.onrender.com
 ```
 
-> `NEXT_PUBLIC_*` se incrusta en el bundle en tiempo de build: al cambiarla hay que reiniciar `npm run dev` (o redeployar) para que tome efecto.
+> `NEXT_PUBLIC_*` is inlined into the bundle at build time: after changing it you must restart `npm run dev` (or redeploy) for it to take effect.
 
-## Decisiones técnicas
+## Technical decisions
 
-- **Server Components por defecto.** Solo se marca `"use client"` cuando hace falta interactividad (formularios, hooks, mapas). Reduce el JS que llega al navegador.
-- **Un único punto de acceso al token.** Toda la sesión JWT vive en `lib/session.ts` (localStorage). Ningún componente lee el token directo. El interceptor de `lib/api/axios.ts` lo adjunta en cada request y, ante un `401`, limpia la sesión y redirige a `/login`.
-- **Recarga por `retryKey`, no por estado local.** Tras crear/editar/eliminar, se incrementa un `retryKey` que re-dispara el `useEffect` de carga, en vez de mutar el estado a mano. Menos bugs de sincronización entre la UI y el servidor.
-- **Colores de estado centralizados.** Los badges de estado/prioridad y las alertas usan clases compartidas (`.badge-*`, `.alert-*`) definidas una sola vez en `globals.css`, cada una con su variante de modo oscuro. Cambiar un color = un solo lugar, no N archivos.
-- **Frontend y backend desacoplados por contrato.** El frontend no sabe nada del almacenamiento del backend: consume formas de respuesta fijas (`{ data }` / `{ error }`). El backend arrancó con datos en memoria y puede migrar a Postgres sin tocar el frontend.
-- **Limitación conocida (honesta).** La protección de rutas hoy depende del interceptor `401` del lado del cliente; el middleware server-side (`src/proxy.ts`) está pendiente porque requiere migrar el token de localStorage a una cookie legible en el edge. Los roles (`administrador` | `asesor`) son estáticos en el frontend.
+- **Server Components by default.** `"use client"` is added only where interactivity is needed (forms, hooks, maps). This keeps the JS shipped to the browser small.
+- **A single source of truth for the token.** The whole JWT session lives in `lib/session.ts` (localStorage). No component reads the token directly. The `lib/api/axios.ts` interceptor attaches it to every request and, on a `401`, clears the session and redirects to `/login`.
+- **Reloading via `retryKey`, not local state.** After create/update/delete, a `retryKey` is incremented to re-trigger the loading `useEffect`, instead of hand-mutating state. Fewer UI-vs-server sync bugs.
+- **Centralized status colors.** Status/priority badges and alerts use shared classes (`.badge-*`, `.alert-*`) defined once in `globals.css`, each with its dark-mode variant. Changing a color is one edit, not N files.
+- **Frontend and backend decoupled by contract.** The frontend knows nothing about the backend's storage: it consumes fixed response shapes (`{ data }` / `{ error }`). The backend started with in-memory data and can migrate to Postgres without touching the frontend.
+- **Known limitation (kept honest).** Route protection currently relies on the client-side `401` interceptor; the server-side middleware (`src/proxy.ts`) is pending because it requires moving the token from localStorage to an edge-readable cookie. Roles (`administrador` | `asesor`) are static on the frontend.
 
-## Estado actual
+## Current status
 
-La UI está completa para los 9 módulos, cada uno conectado a su capa de API contra el backend Node/Express, ya desplegado en Render. Si el backend está dormido (plan Free), los componentes muestran estado de error con botón de reintentar y caen a los datos mock como referencia.
+The UI is complete for all 9 modules, each wired to its API layer against the Node/Express backend, already deployed on Render. If the backend is asleep (free tier), components show an error state with a retry button and fall back to mock data.
 
-Ver `TODO.md` para el detalle de tareas pendientes y decisiones de diseño abiertas.
+See `TODO.md` for the detailed pending tasks and open design decisions.
