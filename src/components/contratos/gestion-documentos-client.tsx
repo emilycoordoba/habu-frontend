@@ -190,7 +190,7 @@ export function GestionDocumentosClient({ contratoId }: GestionDocumentosClientP
             {contratoHeader.referencia} · {contratoHeader.inmueble}
           </p>
         </div>
-        <Badge variant="outline" className="ml-auto bg-gray-100 text-gray-600 border-gray-200">
+        <Badge variant="outline" className="ml-auto badge-gray">
           Borrador
         </Badge>
       </div>

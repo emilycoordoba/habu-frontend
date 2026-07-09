@@ -51,11 +51,11 @@ const MapaInmueble = dynamic(
 // ---------------------------------------------------------------------------
 
 const ESTADO_CONFIG: Record<EstadoInmueble, { label: string; className: string }> = {
-  disponible:        { label: "Disponible",         className: "bg-green-100 text-green-700 border-green-200" },
-  arrendado:         { label: "Arrendado",           className: "bg-blue-100 text-blue-700 border-blue-200" },
-  en_proceso_venta:  { label: "En proceso de venta", className: "bg-purple-100 text-purple-700 border-purple-200" },
-  vendido:           { label: "Vendido",             className: "bg-gray-100 text-gray-500 border-gray-200" },
-  en_mantenimiento:  { label: "En mantenimiento",    className: "bg-amber-100 text-amber-700 border-amber-200" },
+  disponible:        { label: "Disponible",         className: "badge-green" },
+  arrendado:         { label: "Arrendado",           className: "badge-blue" },
+  en_proceso_venta:  { label: "En proceso de venta", className: "badge-purple" },
+  vendido:           { label: "Vendido",             className: "badge-gray" },
+  en_mantenimiento:  { label: "En mantenimiento",    className: "badge-amber" },
 }
 
 const TIPO_ICON: Record<TipoInmueble, typeof Home01Icon> = {
@@ -249,7 +249,7 @@ export function DetalleInmuebleClient({ inmuebleId }: DetalleInmuebleClientProps
               {estadoConfig.label}
             </Badge>
             {inmueble.publicado ? (
-              <Badge variant="outline" className="text-xs font-medium bg-green-50 text-green-700 border-green-200 gap-1">
+              <Badge variant="outline" className="text-xs font-medium badge-green gap-1">
                 <HugeiconsIcon icon={EyeIcon} strokeWidth={2} className="size-3" />
                 Publicado
               </Badge>

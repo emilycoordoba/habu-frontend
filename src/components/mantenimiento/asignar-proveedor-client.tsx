@@ -25,9 +25,9 @@ import { obtenerMantenimiento, asignarProveedor, listarProveedores } from "@/lib
 import type { SolicitudMantenimiento, ProveedorOpcion, PrioridadMantenimiento } from "@/types/mantenimiento.types"
 
 const PRIORIDAD_CONFIG: Record<PrioridadMantenimiento, { label: string; className: string }> = {
-  baja:  { label: "Baja",  className: "bg-gray-100 text-gray-500 border-gray-200" },
-  media: { label: "Media", className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  alta:  { label: "Alta",  className: "bg-red-100 text-red-700 border-red-200" },
+  baja:  { label: "Baja",  className: "badge-gray" },
+  media: { label: "Media", className: "badge-yellow" },
+  alta:  { label: "Alta",  className: "badge-red" },
 }
 
 // ---------------------------------------------------------------------------

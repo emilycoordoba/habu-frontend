@@ -453,10 +453,10 @@ export function ProveedoresClient() {
 
 function CalificacionBadge({ valor }: { valor: number }) {
   const color = valor >= 4.5
-    ? "bg-green-100 text-green-700 border-green-200"
+    ? "badge-green"
     : valor >= 3.5
-      ? "bg-yellow-100 text-yellow-700 border-yellow-200"
-      : "bg-red-100 text-red-700 border-red-200"
+      ? "badge-yellow"
+      : "badge-red"
 
   return (
     <Badge variant="outline" className={cn("text-xs gap-1", color)}>

@@ -135,8 +135,10 @@ Todos los módulos de UI están completos y conectados a la capa de API REST. El
 - [ ] Animaciones y transiciones entre páginas
 - [ ] Full-page sheet — actualmente no funciona correctamente
 - [ ] Mejorar layout del PDF de reportes de ingresos
-- [ ] **Bordes de tarjetas en modo oscuro** — revisar/corregir; se ven mal en dark (detectado al tomar screenshots para el portafolio, 2026-06-22)
-- [ ] **Chatbot — imágenes de fachada generadas por IA**: las fachadas que muestra el chatbot se ven "muy IA". Reemplazar por imágenes reales de inmuebles.
+- [x] **Bordes de tarjetas en modo oscuro** — CORREGIDO 2026-07-08. Causa: `.dark` usaba bordes translúcidos (`oklch(1 0 0 / 10%)`) → turbios y de color inconsistente según el fondo. Fix en `globals.css`: `--border`→`oklch(0.32 0 0)`, `--input`→`oklch(0.37 0 0)`, `--sidebar-border`→`oklch(0.32 0 0)` (grises opacos, línea nítida). Todo lo hereda vía `border-border`.
+- [x] **Chatbot — imágenes de fachada** — CORREGIDO 2026-07-08/09. 10 fotos reales de Unsplash (licencia comercial libre) en `frontend/public/inmuebles/` (casa-fachada-1, edificio-1/2, local-comercial-1/2, cocina-1/2, habitacion-1/2, sala-1). Seed del backend (`seed/mock/inmuebles.ts`) reapuntado a rutas locales `/inmuebles/*.jpg`. Verificado en local (`.env.local`→`http://localhost:4000`). **Pendiente:** replicar el cambio en `frontend/lib/mock/inmuebles.ts` (aún tiene placehold.co) y redeploy backend→Render para que se vea en la URL pública.
+- [x] **Badges de estado en modo oscuro** — CORREGIDO 2026-07-09. Los badges de páginas internas usaban tríadas hardcodeadas `bg-*-100 text-*-700 border-*-200` (sin variante `.dark`) → ilegibles en oscuro. Fix: rutados a las clases compartidas `.badge-*` de `globals.css` (que ya definen su variante `.dark`). Archivos: mantenimiento (detalle, asignar-proveedor, proveedores), clientes/detalle-cliente, contratos (escrituracion, formulario-arriendo, formulario-promesa, gestion-documentos), inmuebles/detalle-inmueble (unificado). 
+- [ ] **Selection-cards de prioridad/estado en modo oscuro** — `mantenimiento/registrar-solicitud` (PRIORIDAD_INFO) y `mantenimiento/actualizar-estado` (TRANSICIONES) usan `bg-*-50 border-*-300 text-*-700` en tarjetas grandes seleccionables (NO son badges). Requieren verse con la app en oscuro antes de tocar — no reusan `.badge-*` porque su borde `-300` pelearía. Decidir si crear `.select-card-*` o ajustar inline.
 
 ---
 

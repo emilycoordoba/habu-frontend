@@ -134,7 +134,7 @@ export function EscrituracionClient({ contratoId }: EscrituracionClientProps) {
             {contrato.referencia} · {contrato.inmueble}
           </p>
         </div>
-        <Badge variant="outline" className="ml-auto bg-indigo-100 text-indigo-700 border-indigo-200">
+        <Badge variant="outline" className="ml-auto badge-indigo">
           En escrituración
         </Badge>
       </div>

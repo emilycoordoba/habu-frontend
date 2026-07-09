@@ -37,16 +37,16 @@ import type {
 // ---------------------------------------------------------------------------
 
 const ESTADO_CONFIG: Record<EstadoMantenimiento, { label: string; className: string; icon: IconSvgElement }> = {
-  pendiente:  { label: "Pendiente",  className: "bg-amber-100 text-amber-700 border-amber-200",  icon: Clock01Icon },
-  en_proceso: { label: "En proceso", className: "bg-blue-100 text-blue-700 border-blue-200",     icon: Wrench01Icon },
-  finalizado: { label: "Finalizado", className: "bg-green-100 text-green-700 border-green-200",  icon: CheckmarkCircle01Icon },
-  cancelado:  { label: "Cancelado",  className: "bg-gray-100 text-gray-500 border-gray-200",     icon: Cancel01Icon },
+  pendiente:  { label: "Pendiente",  className: "badge-amber",  icon: Clock01Icon },
+  en_proceso: { label: "En proceso", className: "badge-blue",   icon: Wrench01Icon },
+  finalizado: { label: "Finalizado", className: "badge-green",  icon: CheckmarkCircle01Icon },
+  cancelado:  { label: "Cancelado",  className: "badge-gray",   icon: Cancel01Icon },
 }
 
 const PRIORIDAD_CONFIG: Record<PrioridadMantenimiento, { label: string; className: string }> = {
-  baja:  { label: "Baja",  className: "bg-gray-100 text-gray-500 border-gray-200" },
-  media: { label: "Media", className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  alta:  { label: "Alta",  className: "bg-red-100 text-red-700 border-red-200" },
+  baja:  { label: "Baja",  className: "badge-gray" },
+  media: { label: "Media", className: "badge-yellow" },
+  alta:  { label: "Alta",  className: "badge-red" },
 }
 
 // ---------------------------------------------------------------------------

@@ -71,11 +71,11 @@ const INTERACCION_CONFIG: Record<TipoInteraccion, { label: string; icon: typeof 
 }
 
 const ESTADO_INMUEBLE_CONFIG = {
-  disponible:       { label: "Disponible",          className: "bg-green-100 text-green-700 border-green-200" },
-  arrendado:        { label: "Arrendado",            className: "bg-blue-100 text-blue-700 border-blue-200" },
-  en_proceso_venta: { label: "En proceso de venta",  className: "bg-purple-100 text-purple-700 border-purple-200" },
-  vendido:          { label: "Vendido",               className: "bg-gray-100 text-gray-500 border-gray-200" },
-  en_mantenimiento: { label: "En mantenimiento",      className: "bg-amber-100 text-amber-700 border-amber-200" },
+  disponible:       { label: "Disponible",          className: "badge-green" },
+  arrendado:        { label: "Arrendado",            className: "badge-blue" },
+  en_proceso_venta: { label: "En proceso de venta",  className: "badge-purple" },
+  vendido:          { label: "Vendido",               className: "badge-gray" },
+  en_mantenimiento: { label: "En mantenimiento",      className: "badge-amber" },
 } as const
 
 function formatFecha(iso: string) {
@@ -216,7 +216,7 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg font-semibold leading-tight">{cliente.nombre}</h1>
               {!cliente.activo && (
-                <Badge variant="outline" className="text-xs bg-gray-100 text-gray-500 border-gray-200">
+                <Badge variant="outline" className="text-xs badge-gray">
                   Inactivo
                 </Badge>
               )}
@@ -319,8 +319,8 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
                       className={cn(
                         "text-xs",
                         cliente.activo
-                          ? "bg-green-100 text-green-700 border-green-200"
-                          : "bg-gray-100 text-gray-500 border-gray-200"
+                          ? "badge-green"
+                          : "badge-gray"
                       )}
                     >
                       {cliente.activo ? "Activo" : "Inactivo"}
@@ -359,7 +359,7 @@ export function DetalleClienteClient({ clienteId }: { clienteId: string }) {
                   </thead>
                   <tbody className="divide-y">
                     {inmuebles.map(inmueble => {
-                      const estadoCfg = ESTADO_INMUEBLE_CONFIG[inmueble.estado] ?? { label: inmueble.estado, className: "bg-gray-100 text-gray-500 border-gray-200" }
+                      const estadoCfg = ESTADO_INMUEBLE_CONFIG[inmueble.estado] ?? { label: inmueble.estado, className: "badge-gray" }
                       return (
                         <tr key={inmueble.id} className="hover:bg-muted/30 transition-colors">
                           <td className="px-4 py-3">
