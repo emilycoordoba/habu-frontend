@@ -1,6 +1,22 @@
-# Sistema de Gestión Inmobiliaria — Frontend
+# Sistema de Gestión Inmobiliaria (Habu) — Frontend
 
-Aplicación web para la gestión integral de inmuebles, contratos, clientes, pagos y mantenimiento de una empresa inmobiliaria. Construida con Next.js 16 App Router, conectada a la capa de API REST del backend Python.
+Aplicación web para la gestión integral de una empresa inmobiliaria: inmuebles, clientes, contratos de arriendo y compraventa, pagos y mora, mantenimiento y un chatbot de captación. Construida con Next.js 16 App Router, conectada por API REST a un backend propio en Node/Express/TypeScript.
+
+## Demo en vivo
+
+| | URL | |
+|---|---|---|
+| **App (Vercel)** | `<PENDIENTE: pegar URL de Vercel>` | Iniciar sesión con los usuarios de prueba de abajo |
+| **API (Render)** | https://habu-app-backend.onrender.com | Verificar en `/health` → `estado: ok` |
+
+**Usuarios de prueba:**
+
+| Rol | Correo | Contraseña |
+|---|---|---|
+| Administrador | `admin@habu.com.co` | `admin123` |
+| Asesor | `asesor@habu.com.co` | `asesor123` |
+
+> El backend corre en el plan Free de Render y "duerme" tras ~15 min de inactividad: la primera petición tras dormir tarda ~30–50 s. Si al entrar ves errores, abre primero `https://habu-app-backend.onrender.com/health` para despertarlo y recarga.
 
 ## Stack tecnológico
 
@@ -104,11 +120,24 @@ npm run lint
 ## Variables de entorno
 
 ```env
-NEXT_PUBLIC_API_URL=https://api.habu.com.co   # URL base del backend
+# URL base del backend (sin barra final, sin /api)
+# Producción: la URL de Render. Local: http://localhost:4000
+NEXT_PUBLIC_API_URL=https://habu-app-backend.onrender.com
 ```
+
+> `NEXT_PUBLIC_*` se incrusta en el bundle en tiempo de build: al cambiarla hay que reiniciar `npm run dev` (o redeployar) para que tome efecto.
+
+## Decisiones técnicas
+
+- **Server Components por defecto.** Solo se marca `"use client"` cuando hace falta interactividad (formularios, hooks, mapas). Reduce el JS que llega al navegador.
+- **Un único punto de acceso al token.** Toda la sesión JWT vive en `lib/session.ts` (localStorage). Ningún componente lee el token directo. El interceptor de `lib/api/axios.ts` lo adjunta en cada request y, ante un `401`, limpia la sesión y redirige a `/login`.
+- **Recarga por `retryKey`, no por estado local.** Tras crear/editar/eliminar, se incrementa un `retryKey` que re-dispara el `useEffect` de carga, en vez de mutar el estado a mano. Menos bugs de sincronización entre la UI y el servidor.
+- **Colores de estado centralizados.** Los badges de estado/prioridad y las alertas usan clases compartidas (`.badge-*`, `.alert-*`) definidas una sola vez en `globals.css`, cada una con su variante de modo oscuro. Cambiar un color = un solo lugar, no N archivos.
+- **Frontend y backend desacoplados por contrato.** El frontend no sabe nada del almacenamiento del backend: consume formas de respuesta fijas (`{ data }` / `{ error }`). El backend arrancó con datos en memoria y puede migrar a Postgres sin tocar el frontend.
+- **Limitación conocida (honesta).** La protección de rutas hoy depende del interceptor `401` del lado del cliente; el middleware server-side (`src/proxy.ts`) está pendiente porque requiere migrar el token de localStorage a una cookie legible en el edge. Los roles (`administrador` | `asesor`) son estáticos en el frontend.
 
 ## Estado actual
 
-La UI está completa para todos los módulos y cada uno tiene su capa de API conectada. El backend (Python/Django) aún no está desplegado — mientras tanto los componentes muestran estado de error con botón de reintentar, usando los datos mock como referencia de desarrollo.
+La UI está completa para los 9 módulos, cada uno conectado a su capa de API contra el backend Node/Express, ya desplegado en Render. Si el backend está dormido (plan Free), los componentes muestran estado de error con botón de reintentar y caen a los datos mock como referencia.
 
 Ver `TODO.md` para el detalle de tareas pendientes y decisiones de diseño abiertas.
